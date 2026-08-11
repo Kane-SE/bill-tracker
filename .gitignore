@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+dist-ssr/
+*.local
+
+# SDD scratch workspace (self-ignored, but listed for clarity)
+.superpowers/
+
+# Vite / PWA
+dev-dist/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+
+# TS build info
+*.tsbuildinfo
+node_modules/.tmp/

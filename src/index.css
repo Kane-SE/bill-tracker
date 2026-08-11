@@ -1,0 +1,153 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================================
+ * THEME TOKENS — CHANGE / ADD YOUR COLORS HERE
+ * ----------------------------------------------------------------------------
+ * Every color in the app comes from the HSL variables below (format is
+ * "H S% L%", no `hsl()` wrapper). A theme is one full set of these tokens,
+ * selected by the `data-theme` attribute on <html> (see src/lib/theme.ts).
+ *
+ *   :root                       -> fallback (default light)
+ *   [data-theme='light']        -> default palette, light
+ *   [data-theme='dark']         -> default palette, dark
+ *   [data-theme='coffee']       -> Coffee palette, light
+ *   [data-theme='coffee-dark']  -> Coffee palette, dark
+ *
+ * To add a palette: copy a block, give it a new [data-theme='name'], change the
+ * values, and register it in src/lib/theme.ts + the Settings picker. Nothing
+ * else in the codebase hard-codes a color.
+ *
+ * Which token gets which color? Neutral/brand tokens (background, card, primary,
+ * secondary, muted, accent, border, input, ring) map by LIGHTNESS + contrast:
+ * lightest -> surfaces, darkest -> primary, middles -> borders/secondary.
+ * Functional tokens (destructive = red, success = green) map by MEANING and
+ * should stay recognizable in every palette.
+ * ==========================================================================*/
+@layer base {
+  /* ---- Default palette · LIGHT (also the fallback) ---------------------- */
+  :root,
+  [data-theme='light'] {
+    --background: 240 20% 99%;
+    --foreground: 240 10% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 10%;
+    --primary: 250 95% 68%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 240 10% 15%;
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 46%;
+    --accent: 250 95% 96%;
+    --accent-foreground: 250 60% 40%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 152 62% 42%;
+    --success-foreground: 0 0% 100%;
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
+    --ring: 250 95% 68%;
+    --radius: 0.85rem;
+  }
+
+  /* ---- Default palette · DARK ------------------------------------------- */
+  [data-theme='dark'] {
+    --background: 240 18% 7%;
+    --foreground: 240 10% 96%;
+    --card: 240 15% 11%;
+    --card-foreground: 240 10% 96%;
+    --primary: 250 95% 72%;
+    --primary-foreground: 240 30% 8%;
+    --secondary: 240 12% 16%;
+    --secondary-foreground: 240 10% 96%;
+    --muted: 240 12% 16%;
+    --muted-foreground: 240 6% 60%;
+    --accent: 250 40% 22%;
+    --accent-foreground: 250 90% 88%;
+    --destructive: 0 72% 62%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 152 55% 48%;
+    --success-foreground: 152 60% 8%;
+    --border: 240 10% 20%;
+    --input: 240 10% 22%;
+    --ring: 250 95% 72%;
+    --radius: 0.85rem;
+  }
+
+  /* ---- Coffee palette · LIGHT ------------------------------------------- *
+   * AD8B73 -> primary/ring · CEAB93 -> border/input · E3CAA5 -> secondary/
+   * muted/accent · FFFBE9 -> background. Added: espresso text, warm red,
+   * muted green (not in the source palette).                                */
+  [data-theme='coffee'] {
+    --background: 48 80% 96%;        /* FFFBE9 */
+    --foreground: 25 38% 17%;        /* espresso (added) */
+    --card: 46 72% 99%;
+    --card-foreground: 25 38% 17%;
+    --primary: 25 26% 56%;           /* AD8B73 */
+    --primary-foreground: 30 45% 15%;
+    --secondary: 34 48% 86%;         /* light tan from E3CAA5 */
+    --secondary-foreground: 25 35% 22%;
+    --muted: 36 44% 89%;
+    --muted-foreground: 28 18% 40%;
+    --accent: 36 53% 82%;            /* E3CAA5 */
+    --accent-foreground: 24 45% 24%;
+    --destructive: 8 62% 47%;        /* warm red (added) */
+    --destructive-foreground: 40 60% 97%;
+    --success: 140 40% 36%;          /* muted green (added) */
+    --success-foreground: 90 40% 96%;
+    --border: 30 34% 78%;            /* CEAB93 */
+    --input: 30 34% 78%;             /* CEAB93 */
+    --ring: 25 26% 56%;              /* AD8B73 */
+    --radius: 0.85rem;
+  }
+
+  /* ---- Coffee palette · DARK (espresso tones extending the palette) ----- */
+  [data-theme='coffee-dark'] {
+    --background: 25 24% 9%;
+    --foreground: 44 55% 90%;        /* cream */
+    --card: 25 20% 13%;
+    --card-foreground: 44 55% 90%;
+    --primary: 30 42% 72%;           /* CEAB93 lightened for contrast on dark */
+    --primary-foreground: 25 40% 12%;
+    --secondary: 25 16% 20%;
+    --secondary-foreground: 44 45% 88%;
+    --muted: 25 15% 20%;
+    --muted-foreground: 34 22% 64%;
+    --accent: 28 28% 26%;
+    --accent-foreground: 40 50% 86%;
+    --destructive: 6 60% 56%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 140 35% 52%;
+    --success-foreground: 140 45% 8%;
+    --border: 25 15% 24%;
+    --input: 25 15% 26%;
+    --ring: 30 42% 72%;
+    --radius: 0.85rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    /* Respect device safe areas (notches) on mobile PWAs */
+    padding: env(safe-area-inset-top) env(safe-area-inset-right)
+      env(safe-area-inset-bottom) env(safe-area-inset-left);
+    -webkit-tap-highlight-color: transparent;
+  }
+  /* Prevent iOS input zoom */
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
