@@ -1,8 +1,8 @@
 import * as React from 'react'
 import { Plus, X } from 'lucide-react'
-import { Input } from '@/shared/ui/input'
 import { Button } from '@/shared/ui/button'
 import { Badge } from '@/shared/ui/badge'
+import { Combobox } from '@/shared/components/Combobox'
 import { cn } from '@/shared/lib/utils'
 
 interface ParticipantEditorProps {
@@ -11,27 +11,19 @@ interface ParticipantEditorProps {
   onChange: (names: string[]) => void
 }
 
-/**
- * Edit the list of people for a night: type a name (with autocomplete from the
- * common-names list) and add it, or remove existing chips. Names are matched
- * case-insensitively to avoid accidental duplicates that would split balances.
- */
 export function ParticipantEditor({ participants, knownNames, onChange }: ParticipantEditorProps) {
   const [draft, setDraft] = React.useState('')
-  const listId = React.useId()
 
   const suggestions = knownNames.filter(
     (n) => !participants.some((p) => p.toLowerCase() === n.toLowerCase()),
   )
 
-  function add() {
-    const name = draft.trim()
+  function add(raw: string) {
+    const name = raw.trim()
     if (!name) return
-    if (participants.some((p) => p.toLowerCase() === name.toLowerCase())) {
-      setDraft('')
-      return
+    if (!participants.some((p) => p.toLowerCase() === name.toLowerCase())) {
+      onChange([...participants, name])
     }
-    onChange([...participants, name])
     setDraft('')
   }
 
@@ -42,25 +34,15 @@ export function ParticipantEditor({ participants, knownNames, onChange }: Partic
   return (
     <div className="space-y-3">
       <div className="flex gap-2">
-        <Input
+        <Combobox
           value={draft}
-          list={listId}
+          onValueChange={setDraft}
+          onSelect={add}
+          suggestions={suggestions}
           placeholder="Add a name…"
-          autoComplete="off"
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault()
-              add()
-            }
-          }}
+          aria-label="Add a name"
         />
-        <datalist id={listId}>
-          {suggestions.map((n) => (
-            <option key={n} value={n} />
-          ))}
-        </datalist>
-        <Button type="button" size="icon" variant="secondary" onClick={add} aria-label="Add name">
+        <Button type="button" size="icon" variant="secondary" onClick={() => add(draft)} aria-label="Add name">
           <Plus className="h-4 w-4" />
         </Button>
       </div>
@@ -68,11 +50,7 @@ export function ParticipantEditor({ participants, knownNames, onChange }: Partic
       {participants.length > 0 ? (
         <div className="flex flex-wrap gap-2">
           {participants.map((name) => (
-            <Badge
-              key={name}
-              variant="secondary"
-              className={cn('gap-1 py-1 pl-3 pr-1.5 text-sm font-medium')}
-            >
+            <Badge key={name} variant="secondary" className={cn('gap-1 py-1 pl-3 pr-1.5 text-sm font-medium')}>
               {name}
               <button
                 type="button"
