@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { CheckCircle2, Plus, Receipt, RotateCcw, Trash2 } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
@@ -128,7 +128,7 @@ export function NightDetail() {
       <Card className="mb-5">
         <CardHeader className="flex-row items-center justify-between space-y-0">
           <CardTitle className="text-base">
-            Items <span className="text-muted-foreground">Â· {formatMoney(total)}</span>
+            Items <span className="text-muted-foreground">· {formatMoney(total)}</span>
           </CardTitle>
           {isActive && (
             <Button size="sm" variant="secondary" onClick={openAdd} disabled={night.participants.length === 0}>
@@ -142,7 +142,7 @@ export function NightDetail() {
             <p className="text-sm text-muted-foreground">
               {night.participants.length === 0
                 ? 'Add people above, then add what was paid.'
-                : 'No items yet. Tap â€œAddâ€ to record a payment.'}
+                : 'No items yet. Tap “Add” to record a payment.'}
             </p>
           ) : (
             night.items.map((item) => (

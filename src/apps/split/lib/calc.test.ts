@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { computeBalances, equalShares, redistribute, shareRemainder, type SplitRow } from './calc'
 import type { Item, Night } from '@/apps/split/types'
 

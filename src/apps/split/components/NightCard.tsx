@@ -1,4 +1,4 @@
-﻿import { Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { ChevronRight, Receipt, Users } from 'lucide-react'
 import { Card } from '@/shared/ui/card'
 import { Badge } from '@/shared/ui/badge'

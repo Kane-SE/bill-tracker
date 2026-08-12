@@ -1,4 +1,4 @@
-﻿import { ArrowRight } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import type { Debt } from '@/apps/split/types'
 import { formatMoney } from '@/apps/split/lib/format'
 import { cn } from '@/shared/lib/utils'
@@ -11,7 +11,7 @@ interface BalanceListProps {
 /** Renders netted "X owes Y amount" rows. */
 export function BalanceList({ debts, className }: BalanceListProps) {
   if (debts.length === 0) {
-    return <p className="text-sm text-muted-foreground">All settled â€” nobody owes anything.</p>
+    return <p className="text-sm text-muted-foreground">All settled — nobody owes anything.</p>
   }
   return (
     <ul className={cn('space-y-2', className)}>

@@ -1,4 +1,4 @@
-﻿import { useMemo } from 'react'
+import { useMemo } from 'react'
 import { Archive as ArchiveIcon } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { NightCard } from '@/apps/split/components/NightCard'

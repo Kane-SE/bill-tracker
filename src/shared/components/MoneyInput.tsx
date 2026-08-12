@@ -1,4 +1,4 @@
-﻿import { Input } from '@/shared/ui/input'
+import { Input } from '@/shared/ui/input'
 import { formatNumber, parseMoney } from '@/apps/split/lib/format'
 import { cn } from '@/shared/lib/utils'
 
@@ -37,7 +37,7 @@ export function MoneyInput({
         className={cn('pr-9 text-right tabular-nums', className)}
       />
       <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-        â‚«
+        ₫
       </span>
     </div>
   )

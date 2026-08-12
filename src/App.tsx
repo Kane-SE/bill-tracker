@@ -1,4 +1,4 @@
-﻿import { HashRouter, Route, Routes } from 'react-router-dom'
+import { HashRouter, Route, Routes } from 'react-router-dom'
 import { Home } from '@/apps/split/pages/Home'
 import { NightDetail } from '@/apps/split/pages/NightDetail'
 import { Archive } from '@/apps/split/pages/Archive'

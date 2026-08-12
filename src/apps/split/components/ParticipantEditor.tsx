@@ -1,4 +1,4 @@
-﻿import * as React from 'react'
+import * as React from 'react'
 import { Plus, X } from 'lucide-react'
 import { Input } from '@/shared/ui/input'
 import { Button } from '@/shared/ui/button'
@@ -45,7 +45,7 @@ export function ParticipantEditor({ participants, knownNames, onChange }: Partic
         <Input
           value={draft}
           list={listId}
-          placeholder="Add a nameâ€¦"
+          placeholder="Add a name…"
           autoComplete="off"
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => {

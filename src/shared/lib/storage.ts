@@ -1,4 +1,4 @@
-﻿import { appDataSchema, type AppData } from '@/apps/split/types'
+import { appDataSchema, type AppData } from '@/apps/split/types'
 
 /**
  * Export / import of the whole app dataset as a JSON file. Import is validated

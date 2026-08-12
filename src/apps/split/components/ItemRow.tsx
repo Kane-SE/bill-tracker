@@ -1,4 +1,4 @@
-﻿import { Pencil, Trash2 } from 'lucide-react'
+import { Pencil, Trash2 } from 'lucide-react'
 import { Button } from '@/shared/ui/button'
 import { formatMoney } from '@/apps/split/lib/format'
 import { shareRemainder } from '@/apps/split/lib/calc'

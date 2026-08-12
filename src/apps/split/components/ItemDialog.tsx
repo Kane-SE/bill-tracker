@@ -1,4 +1,4 @@
-﻿import * as React from 'react'
+import * as React from 'react'
 import { Lock, LockOpen, SplitSquareHorizontal } from 'lucide-react'
 import {
   Dialog,
@@ -202,7 +202,7 @@ export function ItemDialog({ open, onOpenChange, participants, initial, onSubmit
                           : 'text-muted-foreground hover:bg-secondary',
                       )}
                       aria-label={r.locked ? `Unlock ${r.name} (back to auto-split)` : `Lock ${r.name}`}
-                      title={r.locked ? 'Edited â€” tap to auto-split' : 'Auto-split'}
+                      title={r.locked ? 'Edited — tap to auto-split' : 'Auto-split'}
                     >
                       {r.locked ? <Lock className="h-4 w-4" /> : <LockOpen className="h-4 w-4" />}
                     </button>
@@ -224,8 +224,8 @@ export function ItemDialog({ open, onOpenChange, participants, initial, onSubmit
             {included.length > 0 && remainder !== 0 && (
               <p className={cn('text-xs', remainder > 0 ? 'text-muted-foreground' : 'text-destructive')}>
                 {remainder > 0
-                  ? `Unassigned: ${formatMoney(remainder)} â€” every person is locked; unlock someone or tap â€œSplit equallyâ€.`
-                  : `Over by ${formatMoney(-remainder)} â€” locked shares exceed the total.`}
+                  ? `Unassigned: ${formatMoney(remainder)} — every person is locked; unlock someone or tap “Split equally”.`
+                  : `Over by ${formatMoney(-remainder)} — locked shares exceed the total.`}
               </p>
             )}
           </div>

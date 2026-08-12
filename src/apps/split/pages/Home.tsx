@@ -1,4 +1,4 @@
-﻿import { useMemo } from 'react'
+import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Archive, Moon, Plus, Settings, Wallet } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'

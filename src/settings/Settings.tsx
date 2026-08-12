@@ -1,4 +1,4 @@
-﻿import { useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { Download, Moon, Plus, Sun, Upload, UserRound, X } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { Button } from '@/shared/ui/button'
@@ -112,7 +112,7 @@ export function Settings() {
           <div className="flex gap-2">
             <Input
               value={draft}
-              placeholder="Add a nameâ€¦"
+              placeholder="Add a name…"
               autoComplete="off"
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={(e) => {
@@ -183,7 +183,7 @@ export function Settings() {
         </CardContent>
       </Card>
 
-      <p className="px-1 text-center text-xs text-muted-foreground">Split Â· offline-first PWA</p>
+      <p className="px-1 text-center text-xs text-muted-foreground">Split · offline-first PWA</p>
     </div>
   )
 }
