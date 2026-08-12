@@ -45,10 +45,10 @@ export function NightDetail() {
   if (!night) {
     return (
       <div className="mx-auto max-w-lg px-4">
-        <PageHeader title="Night not found" backTo="/" />
+        <PageHeader title="Nomnom not found" backTo="/" />
         <EmptyState
           icon={Receipt}
-          title="This night doesn't exist"
+          title="This Nomnom doesn't exist"
           description="It may have been deleted."
         />
       </div>
@@ -100,7 +100,7 @@ export function NightDetail() {
 
       {isActive && (
         <div className="mb-5 space-y-1.5">
-          <Label htmlFor="night-title">Night name (optional)</Label>
+          <Label htmlFor="night-title">Nomnom name (optional)</Label>
           <Input
             id="night-title"
             value={night.title ?? ''}
@@ -160,7 +160,7 @@ export function NightDetail() {
 
       <Card className="mb-5">
         <CardHeader>
-          <CardTitle className="text-base">This night's balances</CardTitle>
+          <CardTitle className="text-base">This Nomnom's balances</CardTitle>
         </CardHeader>
         <CardContent>
           <BalanceList debts={balances} />
@@ -177,7 +177,7 @@ export function NightDetail() {
             disabled={night.items.length === 0}
           >
             <CheckCircle2 className="h-5 w-5" />
-            Mark night as done
+            Mark Nomnom as done
           </Button>
         ) : (
           <Button size="lg" variant="outline" className="w-full" onClick={() => restoreNight(night.id)}>
@@ -191,7 +191,7 @@ export function NightDetail() {
           onClick={() => setConfirmDelete(true)}
         >
           <Trash2 className="h-4 w-4" />
-          Delete night
+          Delete Nomnom
         </Button>
       </div>
 
@@ -206,13 +206,13 @@ export function NightDetail() {
       <ConfirmDialog
         open={confirmDone}
         onOpenChange={setConfirmDone}
-        title="Mark this night as done?"
+        title="Mark this Nomnom as done?"
         description="Its debts will be settled and it moves to the archive. You can restore it later."
         confirmLabel="Mark done"
         variant="success"
         onConfirm={() => {
           markDone(night.id)
-          toast.success('Night settled')
+          toast.success('Nomnom settled')
           navigate('/')
         }}
       />
@@ -220,13 +220,13 @@ export function NightDetail() {
       <ConfirmDialog
         open={confirmDelete}
         onOpenChange={setConfirmDelete}
-        title="Delete this night?"
-        description="This permanently removes the night and its items. This can't be undone."
+        title="Delete this Nomnom?"
+        description="This permanently removes the Nomnom and its items. This can't be undone."
         confirmLabel="Delete"
         variant="destructive"
         onConfirm={() => {
           deleteNight(night.id)
-          toast.success('Night deleted')
+          toast.success('Nomnom deleted')
           navigate('/')
         }}
       />

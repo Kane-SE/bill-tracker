@@ -53,7 +53,7 @@ export function Home() {
         <CardContent>
           {activeNights.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              No active nights yet. Start one below to begin tracking.
+              No active Nomnoms yet. Start one below to begin tracking.
             </p>
           ) : (
             <BalanceList debts={balances} />
@@ -63,7 +63,7 @@ export function Home() {
 
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Active nights
+          Active Nomnoms
         </h2>
         {settledCount > 0 && (
           <span className="text-xs text-muted-foreground">{settledCount} archived</span>
@@ -73,8 +73,8 @@ export function Home() {
       {activeNights.length === 0 ? (
         <EmptyState
           icon={Moon}
-          title="No active nights"
-          description="Create a night, add who came and what was paid, and balances appear here."
+          title="No active Nomnoms"
+          description="Create a Nomnom, add who came and what was paid, and balances appear here."
         />
       ) : (
         <div className="space-y-3">
@@ -88,7 +88,7 @@ export function Home() {
         <div className="mx-auto max-w-lg">
           <Button size="lg" className="w-full" onClick={createNight}>
             <Plus className="h-5 w-5" />
-            New night
+            New Nomnom
           </Button>
         </div>
       </div>

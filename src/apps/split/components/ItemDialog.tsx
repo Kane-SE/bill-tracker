@@ -217,7 +217,7 @@ export function ItemDialog({ open, onOpenChange, participants, initial, onSubmit
                 </div>
               ))}
               {participants.length === 0 && (
-                <p className="text-sm text-muted-foreground">Add people to the night first.</p>
+                <p className="text-sm text-muted-foreground">Add people to the Nomnom first.</p>
               )}
             </div>
 

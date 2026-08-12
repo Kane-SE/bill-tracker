@@ -17,13 +17,13 @@ export function Archive() {
 
   return (
     <div className="mx-auto max-w-lg px-4 pb-10">
-      <PageHeader title="Archive" subtitle="Settled nights" backTo="/" />
+      <PageHeader title="Archive" subtitle="Settled Nomnoms" backTo="/" />
 
       {settled.length === 0 ? (
         <EmptyState
           icon={ArchiveIcon}
           title="Nothing archived yet"
-          description="Nights you mark as done will appear here. You can still open them to review or restore."
+          description="Nomnoms you mark as done will appear here. You can still open them to review or restore."
         />
       ) : (
         <div className="space-y-3">
