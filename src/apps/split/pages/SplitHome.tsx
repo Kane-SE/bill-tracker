@@ -11,7 +11,7 @@ import { HeaderIconLink } from '@/shared/components/HeaderIconLink'
 import { useSplitStore } from '@/apps/split/store/useSplitStore'
 import { computeBalances } from '@/apps/split/lib/calc'
 
-export function Home() {
+export function SplitHome() {
   const navigate = useNavigate()
   const nights = useSplitStore((s) => s.nights)
   const addNight = useSplitStore((s) => s.addNight)
@@ -25,7 +25,7 @@ export function Home() {
 
   function createNight() {
     const id = addNight()
-    navigate(`/night/${id}`)
+    navigate(`/split/night/${id}`)
   }
 
   return (
@@ -35,7 +35,7 @@ export function Home() {
         subtitle="Who owes whom"
         actions={
           <>
-            <HeaderIconLink to="/archive" label="Archive">
+            <HeaderIconLink to="/split/archive" label="Archive">
               <Archive className="h-5 w-5" />
             </HeaderIconLink>
             <HeaderIconLink to="/settings" label="Settings">

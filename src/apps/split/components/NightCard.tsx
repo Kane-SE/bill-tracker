@@ -16,7 +16,7 @@ export function NightCard({ night }: NightCardProps) {
   const title = night.title || formatDate(night.date)
 
   return (
-    <Link to={`/night/${night.id}`} className="block">
+    <Link to={`/split/night/${night.id}`} className="block">
       <Card className="flex items-center gap-3 p-4 transition-colors hover:border-primary/50">
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex items-center gap-2">

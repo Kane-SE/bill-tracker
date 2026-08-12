@@ -45,7 +45,7 @@ export function NightDetail() {
   if (!night) {
     return (
       <div className="mx-auto max-w-lg px-4">
-        <PageHeader title="Nomnom not found" backTo="/" />
+        <PageHeader title="Nomnom not found" backTo="/split" />
         <EmptyState
           icon={Receipt}
           title="This Nomnom doesn't exist"
@@ -92,7 +92,7 @@ export function NightDetail() {
       <PageHeader
         title={night.title || formatDate(night.date)}
         subtitle={formatDate(night.date)}
-        backTo="/"
+        backTo="/split"
         actions={
           night.status === 'settled' ? <Badge variant="success">Done</Badge> : undefined
         }
@@ -213,7 +213,7 @@ export function NightDetail() {
         onConfirm={() => {
           markDone(night.id)
           toast.success('Nomnom settled')
-          navigate('/')
+          navigate('/split')
         }}
       />
 
@@ -227,7 +227,7 @@ export function NightDetail() {
         onConfirm={() => {
           deleteNight(night.id)
           toast.success('Nomnom deleted')
-          navigate('/')
+          navigate('/split')
         }}
       />
 

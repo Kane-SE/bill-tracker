@@ -17,7 +17,7 @@ export function Archive() {
 
   return (
     <div className="mx-auto max-w-lg px-4 pb-10">
-      <PageHeader title="Archive" subtitle="Settled Nomnoms" backTo="/" />
+      <PageHeader title="Archive" subtitle="Settled Nomnoms" backTo="/split" />
 
       {settled.length === 0 ? (
         <EmptyState
