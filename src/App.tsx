@@ -1,9 +1,9 @@
-import { HashRouter, Route, Routes } from 'react-router-dom'
-import { Home } from '@/pages/Home'
-import { NightDetail } from '@/pages/NightDetail'
-import { Archive } from '@/pages/Archive'
-import { Settings } from '@/pages/Settings'
-import { Toaster } from '@/components/ui/sonner'
+﻿import { HashRouter, Route, Routes } from 'react-router-dom'
+import { Home } from '@/apps/split/pages/Home'
+import { NightDetail } from '@/apps/split/pages/NightDetail'
+import { Archive } from '@/apps/split/pages/Archive'
+import { Settings } from '@/settings/Settings'
+import { Toaster } from '@/shared/ui/sonner'
 
 /**
  * HashRouter is used so deep links (e.g. /night/:id) work when the PWA is
