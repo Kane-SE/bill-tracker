@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { uid } from '@/shared/lib/utils'
 import { STORAGE_KEY } from '@/shared/lib/storage'
+import { frequentNames } from '@/apps/split/lib/names'
 import type { AppData, Item, Night } from '@/apps/split/types'
 
 /**
@@ -13,6 +14,7 @@ import type { AppData, Item, Night } from '@/apps/split/types'
 interface AppState {
   knownNames: string[]
   nights: Night[]
+  promotedNames: string[]
 
   // ---- nights --------------------------------------------------------------
   addNight(input?: { title?: string; participants?: string[] }): string
@@ -30,6 +32,7 @@ interface AppState {
   // ---- known names ---------------------------------------------------------
   addKnownName(name: string): void
   removeKnownName(name: string): void
+  promoteFrequentNames(): void
 
   // ---- backup --------------------------------------------------------------
   exportData(): AppData
@@ -45,6 +48,7 @@ export const useSplitStore = create<AppState>()(
     (set, get) => ({
       knownNames: [],
       nights: [],
+      promotedNames: [],
 
       addNight(input) {
         const id = uid()
@@ -57,6 +61,7 @@ export const useSplitStore = create<AppState>()(
           items: [],
         }
         set((s) => ({ nights: [night, ...s.nights] }))
+        get().promoteFrequentNames()
         return id
       },
 
@@ -90,6 +95,7 @@ export const useSplitStore = create<AppState>()(
 
       setParticipants(nightId, names) {
         set((s) => ({ nights: mapNight(s.nights, nightId, (n) => ({ ...n, participants: names })) }))
+        get().promoteFrequentNames()
       },
 
       addItem(nightId, item) {
@@ -133,6 +139,22 @@ export const useSplitStore = create<AppState>()(
         set((s) => ({ knownNames: s.knownNames.filter((n) => n !== name) }))
       },
 
+      promoteFrequentNames() {
+        set((s) => {
+          const frequent = frequentNames(s.nights) // threshold 2 -> 3+ nights
+          const knownLower = new Set(s.knownNames.map((n) => n.toLowerCase()))
+          const promotedLower = new Set(s.promotedNames.map((n) => n.toLowerCase()))
+          const toAdd = frequent.filter(
+            (n) => !knownLower.has(n.toLowerCase()) && !promotedLower.has(n.toLowerCase()),
+          )
+          if (toAdd.length === 0) return s
+          return {
+            knownNames: [...s.knownNames, ...toAdd].sort((a, b) => a.localeCompare(b)),
+            promotedNames: [...s.promotedNames, ...toAdd],
+          }
+        })
+      },
+
       exportData() {
         const { knownNames, nights } = get()
         return { version: 1, knownNames, nights }
@@ -145,7 +167,7 @@ export const useSplitStore = create<AppState>()(
     {
       name: STORAGE_KEY,
       version: 1,
-      partialize: (s) => ({ knownNames: s.knownNames, nights: s.nights }),
+      partialize: (s) => ({ knownNames: s.knownNames, nights: s.nights, promotedNames: s.promotedNames }),
     },
   ),
 )
