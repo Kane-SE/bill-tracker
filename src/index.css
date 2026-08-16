@@ -125,6 +125,11 @@
     --ring: 30 42% 72%;
     --radius: 0.85rem;
   }
+
+  /* ---- Custom palette · values injected at runtime (see shared/lib/theme.ts) - */
+  [data-theme='custom'] {
+    --radius: 0.85rem;
+  }
 }
 
 @layer base {
