@@ -35,7 +35,7 @@ apps get added.
   JSON file (backup v2, see below) to move between devices.
 - **Installable PWA** — add to home screen; works offline; light & dark themes,
   plus a fully custom color palette (see
-  [Custom palette](#custom-palette-settings--appearance--custom) below).
+  [Custom palette](#custom-palette-settings--appearance--custom--customize-colors) below).
 
 ## Tech stack
 

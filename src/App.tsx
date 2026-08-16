@@ -1,4 +1,4 @@
-import { HashRouter, Route, Routes } from 'react-router-dom'
+import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { Launcher } from '@/launcher/Launcher'
 import { Settings } from '@/settings/Settings'
 import { splitRoutes } from '@/apps/split/routes'
@@ -12,6 +12,7 @@ export default function App() {
           <Route path="/" element={<Launcher />} />
           <Route path="/settings" element={<Settings />} />
           {splitRoutes}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
       <Toaster />

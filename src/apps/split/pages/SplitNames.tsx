@@ -29,7 +29,7 @@ export function SplitNames() {
         <CardHeader>
           <CardTitle className="text-base">Common names</CardTitle>
           <CardDescription>
-            Suggested when adding people to a night. Add the friends you hang out with often.
+            Suggested when adding people to a Nomnom. Add the friends you hang out with often.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
