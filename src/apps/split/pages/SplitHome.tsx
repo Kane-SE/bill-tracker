@@ -14,7 +14,6 @@ import { computeBalances } from '@/apps/split/lib/calc'
 export function SplitHome() {
   const navigate = useNavigate()
   const nights = useSplitStore((s) => s.nights)
-  const addNight = useSplitStore((s) => s.addNight)
 
   const activeNights = useMemo(
     () => nights.filter((n) => n.status === 'active'),
@@ -22,11 +21,6 @@ export function SplitHome() {
   )
   const settledCount = nights.length - activeNights.length
   const balances = useMemo(() => computeBalances(activeNights), [activeNights])
-
-  function createNight() {
-    const id = addNight()
-    navigate(`/split/night/${id}`)
-  }
 
   return (
     <div className="mx-auto max-w-lg px-4 pb-28">
@@ -86,7 +80,7 @@ export function SplitHome() {
 
       <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/90 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur">
         <div className="mx-auto max-w-lg">
-          <Button size="lg" className="w-full" onClick={createNight}>
+          <Button size="lg" className="w-full" onClick={() => navigate('/split/new')}>
             <Plus className="h-5 w-5" />
             New Nomnom
           </Button>
