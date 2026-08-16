@@ -9,7 +9,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const outDir = resolve(__dirname, '../public/icons')
 mkdirSync(outDir, { recursive: true })
 
-const BRAND = [0x6d, 0x5e, 0xfc] // #6d5efc
+const BRAND = [0x47, 0x53, 0x69] // #475369
 const WHITE = [0xff, 0xff, 0xff]
 
 function crc32(buf) {
