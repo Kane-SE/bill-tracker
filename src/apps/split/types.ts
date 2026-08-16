@@ -34,14 +34,6 @@ export const nightSchema = z.object({
 })
 export type Night = z.infer<typeof nightSchema>
 
-/** Full persisted state — also the shape of an export/import file. */
-export const appDataSchema = z.object({
-  version: z.literal(1),
-  knownNames: z.array(z.string()),
-  nights: z.array(nightSchema),
-})
-export type AppData = z.infer<typeof appDataSchema>
-
 /** A netted, directional debt: `from` owes `to` `amount`. */
 export interface Debt {
   from: string

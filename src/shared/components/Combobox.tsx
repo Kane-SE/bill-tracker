@@ -32,7 +32,7 @@ export function Combobox({
   const showNew = allowNew && trimmed.length > 0 && !hasExact
   const rows: { label: string; value: string; isNew?: boolean }[] = [
     ...matches.map((m) => ({ label: m, value: m })),
-    ...(showNew ? [{ label: `Add "${trimmed}"`, value: trimmed, isNew: true }] : []),
+    ...(showNew ? [{ label: `Add “${trimmed}”`, value: trimmed, isNew: true }] : []),
   ]
 
   // Close on outside click.

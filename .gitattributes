@@ -1,0 +1,5 @@
+# calc.ts used to contain literal NUL bytes as a map-key separator (fixed in
+# Task 12). Git's binary-vs-text auto-detection looks at both sides of a diff,
+# so any diff spanning that history still gets flagged as binary unless we
+# force it. This makes calc.ts always diff as text going forward.
+src/apps/split/lib/calc.ts diff

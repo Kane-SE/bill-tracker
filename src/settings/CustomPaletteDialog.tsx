@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Download, Upload } from 'lucide-react'
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
@@ -25,6 +25,10 @@ interface Props {
 
 export function CustomPaletteDialog({ open, onOpenChange, initial, onSave }: Props) {
   const [colors, setColors] = useState<CustomColors>(initial)
+
+  useEffect(() => {
+    if (open) setColors(initial)
+  }, [open])
 
   function set(key: keyof CustomColors, value: string) {
     setColors((c) => ({ ...c, [key]: value }))
