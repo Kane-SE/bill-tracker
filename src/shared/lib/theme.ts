@@ -36,6 +36,13 @@ export const DEFAULT_CUSTOM: CustomColors = {
   accent: '#241f3a', destructive: '#e5484d', success: '#30a46c',
 }
 
+/** Narrow an unknown value to a valid CustomColors object (all six keys present as strings). */
+function isCustomColors(value: unknown): value is CustomColors {
+  if (typeof value !== 'object' || value === null) return false
+  const keys: (keyof CustomColors)[] = ['background', 'foreground', 'primary', 'accent', 'destructive', 'success']
+  return keys.every((k) => typeof (value as Record<string, unknown>)[k] === 'string')
+}
+
 export function getStoredTheme(): ThemeChoice {
   try {
     const parsed = JSON.parse(localStorage.getItem(THEME_KEY) ?? '')
@@ -43,7 +50,7 @@ export function getStoredTheme(): ThemeChoice {
       parsed?.palette === 'coffee' ? 'coffee' : parsed?.palette === 'custom' ? 'custom' : 'default'
     const mode: Mode = parsed?.mode === 'light' ? 'light' : 'dark'
     const custom: CustomColors | undefined =
-      palette === 'custom' && parsed?.custom ? (parsed.custom as CustomColors) : undefined
+      palette === 'custom' && isCustomColors(parsed?.custom) ? parsed.custom : undefined
     return { palette, mode, ...(custom ? { custom } : {}) }
   } catch {
     return DEFAULT

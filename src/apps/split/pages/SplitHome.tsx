@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Archive, Moon, Plus, Settings, Wallet } from 'lucide-react'
+import { Archive, Moon, Plus, Settings, UsersRound, Wallet } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { BalanceList } from '@/apps/split/components/BalanceList'
 import { NightCard } from '@/apps/split/components/NightCard'
@@ -31,6 +31,9 @@ export function SplitHome() {
           <>
             <HeaderIconLink to="/split/archive" label="Archive">
               <Archive className="h-5 w-5" />
+            </HeaderIconLink>
+            <HeaderIconLink to="/split/names" label="Common names">
+              <UsersRound className="h-5 w-5" />
             </HeaderIconLink>
             <HeaderIconLink to="/settings" label="Settings">
               <Settings className="h-5 w-5" />
