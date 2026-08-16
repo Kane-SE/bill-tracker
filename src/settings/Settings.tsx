@@ -5,17 +5,14 @@ import { Button } from '@/shared/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
 import { Label } from '@/shared/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select'
-import { useSplitStore } from '@/apps/split/store/useSplitStore'
-import { downloadBackup, parseBackup, readFileAsText } from '@/shared/lib/storage'
+import { downloadJson, readFileAsText } from '@/shared/lib/file'
+import { applyBackup, buildBackup, parseBackup } from '@/settings/backup'
 import { applyTheme, DEFAULT_CUSTOM, getStoredTheme, PALETTES, type Palette, type ThemeChoice } from '@/shared/lib/theme'
 import { CustomPaletteDialog } from '@/settings/CustomPaletteDialog'
 import type { CustomColors } from '@/shared/lib/palette'
 import { toast } from 'sonner'
 
 export function Settings() {
-  const exportData = useSplitStore((s) => s.exportData)
-  const importData = useSplitStore((s) => s.importData)
-
   const [theme, setTheme] = useState<ThemeChoice>(getStoredTheme)
   const [customOpen, setCustomOpen] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -38,7 +35,7 @@ export function Settings() {
   }
 
   function handleExport() {
-    downloadBackup(exportData())
+    downloadJson(`split-backup-${new Date().toISOString().slice(0, 10)}.json`, buildBackup())
     toast.success('Backup downloaded')
   }
 
@@ -50,7 +47,8 @@ export function Settings() {
         toast.error(result.error)
         return
       }
-      importData(result.data)
+      applyBackup(result.data)
+      if (result.data.appearance) setTheme(result.data.appearance)
       toast.success('Backup restored')
     } catch {
       toast.error('Could not read that file.')

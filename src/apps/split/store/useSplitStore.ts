@@ -1,15 +1,17 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { uid } from '@/shared/lib/utils'
-import { STORAGE_KEY } from '@/shared/lib/storage'
 import { frequentNames } from '@/apps/split/lib/names'
-import type { AppData, Item, Night } from '@/apps/split/types'
+import type { Item, Night } from '@/apps/split/types'
 
 /**
  * Single source of truth for app data, persisted to localStorage via zustand's
  * `persist` middleware. Components read slices from here; all mutations go
- * through the actions below.
+ * through the actions below. Backup/restore is a shell concern handled by
+ * settings/backup.ts, which reads/writes this store's state directly.
  */
+
+export const STORAGE_KEY = 'bill-splitter-store'
 
 interface AppState {
   knownNames: string[]
@@ -33,10 +35,6 @@ interface AppState {
   addKnownName(name: string): void
   removeKnownName(name: string): void
   promoteFrequentNames(): void
-
-  // ---- backup --------------------------------------------------------------
-  exportData(): AppData
-  importData(data: AppData): void
 }
 
 function mapNight(nights: Night[], id: string, fn: (n: Night) => Night): Night[] {
@@ -153,15 +151,6 @@ export const useSplitStore = create<AppState>()(
             promotedNames: [...s.promotedNames, ...toAdd],
           }
         })
-      },
-
-      exportData() {
-        const { knownNames, nights } = get()
-        return { version: 1, knownNames, nights }
-      },
-
-      importData(data) {
-        set({ knownNames: data.knownNames, nights: data.nights })
       },
     }),
     {
