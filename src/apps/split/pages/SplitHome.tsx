@@ -27,6 +27,7 @@ export function SplitHome() {
       <PageHeader
         title="Split"
         subtitle="Who owes whom"
+        backTo="/"
         actions={
           <>
             <HeaderIconLink to="/split/archive" label="Archive">
