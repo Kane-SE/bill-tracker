@@ -7,7 +7,7 @@
  * ----------------------------------------------------------------------------
  * Every color in the app comes from the HSL variables below (format is
  * "H S% L%", no `hsl()` wrapper). A theme is one full set of these tokens,
- * selected by the `data-theme` attribute on <html> (see src/lib/theme.ts).
+ * selected by the `data-theme` attribute on <html> (see src/shared/lib/theme.ts).
  *
  *   :root                       -> fallback (default light)
  *   [data-theme='light']        -> default palette, light
@@ -16,7 +16,7 @@
  *   [data-theme='coffee-dark']  -> Coffee palette, dark
  *
  * To add a palette: copy a block, give it a new [data-theme='name'], change the
- * values, and register it in src/lib/theme.ts + the Settings picker. Nothing
+ * values, and register it in src/shared/lib/theme.ts + the Settings picker. Nothing
  * else in the codebase hard-codes a color.
  *
  * Which token gets which color? Neutral/brand tokens (background, card, primary,
@@ -123,6 +123,11 @@
     --border: 25 15% 24%;
     --input: 25 15% 26%;
     --ring: 30 42% 72%;
+    --radius: 0.85rem;
+  }
+
+  /* ---- Custom palette · values injected at runtime (see shared/lib/theme.ts) - */
+  [data-theme='custom'] {
     --radius: 0.85rem;
   }
 }

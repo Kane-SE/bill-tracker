@@ -16,10 +16,10 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Split — Bill Splitter',
+        name: 'Split',
         short_name: 'Split',
         description: 'Track who owes whom after hangouts with friends.',
-        theme_color: '#6d5efc',
+        theme_color: '#0f1117',
         background_color: '#0b0b12',
         display: 'standalone',
         orientation: 'portrait',
