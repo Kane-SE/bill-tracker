@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { deriveTokens, hexToHslToken, TOKEN_NAMES, type CustomColors } from './palette'
+import { deriveTokens, hexToHslToken, hslTokenToHex, TOKEN_NAMES, type CustomColors } from './palette'
 
 const sample: CustomColors = {
   background: '#fffbe9', foreground: '#2b2013', primary: '#ad8b73',
@@ -27,5 +27,20 @@ describe('deriveTokens', () => {
     expect(tokens.background).toBe(hexToHslToken(sample.background))
     expect(tokens.primary).toBe(hexToHslToken(sample.primary))
     expect(tokens.destructive).toBe(hexToHslToken(sample.destructive))
+  })
+})
+
+describe('hslTokenToHex', () => {
+  it('converts an "H S% L%" token to hex', () => {
+    expect(hslTokenToHex('0 0% 100%')).toBe('#ffffff')
+    expect(hslTokenToHex('0 100% 50%')).toBe('#ff0000')
+    expect(hslTokenToHex('120 100% 25%')).toBe('#008000')
+  })
+  it('tolerates the surrounding whitespace getComputedStyle returns', () => {
+    expect(hslTokenToHex('  240 100% 50% ')).toBe('#0000ff')
+  })
+  it('returns null for an unparseable token', () => {
+    expect(hslTokenToHex('')).toBeNull()
+    expect(hslTokenToHex('nope')).toBeNull()
   })
 })
