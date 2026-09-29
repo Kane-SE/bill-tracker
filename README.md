@@ -1,11 +1,11 @@
-# Split — Friends Bill-Splitting PWA
+# Nook — Little Tools PWA (home of Split)
 
 A mobile-first Progressive Web App to track **who owes whom** after hanging out
 with friends, when one (or more) people front the bills. Runs fully offline and
 stores everything in your browser — no account, no server.
 
-Split lives inside a small **app launcher**: the PWA's home screen (`/`) is a
-grid of mini-apps, and Split is the first one. See
+Split lives inside **Nook**, a small app launcher: the PWA's home screen (`/`)
+is a grid of mini-apps, and Split is the first one. See
 [Launcher + registry](#launcher--registry-adding-a-new-app) below for how more
 apps get added.
 
@@ -64,7 +64,9 @@ npm run preview    # preview the production build
 npm test           # run unit tests
 ```
 
-Icons are pre-generated in `public/`. To regenerate them:
+Icons are pre-generated in `public/`. The Nook logo (tile grid) is defined in
+`public/favicon.svg` and mirrored by the pure renderer in
+`scripts/icon-render.mjs` (keep them in sync). To regenerate the PNGs:
 
 ```bash
 node scripts/generate-icons.mjs

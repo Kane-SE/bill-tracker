@@ -16,11 +16,13 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Split',
-        short_name: 'Split',
-        description: 'Track who owes whom after hangouts with friends.',
-        theme_color: '#0f1117',
-        background_color: '#0b0b12',
+        name: 'Nook',
+        short_name: 'Nook',
+        description: 'Little tools for everyday life.',
+        // Espresso from the logo, so the launch splash matches the icon. The
+        // live status bar follows the palette via theme-color (see theme.ts).
+        theme_color: '#4A3426',
+        background_color: '#4A3426',
         display: 'standalone',
         orientation: 'portrait',
         start_url: '/',
