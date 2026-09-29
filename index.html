@@ -8,11 +8,19 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no"
     />
-    <meta name="theme-color" content="#6d5efc" />
-    <meta name="description" content="Track who owes whom after hangouts with friends." />
+    <meta name="theme-color" content="#4A3426" />
+    <script>
+      // Match the status bar to the saved palette before anything else loads
+      // (iOS only reads it at launch). Kept in sync by applyTheme() in theme.ts.
+      try {
+        var c = localStorage.getItem('bill-splitter-status-bar')
+        if (c) document.querySelector('meta[name="theme-color"]').content = c
+      } catch (e) {}
+    </script>
+    <meta name="description" content="Little tools for everyday life." />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <title>Split — Bill Splitter</title>
+    <title>Nook</title>
   </head>
   <body>
     <div id="root"></div>

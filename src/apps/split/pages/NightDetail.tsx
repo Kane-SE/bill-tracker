@@ -5,7 +5,7 @@ import { PageHeader } from '@/shared/components/PageHeader'
 import { ParticipantEditor } from '@/apps/split/components/ParticipantEditor'
 import { ItemRow } from '@/apps/split/components/ItemRow'
 import { ItemDialog, type ItemDraft } from '@/apps/split/components/ItemDialog'
-import { BalanceList } from '@/apps/split/components/BalanceList'
+import { DebtLineList } from '@/apps/split/components/DebtLineList'
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { Button } from '@/shared/ui/button'
@@ -14,7 +14,7 @@ import { Label } from '@/shared/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
 import { Badge } from '@/shared/ui/badge'
 import { useSplitStore, useNight } from '@/apps/split/store/useSplitStore'
-import { computeNightBalances, totalFronted } from '@/apps/split/lib/calc'
+import { computeNightLines, totalFronted, type DebtLine } from '@/apps/split/lib/calc'
 import { formatDate, formatMoney } from '@/apps/split/lib/format'
 import type { Item } from '@/apps/split/types'
 import { toast } from 'sonner'
@@ -33,14 +33,18 @@ export function NightDetail() {
   const markDone = useSplitStore((s) => s.markDone)
   const restoreNight = useSplitStore((s) => s.restoreNight)
   const deleteNight = useSplitStore((s) => s.deleteNight)
+  const markLinePaid = useSplitStore((s) => s.markLinePaid)
+  const unmarkLinePaid = useSplitStore((s) => s.unmarkLinePaid)
 
   const [itemDialogOpen, setItemDialogOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<Item | undefined>(undefined)
   const [confirmDone, setConfirmDone] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null)
+  const [confirmAllPaid, setConfirmAllPaid] = useState(false)
 
-  const balances = useMemo(() => (night ? computeNightBalances(night) : []), [night])
+  const lines = useMemo(() => (night ? computeNightLines(night) : []), [night])
+  const paidCount = lines.filter((l) => l.remaining === 0).length
 
   if (!night) {
     return (
@@ -77,6 +81,20 @@ export function NightDetail() {
       addItem(night.id, draft)
       toast.success('Item added')
     }
+  }
+
+  function toggleLine(line: DebtLine) {
+    if (!night) return
+    const label = `${line.from} → ${line.to}`
+    if (line.remaining === 0) {
+      unmarkLinePaid(night.id, line.from, line.to)
+      toast.success(`${label} unmarked`)
+      return
+    }
+    markLinePaid(night.id, line.from, line.to, line.owed)
+    toast.success(`${label} marked paid`)
+    // Prompt to archive when this tick closes the last open line.
+    if (lines.every((l) => l === line || l.remaining === 0)) setConfirmAllPaid(true)
   }
 
   function confirmDeleteItem() {
@@ -159,11 +177,16 @@ export function NightDetail() {
       </Card>
 
       <Card className="mb-5">
-        <CardHeader>
+        <CardHeader className="flex-row items-center justify-between space-y-0">
           <CardTitle className="text-base">This Nomnom's balances</CardTitle>
+          {lines.length > 0 && (
+            <span className="text-sm text-muted-foreground tabular-nums">
+              {paidCount} of {lines.length} paid
+            </span>
+          )}
         </CardHeader>
         <CardContent>
-          <BalanceList debts={balances} />
+          <DebtLineList lines={lines} readOnly={!isActive} onToggle={toggleLine} />
         </CardContent>
       </Card>
 
@@ -209,6 +232,20 @@ export function NightDetail() {
         title="Mark this Nomnom as done?"
         description="Its debts will be settled and it moves to the archive. You can restore it later."
         confirmLabel="Mark done"
+        variant="success"
+        onConfirm={() => {
+          markDone(night.id)
+          toast.success('Nomnom settled')
+          navigate('/split')
+        }}
+      />
+
+      <ConfirmDialog
+        open={confirmAllPaid}
+        onOpenChange={setConfirmAllPaid}
+        title="Everyone's paid"
+        description="Move this Nomnom to the archive? You can restore it later."
+        confirmLabel="Archive"
         variant="success"
         onConfirm={() => {
           markDone(night.id)

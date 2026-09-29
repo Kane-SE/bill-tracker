@@ -9,7 +9,7 @@
  * colors via `deriveTokens` and applied as inline CSS variables on <html>.
  */
 
-import { deriveTokens, TOKEN_NAMES, type CustomColors } from '@/shared/lib/palette'
+import { deriveTokens, hslTokenToHex, TOKEN_NAMES, type CustomColors } from '@/shared/lib/palette'
 
 export type Palette = 'default' | 'coffee' | 'custom'
 export type Mode = 'light' | 'dark'
@@ -28,6 +28,8 @@ export const PALETTES: { value: Palette; label: string }[] = [
 ]
 
 const THEME_KEY = 'bill-splitter-theme'
+/** Last status-bar hex, read by the inline script in index.html before any JS/CSS loads (iOS reads it at launch). */
+export const STATUS_BAR_KEY = 'bill-splitter-status-bar'
 const DEFAULT: ThemeChoice = { palette: 'default', mode: 'dark' }
 
 /** Fallback base colors for the custom palette until the user picks their own. */
@@ -81,4 +83,24 @@ export function applyTheme(choice: ThemeChoice): void {
     el.classList.toggle('dark', choice.mode === 'dark')
   }
   localStorage.setItem(THEME_KEY, JSON.stringify(choice))
+  syncStatusBar()
+}
+
+/**
+ * Point the phone's status bar (`<meta name="theme-color">`) at the active
+ * palette's background. Android updates live; iOS picks it up on next launch
+ * via the value cached under STATUS_BAR_KEY.
+ */
+function syncStatusBar(): void {
+  const bg = getComputedStyle(document.documentElement).getPropertyValue('--background')
+  const hex = hslTokenToHex(bg)
+  if (!hex) return
+  let meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')
+  if (!meta) {
+    meta = document.createElement('meta')
+    meta.name = 'theme-color'
+    document.head.appendChild(meta)
+  }
+  meta.content = hex
+  localStorage.setItem(STATUS_BAR_KEY, hex)
 }

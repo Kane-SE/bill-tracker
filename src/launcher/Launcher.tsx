@@ -8,7 +8,7 @@ export function Launcher() {
   return (
     <div className="mx-auto max-w-lg px-4 pb-10">
       <PageHeader
-        title="Apps"
+        title="Nook"
         subtitle="Little tools for everyday life"
         actions={
           <HeaderIconLink to="/settings" label="Settings">

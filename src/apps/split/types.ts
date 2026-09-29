@@ -20,6 +20,14 @@ export const itemSchema = z.object({
 })
 export type Item = z.infer<typeof itemSchema>
 
+/** A recorded pay-back on one debt line: `from` paid `to` `amount`. */
+export const paymentSchema = z.object({
+  from: z.string(),
+  to: z.string(),
+  amount: z.number().nonnegative(),
+})
+export type Payment = z.infer<typeof paymentSchema>
+
 export const nightStatus = z.enum(['active', 'settled'])
 export type NightStatus = z.infer<typeof nightStatus>
 
@@ -31,6 +39,8 @@ export const nightSchema = z.object({
   settledAt: z.string().optional(),
   participants: z.array(z.string()),
   items: z.array(itemSchema),
+  // Optional so pre-existing data and backups stay valid; read as `?? []`.
+  payments: z.array(paymentSchema).optional(),
 })
 export type Night = z.infer<typeof nightSchema>
 
