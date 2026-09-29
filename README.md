@@ -29,6 +29,11 @@ apps get added.
   name is never silently re-added.
 - **Netted balances** — a clear "B owes A 50.000 ₫" summary that adds up across
   all active Nomnoms and cancels out opposite debts.
+- **Tick debts off one by one** — each "B owes A" line in a Nomnom has its own
+  Paid check. A tick records the amount paid (`night.payments`), so if an item
+  is edited later the line reopens showing only what's left. Home balances only
+  count unpaid money. Ticking the last line offers to archive the Nomnom (see
+  [spec](docs/superpowers/specs/2026-09-29-nomnom-per-line-payments-design.md)).
 - **Mark a Nomnom done** — settled Nomnoms move to an Archive (still viewable /
   restorable).
 - **Backup** — export/import all app data *and* your appearance settings as one
@@ -159,7 +164,7 @@ src/
     routes.tsx               <Route> subtree mounted under /split
     store/useSplitStore.ts   nights, knownNames, promotedNames (Zustand + persist)
     lib/                     calc.ts (pure debt math), format.ts, names.ts
-    components/              BalanceList, NightCard, ItemRow, ItemDialog, ParticipantEditor
+    components/              BalanceList, DebtLineList, NightCard, ItemRow, ItemDialog, ParticipantEditor
     pages/                   SplitHome, NewNomnom, NightDetail, Archive, SplitNames
 ```
 
@@ -170,7 +175,9 @@ src/
 1. For each item, everyone in the split **except the payer** owes the payer
    their share.
 2. Debts are aggregated across all active Nomnoms.
-3. Opposite debts within a pair are **netted** (A→B and B→A cancel).
+3. Recorded payments (`night.payments`) count as money flowing back, so they
+   reduce the matching debt.
+4. Opposite debts within a pair are **netted** (A→B and B→A cancel).
 
 ## Data & privacy
 

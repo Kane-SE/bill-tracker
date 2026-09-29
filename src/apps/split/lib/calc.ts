@@ -1,4 +1,4 @@
-import type { Debt, Item, Night } from '@/apps/split/types'
+import type { Debt, Item, Night, Payment } from '@/apps/split/types'
 
 /**
  * Pure debt calculation. No React, no storage — just data in, data out, so it
@@ -29,15 +29,33 @@ function accumulate(items: Item[], net: Map<string, number>) {
 }
 
 /**
- * Compute netted, directional debts across the given nights.
- * Opposite debts within a pair cancel out.
+ * A payment `from -> to` is money flowing against the debt, so it reduces
+ * "`from` owes `to`" in the same signed pair map the items feed.
+ */
+function accumulatePayments(payments: Payment[], net: Map<string, number>) {
+  for (const p of payments) {
+    if (!(p.amount > 0) || p.from === p.to) continue
+    const { key, flipped } = pairKey(p.from, p.to)
+    const delta = flipped ? p.amount : -p.amount
+    net.set(key, (net.get(key) ?? 0) + delta)
+  }
+}
+
+/**
+ * Compute netted, directional debts across the given nights, minus any
+ * recorded payments. Opposite debts within a pair cancel out.
  */
 export function computeBalances(nights: Night[]): Debt[] {
   const net = new Map<string, number>()
   for (const night of nights) {
     accumulate(night.items, net)
+    accumulatePayments(night.payments ?? [], net)
   }
+  return toDebts(net)
+}
 
+/** Turn a signed pair map into sorted, rounded, directional debts. */
+function toDebts(net: Map<string, number>): Debt[] {
   const debts: Debt[] = []
   for (const [key, value] of net) {
     if (Math.round(value) === 0) continue
@@ -52,9 +70,27 @@ export function computeBalances(nights: Night[]): Debt[] {
   return debts
 }
 
-/** Convenience: balances for a single night. */
-export function computeNightBalances(night: Night): Debt[] {
-  return computeBalances([night])
+/** One debt line inside a Nomnom, with how much of it has been paid back. */
+export interface DebtLine {
+  from: string
+  to: string
+  owed: number // netted item debt for this pair (payments ignored)
+  paid: number // payment recorded for from -> to, 0 if none
+  remaining: number // max(0, owed - paid)
+}
+
+/**
+ * The Nomnom's debt lines (item debts only, netted per pair) annotated with
+ * the payment recorded against each. A line is paid when `remaining === 0`.
+ */
+export function computeNightLines(night: Night): DebtLine[] {
+  const net = new Map<string, number>()
+  accumulate(night.items, net)
+  const payments = night.payments ?? []
+  return toDebts(net).map(({ from, to, amount }) => {
+    const paid = payments.find((p) => p.from === from && p.to === to)?.amount ?? 0
+    return { from, to, owed: amount, paid, remaining: Math.max(0, amount - paid) }
+  })
 }
 
 /** Total money fronted (sum of item amounts) across nights. */

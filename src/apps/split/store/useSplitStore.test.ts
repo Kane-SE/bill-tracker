@@ -17,3 +17,27 @@ describe('promoteFrequentNames', () => {
     expect(useSplitStore.getState().knownNames).not.toContain('Anna') // not re-added
   })
 })
+
+describe('line payments', () => {
+  it('markLinePaid upserts one payment per pair and tops up on re-tick', () => {
+    const id = useSplitStore.getState().addNight()
+    useSplitStore.getState().markLinePaid(id, 'B', 'A', 30000)
+    useSplitStore.getState().markLinePaid(id, 'B', 'A', 50000)
+    const n = useSplitStore.getState().nights.find((x) => x.id === id)!
+    expect(n.payments).toEqual([{ from: 'B', to: 'A', amount: 50000 }])
+  })
+
+  it('unmarkLinePaid removes only that pair', () => {
+    const id = useSplitStore.getState().addNight()
+    useSplitStore.getState().markLinePaid(id, 'B', 'A', 30000)
+    useSplitStore.getState().markLinePaid(id, 'C', 'A', 30000)
+    useSplitStore.getState().unmarkLinePaid(id, 'B', 'A')
+    const n = useSplitStore.getState().nights.find((x) => x.id === id)!
+    expect(n.payments).toEqual([{ from: 'C', to: 'A', amount: 30000 }])
+  })
+
+  it('ignores unknown Nomnom ids', () => {
+    useSplitStore.getState().markLinePaid('nope', 'B', 'A', 1)
+    expect(useSplitStore.getState().nights).toEqual([])
+  })
+})

@@ -31,6 +31,10 @@ interface AppState {
   updateItem(nightId: string, itemId: string, patch: Partial<Omit<Item, 'id'>>): void
   deleteItem(nightId: string, itemId: string): void
 
+  // ---- payments (one per from->to pair) ----------------------------------
+  markLinePaid(nightId: string, from: string, to: string, amount: number): void
+  unmarkLinePaid(nightId: string, from: string, to: string): void
+
   // ---- known names ---------------------------------------------------------
   addKnownName(name: string): void
   removeKnownName(name: string): void
@@ -119,6 +123,27 @@ export const useSplitStore = create<AppState>()(
           nights: mapNight(s.nights, nightId, (n) => ({
             ...n,
             items: n.items.filter((it) => it.id !== itemId),
+          })),
+        }))
+      },
+
+      markLinePaid(nightId, from, to, amount) {
+        set((s) => ({
+          nights: mapNight(s.nights, nightId, (n) => ({
+            ...n,
+            payments: [
+              ...(n.payments ?? []).filter((p) => !(p.from === from && p.to === to)),
+              { from, to, amount },
+            ],
+          })),
+        }))
+      },
+
+      unmarkLinePaid(nightId, from, to) {
+        set((s) => ({
+          nights: mapNight(s.nights, nightId, (n) => ({
+            ...n,
+            payments: (n.payments ?? []).filter((p) => !(p.from === from && p.to === to)),
           })),
         }))
       },

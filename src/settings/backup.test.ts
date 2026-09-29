@@ -29,4 +29,14 @@ describe('parseBackup', () => {
   it('rejects a foreign object', () => {
     expect(parseBackup(JSON.stringify({ hello: 1 })).ok).toBe(false)
   })
+  it('round-trips Nomnom payments in a v2 file', () => {
+    const night = {
+      id: 'n1', date: '2026-09-29', status: 'active', participants: ['A', 'B'],
+      items: [], payments: [{ from: 'B', to: 'A', amount: 30000 }],
+    }
+    const file = { ...v2, apps: { split: { ...v2.apps.split, nights: [night] } } }
+    const r = parseBackup(JSON.stringify(file))
+    expect(r.ok).toBe(true)
+    if (r.ok) expect(r.data.apps.split.nights[0].payments).toEqual(night.payments)
+  })
 })

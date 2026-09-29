@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { computeBalances, equalShares, redistribute, shareRemainder, type SplitRow } from './calc'
-import type { Item, Night } from '@/apps/split/types'
+import {
+  computeBalances,
+  computeNightLines,
+  equalShares,
+  redistribute,
+  shareRemainder,
+  type SplitRow,
+} from './calc'
+import type { Item, Night, Payment } from '@/apps/split/types'
 
 function rows(...names: string[]): SplitRow[] {
   return names.map((name) => ({ name, included: true, locked: false, amount: 0 }))
@@ -19,13 +26,14 @@ function item(partial: Partial<Item>): Item {
   }
 }
 
-function night(id: string, items: Item[]): Night {
+function night(id: string, items: Item[], payments?: Payment[]): Night {
   return {
     id,
     date: '2026-08-07',
     status: 'active',
     participants: [],
     items,
+    ...(payments ? { payments } : {}),
   }
 }
 
@@ -166,5 +174,70 @@ describe('computeBalances', () => {
     expect(debts).toContainEqual({ from: 'C', to: 'A', amount: 30000 })
     expect(debts).toContainEqual({ from: 'C', to: 'B', amount: 20000 })
     expect(debts).toHaveLength(3)
+  })
+})
+
+describe('payments', () => {
+  // A paid 90k, split A/B/C -> B owes A 30k, C owes A 30k.
+  const dinner = item({
+    payer: 'A',
+    amount: 90000,
+    shares: [
+      { name: 'A', amount: 30000 },
+      { name: 'B', amount: 30000 },
+      { name: 'C', amount: 30000 },
+    ],
+  })
+
+  it('a payment fully cancels its line in computeBalances', () => {
+    const n = night('n1', [dinner], [{ from: 'B', to: 'A', amount: 30000 }])
+    expect(computeBalances([n])).toEqual([{ from: 'C', to: 'A', amount: 30000 }])
+  })
+
+  it('nights without a payments field behave as before', () => {
+    const n = night('n1', [dinner])
+    expect(n.payments).toBeUndefined()
+    expect(computeBalances([n])).toHaveLength(2)
+    expect(computeNightLines(n).every((l) => l.paid === 0 && l.remaining === l.owed)).toBe(true)
+  })
+
+  it('computeNightLines reports owed / paid / remaining per line', () => {
+    const n = night('n1', [dinner], [{ from: 'B', to: 'A', amount: 30000 }])
+    expect(computeNightLines(n)).toEqual([
+      { from: 'B', to: 'A', owed: 30000, paid: 30000, remaining: 0 },
+      { from: 'C', to: 'A', owed: 30000, paid: 0, remaining: 30000 },
+    ])
+  })
+
+  it('a line reopens with the remainder when an item edit grows it', () => {
+    const bigger = { ...dinner, amount: 150000, shares: [
+      { name: 'A', amount: 50000 },
+      { name: 'B', amount: 50000 },
+      { name: 'C', amount: 50000 },
+    ] }
+    const n = night('n1', [bigger], [{ from: 'B', to: 'A', amount: 30000 }])
+    const line = computeNightLines(n).find((l) => l.from === 'B')
+    expect(line).toEqual({ from: 'B', to: 'A', owed: 50000, paid: 30000, remaining: 20000 })
+    expect(computeBalances([n])).toContainEqual({ from: 'B', to: 'A', amount: 20000 })
+  })
+
+  it('an overpayment surfaces as a reverse debt in computeBalances', () => {
+    const smaller = { ...dinner, amount: 60000, shares: [
+      { name: 'A', amount: 20000 },
+      { name: 'B', amount: 20000 },
+      { name: 'C', amount: 20000 },
+    ] }
+    const n = night('n1', [smaller], [{ from: 'B', to: 'A', amount: 30000 }])
+    expect(computeNightLines(n).find((l) => l.from === 'B')?.remaining).toBe(0)
+    expect(computeBalances([n])).toContainEqual({ from: 'A', to: 'B', amount: 10000 })
+  })
+
+  it('payments net correctly across multiple Nomnoms', () => {
+    const n1 = night('n1', [dinner], [{ from: 'B', to: 'A', amount: 30000 }])
+    const n2 = night('n2', [dinner])
+    expect(computeBalances([n1, n2])).toEqual([
+      { from: 'C', to: 'A', amount: 60000 },
+      { from: 'B', to: 'A', amount: 30000 },
+    ])
   })
 })
