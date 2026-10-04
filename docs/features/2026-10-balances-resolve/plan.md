@@ -863,7 +863,7 @@ Before the fixed bottom bar `<div className="fixed ...">`, add:
 Run: `npx tsc --noEmit && npx vitest run`
 Expected: no tsc output; all tests PASS.
 
-- [ ] **Step 6: Check it in the app.** Start the `dev` preview (port 5173). Load the explainer's example data: in the browser console, set `localStorage['bill-splitter-store']` to the Pizza Fri / BBQ Sun / Coffee Wed state from the memory note `explainer-artifact-sync`, then reload. On `#/split`:
+- [ ] **Step 6: Check it in the app.** Start the `dev` preview (port 5173). Load the example data from Appendix A. On `#/split`:
   - The rows read "Huy → Lan · from 1 Nomnom" and "Minh → Lan · from 2 Nomnoms", each with a ›.
   - Tapping Minh → Lan opens the sheet: BBQ Sun "Lan → Minh · other way" −30.000 ₫, Pizza Fri +100.000 ₫, Net 70.000 ₫.
   - Tapping Pizza Fri closes the sheet and opens `#/split/night/pizza`.
@@ -1225,7 +1225,7 @@ Replace the whole Nomnom list block (`{activeNights.length === 0 ? (<EmptyState 
 Run: `npx tsc --noEmit && npx vitest run`
 Expected: clean; all PASS.
 
-- [ ] **Step 4: Check it in the app** with the long-list data (8 friends × 8 Nomnoms; recipe in the memory note `explainer-artifact-sync`):
+- [ ] **Step 4: Check it in the app** with the long-list data from Appendix A:
   - The home screen shows "Showing everyone" and 5 rows plus "Show all (26)"; "Show all" expands to 26 rows and "Show less" collapses again.
   - The picker lists An…Trang alphabetically; Lan's line reads "owes 352.000 ₫ · owed 440.000 ₫".
   - Picking Lan shows 7 rows (no "Show all") and the header "Active Nomnoms · with Lan" with 5 cards.
@@ -1554,7 +1554,7 @@ Expected: all tests PASS (49 + new); the build succeeds.
 
 - [ ] **Step 2: Walk the whole story once** with the example data and the long-list data. Check every bullet from Tasks 5–10 again in one pass, and check the browser console for errors.
 
-- [ ] **Step 3: Refresh the explainer.** Follow the memory note `explainer-artifact-sync`:
+- [ ] **Step 3: Refresh the explainer.** Follow Appendix B:
   - Retake the screens in sections 1, 4, 5 and 5b from the real app. The MOCKUP badges become REAL.
   - Update the decision cards to "shipped on feature/balances-resolve".
   - Read the artifact first, then republish to the same URL.
@@ -1565,3 +1565,57 @@ Expected: all tests PASS (49 + new); the build succeeds.
 - [ ] **Step 5: Ask the user before pushing and opening the PR.** Pushing and creating a PR are outward-facing. Once they say yes:
   - `git push -u origin feature/balances-resolve`
   - `gh pr create` with a body that summarizes the features, links the spec, plan and explainer, and ends with `🤖 Generated with [Claude Code](https://claude.com/claude-code)`.
+
+---
+
+## Appendix A: Test data for manual checks
+
+Paste one snippet into the browser console on `http://localhost:5173` (dev server: `npm run dev`, or `preview_start` "dev"). Each snippet writes the store and **reloads**. A hash change alone doesn't rehydrate the store, and the running app would overwrite the data.
+
+**Example data:** the explainer's three friends. Pizza Fri (Lan paid 300.000 for Minh/Lan/Huy), BBQ Sun (Minh paid 60.000 for Minh/Lan), Coffee Wed (archived). Home shows Huy → Lan 100.000 and Minh → Lan 70.000.
+
+```js
+(() => {
+  const d = (s) => new Date(s).toISOString()
+  const nights = [
+    { id: 'pizza', title: 'Pizza Fri', date: d('2026-10-02T19:00:00'), status: 'active', participants: ['Minh','Lan','Huy'],
+      items: [{ id: 'i1', label: 'Pizza', payer: 'Lan', amount: 300000, shares: [{name:'Minh',amount:100000},{name:'Lan',amount:100000},{name:'Huy',amount:100000}] }], payments: [] },
+    { id: 'bbq', title: 'BBQ Sun', date: d('2026-10-04T12:00:00'), status: 'active', participants: ['Minh','Lan'],
+      items: [{ id: 'i2', label: 'Drinks', payer: 'Minh', amount: 60000, shares: [{name:'Minh',amount:30000},{name:'Lan',amount:30000}] }], payments: [] },
+    { id: 'coffee', title: 'Coffee Wed', date: d('2026-09-24T09:00:00'), status: 'settled', settledAt: d('2026-09-26T09:00:00'), participants: ['Minh','Huy'],
+      items: [{ id: 'i3', label: 'Cà phê', payer: 'Huy', amount: 80000, shares: [{name:'Minh',amount:40000},{name:'Huy',amount:40000}] }], payments: [] },
+  ]
+  localStorage.setItem('bill-splitter-store', JSON.stringify({ state: { knownNames: ['Huy','Lan','Minh'], nights, promotedNames: [] }, version: 1 }))
+  location.hash = '#/split'; location.reload()
+})()
+```
+
+**Long-list data:** 8 friends × 8 Nomnoms, giving 26 home rows. Lan: 7 rows, owes 352.000 ₫, is owed 440.000 ₫, took part in Lẩu Thứ 6, Bún chả, Đà Lạt trip, Hotpot and Sinh nhật Chi.
+
+```js
+(() => {
+  const people = ['An','Bảo','Chi','Dũng','Huy','Lan','Minh','Trang']
+  const titles = ['Lẩu Thứ 6','Karaoke','Bún chả','Đà Lạt trip','Movie night','Hotpot','Sinh nhật Chi','Cà phê sáng']
+  const nights = titles.map((title, i) => {
+    const ps = people.filter((_, j) => (j + i) % 3 !== 0)
+    const mk = (id, label, who, amount) => {
+      const each = Math.round(amount / ps.length)
+      return { id, label, payer: who, amount: each * ps.length, shares: ps.map((name) => ({ name, amount: each })) }
+    }
+    return { id: 'n' + i, title, date: new Date(2026, 8, 3 + i * 4, 19).toISOString(), status: 'active', participants: ps,
+      items: [mk('a' + i, 'Đồ ăn', ps[i % ps.length], 120000 * (i + 2)), mk('b' + i, 'Nước', ps[(i + 2) % ps.length], 40000 * (i + 1))], payments: [] }
+  })
+  localStorage.setItem('bill-splitter-store', JSON.stringify({ state: { knownNames: people, nights, promotedNames: [] }, version: 1 }))
+  location.hash = '#/split'; location.reload()
+})()
+```
+
+## Appendix B: Explainer refresh (Task 12)
+
+The explainer is a published page: https://claude.ai/artifact/TmrnZ3PofbjKp8Ped4ZFs4.
+
+1. Read it first with the Artifact tool (`action: "read"`). Edit the saved file the read gives back, then republish to the **same `url`**. Images that don't change can be carried over with `files: { "shots/x.png": { artifact: <url>, path: "shots/x.png" } }`.
+2. Screenshots: use the Playwright MCP browser at 390×844, loaded with the Appendix A data.
+   - Navigate again before each screenshot; otherwise the capture can come out blank.
+   - Playwright can only save inside the project, so save to `.playwright-mcp/shots/`, move the files to the session scratchpad, then delete `.playwright-mcp/`.
+3. Keep the page's style: phone-framed screenshots and diagrams, little text. REAL badges mark today's app, MOCKUP badges mark proposals. After this PR, sections 4, 5 and 5b should be REAL.
