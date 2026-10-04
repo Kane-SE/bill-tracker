@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { uid } from '@/shared/lib/utils'
 import { frequentNames } from '@/apps/split/lib/names'
+import { applyPairChanges, planPairResolve } from '@/apps/split/lib/calc'
 import type { Item, Night } from '@/apps/split/types'
 
 /**
@@ -34,6 +35,12 @@ interface AppState {
   // ---- payments (one per from->to pair) ----------------------------------
   markLinePaid(nightId: string, from: string, to: string, amount: number): void
   unmarkLinePaid(nightId: string, from: string, to: string): void
+
+  // ---- pair resolution (settle debts between two people) ----------------
+  /** Settle every line between a and b in active Nomnoms; returns the touched nights as they were. */
+  resolvePair(a: string, b: string): Night[]
+  /** Put nights back from a resolvePair snapshot (Undo). */
+  restoreNightsSnapshot(snapshot: Night[]): void
 
   // ---- known names ---------------------------------------------------------
   addKnownName(name: string): void
@@ -146,6 +153,29 @@ export const useSplitStore = create<AppState>()(
             payments: (n.payments ?? []).filter((p) => !(p.from === from && p.to === to)),
           })),
         }))
+      },
+
+      resolvePair(a, b) {
+        const active = get().nights.filter((n) => n.status === 'active')
+        const plan = planPairResolve(active, a, b)
+        const touched = new Set(plan.changes.map((c) => c.nightId))
+        if (touched.size === 0) return []
+        const archive = new Set(plan.toArchive.map((t) => t.nightId))
+        const snapshot = get().nights.filter((n) => touched.has(n.id))
+        const settledAt = new Date().toISOString()
+        set((s) => ({
+          nights: s.nights.map((n) => {
+            if (!touched.has(n.id)) return n
+            const next = applyPairChanges(n, plan.changes)
+            return archive.has(n.id) ? { ...next, status: 'settled' as const, settledAt } : next
+          }),
+        }))
+        return snapshot
+      },
+
+      restoreNightsSnapshot(snapshot) {
+        const byId = new Map(snapshot.map((n) => [n.id, n]))
+        set((s) => ({ nights: s.nights.map((n) => byId.get(n.id) ?? n) }))
       },
 
       addKnownName(name) {

@@ -200,7 +200,7 @@ export function NightDetail() {
             disabled={night.items.length === 0}
           >
             <CheckCircle2 className="h-5 w-5" />
-            Mark Nomnom as done
+            Mark done
           </Button>
         ) : (
           <Button size="lg" variant="outline" className="w-full" onClick={() => restoreNight(night.id)}>
