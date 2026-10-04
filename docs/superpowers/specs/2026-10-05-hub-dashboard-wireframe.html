@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="en" data-theme="dark" class="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hub home · wireframes</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: ['class'],
+    theme: { extend: {
+      colors: {
+        border: 'hsl(var(--border))', input: 'hsl(var(--input))', ring: 'hsl(var(--ring))',
+        background: 'hsl(var(--background))', foreground: 'hsl(var(--foreground))',
+        primary: { DEFAULT: 'hsl(var(--primary))', foreground: 'hsl(var(--primary-foreground))' },
+        secondary: { DEFAULT: 'hsl(var(--secondary))', foreground: 'hsl(var(--secondary-foreground))' },
+        destructive: { DEFAULT: 'hsl(var(--destructive))', foreground: 'hsl(var(--destructive-foreground))' },
+        success: { DEFAULT: 'hsl(var(--success))', foreground: 'hsl(var(--success-foreground))' },
+        warning: { DEFAULT: 'hsl(var(--warning))' },
+        muted: { DEFAULT: 'hsl(var(--muted))', foreground: 'hsl(var(--muted-foreground))' },
+        accent: { DEFAULT: 'hsl(var(--accent))', foreground: 'hsl(var(--accent-foreground))' },
+        card: { DEFAULT: 'hsl(var(--card))', foreground: 'hsl(var(--card-foreground))' },
+      },
+      borderRadius: { lg: 'var(--radius)', md: 'calc(var(--radius) - 2px)', sm: 'calc(var(--radius) - 4px)' },
+    } },
+  }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.454.0/dist/umd/lucide.min.js"></script>
+<style>
+  /* Tokens copied from bill-splitter/src/index.css (default palette). --warning is NEW: the project has no amber token yet. */
+  :root, [data-theme='light'] {
+    --background: 240 20% 99%; --foreground: 240 10% 10%; --card: 0 0% 100%; --card-foreground: 240 10% 10%;
+    --primary: 250 95% 68%; --primary-foreground: 0 0% 100%; --secondary: 240 5% 96%; --secondary-foreground: 240 10% 15%;
+    --muted: 240 5% 96%; --muted-foreground: 240 4% 46%; --accent: 250 95% 96%; --accent-foreground: 250 60% 40%;
+    --destructive: 0 84% 60%; --destructive-foreground: 0 0% 100%; --success: 152 62% 42%; --success-foreground: 0 0% 100%;
+    --warning: 30 90% 31%;
+    --border: 240 6% 90%; --input: 240 6% 90%; --ring: 250 95% 68%; --radius: 0.85rem;
+  }
+  [data-theme='dark'] {
+    --background: 240 18% 7%; --foreground: 240 10% 96%; --card: 240 15% 11%; --card-foreground: 240 10% 96%;
+    --primary: 250 95% 72%; --primary-foreground: 240 30% 8%; --secondary: 240 12% 16%; --secondary-foreground: 240 10% 96%;
+    --muted: 240 12% 16%; --muted-foreground: 240 6% 60%; --accent: 250 40% 22%; --accent-foreground: 250 90% 88%;
+    --destructive: 0 72% 62%; --destructive-foreground: 0 0% 100%; --success: 152 55% 48%; --success-foreground: 152 60% 8%;
+    --warning: 38 92% 60%;
+    --border: 240 10% 20%; --input: 240 10% 22%; --ring: 250 95% 72%; --radius: 0.85rem;
+  }
+  /* Gray step: accent + status colors go gray, everything else stays on the real tokens. */
+  :root[data-mau='xam'][data-theme='light'] { --primary: 0 0% 18%; --primary-foreground: 0 0% 100%; --ring: 0 0% 18%; --accent: 0 0% 95%; --accent-foreground: 0 0% 20%; --warning: 0 0% 38%; --success: 0 0% 38%; --destructive: 0 0% 38%; }
+  :root[data-mau='xam'][data-theme='dark'] { --primary: 0 0% 88%; --primary-foreground: 0 0% 8%; --ring: 0 0% 88%; --accent: 0 0% 20%; --accent-foreground: 0 0% 90%; --warning: 0 0% 66%; --success: 0 0% 66%; --destructive: 0 0% 66%; }
+  body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
+
+  /* ---- Wireframe chrome (not part of the design) ---- */
+  .wf-bar { position: relative; z-index: 50; display: flex; align-items: center; gap: 24px; height: 56px; padding: 0 16px; overflow-x: auto; white-space: nowrap; background: #fff; border-bottom: 1px solid #e5e5e5; color: #737373; font: 14px/1 system-ui, -apple-system, sans-serif; }
+  .wf-bar *, .wf-reason * { box-sizing: border-box; }
+  .wf-group { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .wf-set { display: flex; align-items: center; gap: 2px; flex-shrink: 0; padding: 3px; border-radius: 10px; background: #f4f4f5; }
+  .wf-set a { position: relative; display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: 7px; color: #737373; text-decoration: none; }
+  .wf-set a:hover { color: #171717; }
+  .wf-set a[aria-current="page"] { background: #fff; color: #171717; font-weight: 500; box-shadow: 0 1px 2px rgb(0 0 0 / .08), 0 0 0 1px rgb(0 0 0 / .04); }
+  .wf-switch { display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; color: #737373; text-decoration: none; }
+  .wf-switch i { position: relative; width: 36px; height: 20px; border-radius: 10px; background: #e4e4e7; }
+  .wf-switch i::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgb(0 0 0 / .2); }
+  .wf-switch[aria-checked="true"] i { background: #171717; }
+  .wf-switch[aria-checked="true"] i::after { translate: 16px 0; }
+  .wf-bar svg { width: 16px; height: 16px; flex-shrink: 0; }
+  [data-wf-param="v"] a { justify-content: center; min-width: 32px; padding: 0 10px; }
+  [data-wf-param="v"] a[data-recommended]::after { content: ""; position: absolute; top: 5px; right: 5px; width: 5px; height: 5px; border-radius: 50%; background: #7c6cf6; }
+  .wf-menu { flex-shrink: 0; }
+  .wf-menu summary { display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 10px; border-radius: 8px; cursor: pointer; list-style: none; }
+  .wf-menu summary::-webkit-details-marker { display: none; }
+  .wf-menu summary:hover, .wf-menu[open] summary { background: #f4f4f5; }
+  .wf-menu b { color: #171717; font-weight: 500; }
+  .wf-popover { position: fixed; z-index: 60; display: grid; min-width: 168px; padding: 4px; background: #fff; border: 1px solid #e5e5e5; border-radius: 10px; box-shadow: 0 8px 24px rgb(0 0 0 / .08); }
+  .wf-popover a { display: flex; align-items: center; height: 34px; padding: 0 10px; border-radius: 6px; color: #404040; text-decoration: none; }
+  .wf-popover a:hover, .wf-popover a[aria-current="page"] { background: #f4f4f5; color: #171717; }
+  .wf-reason { border-bottom: 1px solid #e5e5e5; background: #fafafa; color: #404040; font: 13px/1.5 system-ui, -apple-system, sans-serif; }
+  .wf-reason summary { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-height: 44px; padding: 8px 16px; cursor: pointer; list-style: none; }
+  .wf-reason summary::-webkit-details-marker { display: none; }
+  .wf-reason-name { min-width: 0; overflow: hidden; color: #171717; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+  .wf-reason-tag { flex-shrink: 0; height: 20px; padding: 0 8px; border-radius: 10px; background: #eeebfe; color: #4c3fc4; font-size: 12px; font-weight: 500; line-height: 20px; }
+  .wf-reason-why { flex: 1; min-width: 0; overflow: hidden; color: #525252; text-overflow: ellipsis; white-space: nowrap; }
+  .wf-reason[open] .wf-reason-why { white-space: normal; }
+  .wf-reason-toggle { display: inline-flex; flex-shrink: 0; align-items: center; gap: 4px; height: 28px; margin-left: auto; padding: 0 8px; border-radius: 6px; color: #171717; font-weight: 500; }
+  .wf-reason summary:hover .wf-reason-toggle { background: #f0f0f0; }
+  .wf-reason-toggle svg { width: 16px; height: 16px; }
+  .wf-reason[open] .wf-reason-toggle svg { rotate: 180deg; }
+  .wf-reason-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; padding: 4px 16px 16px; }
+  .wf-reason-cols { display: grid; max-width: 1120px; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 16px 32px; }
+  .wf-reason h3 { display: flex; align-items: center; gap: 6px; margin: 0 0 4px; color: #171717; font-size: 12px; font-weight: 600; }
+  .wf-reason h3 i { width: 6px; height: 6px; border-radius: 50%; background: #a3a3a3; }
+  .wf-reason h3 i[data-tone="uu"] { background: #16a34a; }
+  .wf-reason h3 i[data-tone="nhuoc"] { background: #d97706; }
+  .wf-reason ul { display: grid; gap: 2px; margin: 0; padding-left: 16px; }
+  .wf-reason p { margin: 0; }
+  .wf-reason-tips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-top: 12px; border-top: 1px solid #ebebeb; }
+  .wf-reason-tips h3 { margin: 0 4px 0 0; }
+  .wf-reason-tips button { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border: 1px solid #e5e5e5; border-radius: 8px; background: #fff; color: #262626; font: inherit; white-space: nowrap; cursor: pointer; }
+  .wf-reason-tips button svg { width: 14px; height: 14px; color: #737373; }
+  .wf-reason-tips button [data-icon="done"], .wf-reason-tips button[data-copied] [data-icon="copy"] { display: none; }
+  .wf-reason-tips button[data-copied] [data-icon="done"] { display: block; color: #16a34a; }
+  @media (max-width: 767px) {
+    .wf-reason-why { order: 1; flex-basis: 100%; }
+    .wf-reason-toggle span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+    .wf-reason-tips h3 { flex-basis: 100%; }
+  }
+  @layer base { [data-wf-block] { position: relative; } }
+  [data-wf-block]::before { content: attr(data-wf-block); position: absolute; top: 4px; left: 4px; z-index: 5; display: grid; place-items: center; width: 18px; height: 18px; border-radius: 9px; background: #1f1f1f; color: #fff; font: 11px/1 system-ui; }
+  [data-wf-block][data-wf-block-out]::before { top: auto; bottom: 100%; }
+  body[data-frame] .wf-bar, body[data-frame] .wf-reason { display: none; }
+  .no-scrollbar::-webkit-scrollbar { display: none; } .no-scrollbar { scrollbar-width: none; }
+</style>
+</head>
+<body class="min-h-full bg-background text-foreground">
+<nav class="wf-bar" aria-label="Wireframe">
+  <div class="wf-group">
+    <span>Option</span>
+    <span class="wf-set" data-wf-param="v">
+      <a data-value="a" title="A · One scroll, needs-you first (recommended)" data-recommended>A</a><a data-value="b" title="B · Bottom tabs">B</a><a data-value="c" title="C · Ideas first, quick capture">C</a><a data-value="d" title="D · A, compact text">D</a><a data-value="e" title="E · A, no repeats">E</a>
+    </span>
+  </div>
+  <a class="wf-switch" data-wf-toggle="mau" data-on="mau" data-off="xam" role="switch">Color <i></i></a>
+  <span class="wf-set" data-wf-param="theme"><a data-value="dark">Dark</a><a data-value="light">Light</a></span>
+  <span class="wf-set" data-wf-param="kho">
+    <a data-value="desktop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8M12 17v4"/></svg>Desktop</a>
+    <a data-value="mobile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="20" x="5" y="2" rx="2"/><path d="M12 18h.01"/></svg>Mobile</a>
+  </span>
+  <details class="wf-menu">
+    <summary><span>State:</span><b data-wf-current="tt"></b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+    <div class="wf-popover" data-wf-param="tt"><a data-value="data">Data</a><a data-value="loading">Loading</a><a data-value="empty">Empty</a><a data-value="error">Error</a></div>
+  </details>
+</nav>
+<details class="wf-reason" data-wf-reason></details>
+<main id="wf-design"></main>
+
+<script>
+const params = new URLSearchParams(location.search)
+const state = { v: 'a', mau: 'xam', theme: 'dark', kho: 'desktop', tt: 'data' }
+for (const key of Object.keys(state)) state[key] = params.get(key) || state[key]
+Object.assign(document.body.dataset, state)
+Object.assign(document.documentElement.dataset, { mau: state.mau, theme: state.theme })
+document.documentElement.classList.toggle('dark', state.theme === 'dark')
+if (params.has('frame')) document.body.dataset.frame = '1'
+
+new MutationObserver(() => { if (document.querySelector('i[data-lucide]')) lucide.createIcons() })
+  .observe(document.body, { childList: true, subtree: true })
+
+/* ------------------------------------------------------------------ data (sample; "today" = 4 Oct 2026) */
+const now = [
+  { project: 'bill-splitter', machine: 'pc', date: '30 Sep',
+    next: 'Decide whether the Vercel SPA-rewrite fix is still needed (the app uses HashRouter, so probably not), then open a PR or delete the branch',
+    ref: 'feat/nomnom-launcher', waiting: 'Photo-tagging design grill, round 5 (Q13–Q15)', waitingAge: '7 weeks', inFlight: 2 },
+  { project: 'automation-app', machine: 'phone', date: 'Today',
+    next: 'Move the remaining browser steps into the Playwright automation layer', ref: 'PR #14', waiting: null, inFlight: 1 },
+  { project: 'idle-farming', machine: 'fedora', date: '12 Sep', stale: true,
+    next: 'Pick the art direction for the flower sprites', ref: null, waiting: 'Choose a working title', waitingAge: '3 weeks', inFlight: 0 },
+]
+const ideas = [
+  { title: 'Hub dashboard in Nook', stage: 'building', last: '4 Oct', note: 'Design approved, writing the spec' },
+  { title: 'Photo-tagging for Nomnoms', stage: 'exploring', last: '2 Sep', note: 'Grilled the design, rounds 1–4', quiet: '4 weeks' },
+  { title: 'Godot export pipeline on the Fedora box', stage: 'exploring', last: '28 Sep', note: 'Export template works, signing does not yet' },
+  { title: 'Weather that changes which flowers bloom', stage: 'idea', unsynced: true },
+  { title: 'Receipt OCR to pre-fill Nomnom items', stage: 'idea', last: '20 Sep', note: 'Idea captured' },
+  { title: 'Auto-refresh NOW notes from a git hook when a branch merges into main', stage: 'idea', last: '10 Aug', note: 'Idea captured', quiet: '8 weeks' },
+]
+const projects = [
+  { name: 'bill-splitter', stack: 'Vite · React · PWA' },
+  { name: 'automation-app', stack: 'Electron · Playwright' },
+  { name: 'idle-farming', stack: 'Godot 4 · design docs' },
+]
+const stageCounts = { building: 1, exploring: 2, idea: 3 }
+
+/* ------------------------------------------------------------------ shared pieces (classes from src/shared/ui) */
+const btnBase = 'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background [&_svg]:size-4 [&_svg]:shrink-0'
+const btn = {
+  primary: `${btnBase} bg-primary text-primary-foreground hover:bg-primary/90 h-11 px-4`,
+  outline: `${btnBase} border border-input bg-transparent hover:bg-accent hover:text-accent-foreground h-9 px-3`,
+  icon: `${btnBase} hover:bg-accent hover:text-accent-foreground h-11 w-11`,
+}
+const badgeBase = 'inline-flex shrink-0 items-center rounded-full border px-2.5 py-0.5 text-xs font-medium'
+const dot = { building: 'bg-success', exploring: 'bg-primary', idea: 'bg-muted-foreground' }
+const stageBadge = new Proxy({}, { get: (_, k) => `${badgeBase} gap-1.5 border-transparent bg-secondary text-secondary-foreground" data-stage="${k}` })
+const stageLabel = { building: 'Building', exploring: 'Exploring', idea: 'Idea' }
+const frame = 'rounded-2xl border border-border bg-card'
+const sectionHead = (title, meta, action = '') => `
+  <div class="mb-2 mt-6 flex min-h-9 items-center justify-between gap-3 px-1">
+    <h2 class="text-base font-semibold">${title}${meta ? ` <span class="ml-1 text-sm font-normal text-muted-foreground">${meta}</span>` : ''}</h2>${action}
+  </div>`
+
+const header = (wide = false) => `
+  <header data-wf-block="1" class="sticky top-0 z-20 -mx-4 mb-2 border-b border-border bg-background/80 px-4 py-3 backdrop-blur ${wide ? 'lg:-mx-8 lg:px-8' : ''}">
+    <div class="flex items-center gap-2">
+      <a href="#" class="${btn.icon} -ml-2 shrink-0" aria-label="Back to Nook"><i data-lucide="chevron-left" class="h-5 w-5"></i></a>
+      <div class="min-w-0 flex-1">
+        <h1 class="truncate text-lg font-bold leading-tight">Hub</h1>
+        <p class="truncate text-xs text-muted-foreground">${state.tt === 'error' ? 'Last updated 4 Oct, 09:12' : 'Updated 2h ago'}</p>
+      </div>
+      <div class="flex shrink-0 items-center gap-1">
+        <button class="${btn.icon}" aria-label="Refresh" title="Refresh"><i data-lucide="refresh-cw"></i></button>
+        <span class="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-xs font-semibold text-accent-foreground" title="@Kane-SE">KS</span>
+      </div>
+    </div>
+  </header>`
+
+const waitLine = (n) => n.waiting ? `
+  <p class="mt-2 flex items-start gap-1.5 text-sm text-pretty text-warning"><i data-lucide="hand" class="mt-0.5 h-4 w-4 shrink-0"></i><span><span class="font-medium">Waiting on you ${n.waitingAge}</span> <span class="text-foreground/80">· ${n.waiting}</span></span></p>` : ''
+
+const nowRow = (n, opts = {}) => `
+  <li class="px-4 py-3.5">
+    <div class="flex items-center justify-between gap-3">
+      <span class="truncate font-semibold">${n.project}</span>
+      <span class="shrink-0 text-xs text-muted-foreground">${n.machine} · ${n.date}${n.stale ? ' · <span class="text-warning">3 weeks ago</span>' : ''}</span>
+    </div>
+    <p class="mt-1 text-sm text-pretty ${opts.compact ? 'line-clamp-2' : ''}">${n.next}${n.ref && !opts.compact ? ` <span class="text-muted-foreground">(${n.ref.startsWith('PR') ? `<a href="#" class="text-primary underline-offset-4 hover:underline">${n.ref}</a>` : n.ref})</span>` : ''}</p>
+    ${opts.noWaiting ? '' : opts.compact
+      ? (n.waiting ? `<p class="mt-1.5"><span class="${badgeBase} border-transparent bg-warning/10 text-warning">Waiting on you · ${n.waitingAge}</span></p>` : '')
+      : waitLine(n)}
+    ${!opts.compact && n.inFlight ? `<button class="-ml-1 mt-1 inline-flex h-8 items-center gap-1 rounded-md px-1 text-xs text-muted-foreground hover:bg-foreground/5 hover:text-foreground"><i data-lucide="chevron-down" class="h-3.5 w-3.5"></i>In flight (${n.inFlight})</button>` : ''}
+  </li>`
+
+const ideaRow = (i, opts = {}) => `
+  <li><a href="#" class="flex items-start gap-3 rounded-xl px-3 py-2.5 hover:bg-foreground/5 ${i.unsynced ? 'outline-dashed outline-1 outline-border' : ''}">
+    <div class="min-w-0 flex-1">
+      <p class="line-clamp-2 font-medium">${i.title}</p>
+      <p class="mt-0.5 truncate text-sm text-muted-foreground">${i.unsynced
+        ? '<span class="inline-flex items-center gap-1"><i data-lucide="cloud-off" class="h-3.5 w-3.5"></i>Not synced yet</span>'
+        : `${i.last} · ${i.note}`}</p>
+      ${i.quiet && !opts.noQuiet && !opts.compact ? `<p class="mt-0.5 text-xs text-warning">Quiet for ${i.quiet}</p>` : ''}
+    </div>
+    ${opts.grouped ? '' : `<span class="${stageBadge[i.stage]} mt-0.5"><span class="h-1.5 w-1.5 rounded-full ${dot[i.stage]}"></span>${stageLabel[i.stage]}</span>`}
+  </a></li>`
+
+const stageChips = () => {
+  const chip = (label, count, active) => `<button aria-pressed="${active}" class="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-sm font-medium transition-colors ${active ? 'bg-primary text-primary-foreground' : 'bg-foreground/5 text-foreground/70 hover:bg-foreground/10 hover:text-foreground'}">${label}${count != null ? ` <span>${count}</span>` : ''}</button>`
+  return `<div class="-mx-4 mb-2 overflow-x-auto px-4 no-scrollbar lg:mx-0 lg:overflow-visible lg:px-0"><div class="flex gap-2 lg:flex-wrap">${chip('Active', 6, true)}${chip('Idea', 3)}${chip('Exploring', 2)}${chip('Building', 1)}${chip('Shipped', 1)}${chip('Dropped', 1)}</div></div>`
+}
+
+const projectsBlock = (n = '5') => `
+  <section data-wf-block="${n}">
+    ${sectionHead('Projects', '3 active')}
+    <ul class="${frame} divide-y divide-border">
+      ${projects.map((p) => `<li class="flex items-center justify-between gap-3 px-4 py-3"><span class="flex min-w-0 items-center gap-2"><span class="h-2 w-2 shrink-0 rounded-full bg-success"></span><span class="truncate font-medium">${p.name}</span></span><span class="shrink-0 truncate text-sm text-muted-foreground">${p.stack}</span></li>`).join('')}
+      <li><button class="flex w-full items-center justify-between px-4 py-3 text-sm text-muted-foreground hover:text-foreground">Show 6 paused or archived<i data-lucide="chevron-down" class="h-4 w-4"></i></button></li>
+    </ul>
+  </section>`
+
+const newIdeaBar = () => `
+  <div data-wf-block="6" class="fixed inset-x-0 bottom-0 z-20 lg:hidden border-t border-border bg-background/80 pb-[env(safe-area-inset-bottom)] backdrop-blur">
+    <div class="mx-auto max-w-lg px-4 py-3"><button class="${btn.primary} w-full"><i data-lucide="plus"></i>New idea</button></div>
+  </div>`
+
+const needsYou = (n = '2') => {
+  const items = [
+    { icon: 'hand', text: 'Photo-tagging design grill, round 5', meta: 'bill-splitter · waiting 7 weeks' },
+    { icon: 'hand', text: 'Choose a working title', meta: 'idle-farming · waiting 3 weeks' },
+    { icon: 'moon', text: 'Auto-refresh NOW notes from a git hook…', meta: 'Idea · quiet for 8 weeks' },
+  ]
+  return `
+  <section data-wf-block="${n}" class="mt-4 lg:mt-0">
+    ${sectionHead('Needs you', '', '<span class="text-sm text-muted-foreground">+1 more</span>')}
+    <ul class="${frame} divide-y divide-border">
+      ${items.map((it) => `<li><a href="#" class="flex items-center gap-3 px-4 py-3 hover:bg-foreground/5">
+        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-warning/15 text-warning"><i data-lucide="${it.icon}" class="h-4 w-4"></i></span>
+        <span class="min-w-0 flex-1"><span class="block truncate text-sm font-medium">${it.text}</span><span class="block truncate text-xs text-muted-foreground">${it.meta}</span></span>
+        <i data-lucide="chevron-right" class="h-4 w-4 shrink-0 text-muted-foreground"></i></a></li>`).join('')}
+    </ul>
+  </section>`
+}
+
+/* ------------------------------------------------------------------ states */
+const skel = (w) => `<div class="h-3 ${w} animate-pulse rounded-full bg-foreground/5 motion-reduce:animate-none"></div>`
+const loadingBody = (wide) => `
+  <div aria-busy="true" class="${wide ? 'lg:grid lg:grid-cols-12 lg:items-start lg:gap-x-8' : ''}"><div class="${wide ? 'lg:col-span-7' : ''}">
+    <div class="mb-2 mt-6 h-4 w-24 rounded-full bg-foreground/5"></div>
+    <ul class="${frame} divide-y divide-border">${[['w-1/3', 'w-11/12', 'w-2/3'], ['w-2/5', 'w-4/5', 'w-1/2'], ['w-1/4', 'w-3/4', '']].map((r) => `<li class="space-y-2.5 px-4 py-4">${r.filter(Boolean).map(skel).join('')}</li>`).join('')}</ul>
+    </div><div class="${wide ? 'lg:col-span-5' : ''}"><div class="mb-2 mt-6 h-4 w-20 rounded-full bg-foreground/5"></div>
+    <ul class="${frame} px-1 py-1">${['w-1/2', 'w-2/3', 'w-2/5', 'w-3/5'].map((w) => `<li class="flex items-start gap-3 px-3 py-3"><div class="flex-1 space-y-2">${skel(w)}${skel('w-1/3')}</div><div class="h-5 w-16 rounded-full bg-foreground/5"></div></li>`).join('')}</ul>
+    </div><span class="sr-only" role="status">Loading your hub</span>
+  </div>`
+const emptyBody = () => `
+  <div data-wf-block="9" class="mt-6 flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border px-6 py-12 text-center">
+    <div class="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground"><i data-lucide="sprout" class="h-6 w-6"></i></div>
+    <div class="space-y-1"><p class="font-medium">Nothing in personal-hub yet</p><p class="text-sm text-muted-foreground">Add NOW notes, projects.md or ideas.md to the repo and they show up here. Your first idea creates ideas.md for you.</p></div>
+    <a href="#" class="${btn.outline}"><i data-lucide="external-link"></i>Open personal-hub on GitHub</a>
+  </div>`
+const errorBanner = () => `
+  <div data-wf-block="10" role="status" class="mt-4 flex gap-3 rounded-2xl border border-warning/30 bg-warning/10 p-4">
+    <i data-lucide="cloud-off" class="mt-0.5 h-5 w-5 shrink-0 text-warning"></i>
+    <div class="min-w-0 flex-1"><p class="text-sm font-medium text-warning">Can't reach GitHub</p><p class="mt-0.5 text-sm text-foreground/80">Showing your copy from 4 Oct, 09:12. New ideas stay on this phone until you're back online.</p></div>
+    <div class="flex shrink-0 items-center self-center"><button class="${btn.outline}">Retry</button></div>
+  </div>`
+
+const withState = (body, wide = false) => {
+  if (state.tt === 'loading') return loadingBody(wide)
+  if (state.tt === 'empty') return emptyBody()
+  if (state.tt === 'error') return errorBanner() + body()
+  return body()
+}
+
+/* ------------------------------------------------------------------ options */
+const nowBlock = (opts = {}) => `
+  <section data-wf-block="3">
+    ${sectionHead('Now', '3 projects')}
+    <ul class="${frame} divide-y divide-border">${now.map((n) => nowRow(n, opts)).join('')}</ul>
+  </section>`
+const ideasBlock = (opts = {}) => `
+  <section data-wf-block="4">
+    ${sectionHead('Ideas', '6 active', opts.wide ? `<button class="${btnBase} hidden h-9 bg-primary px-3 text-primary-foreground hover:bg-primary/90 lg:inline-flex"><i data-lucide="plus"></i>New idea</button>` : '')}
+    ${stageChips()}
+    <ul class="${frame} space-y-0.5 px-1 py-1">${ideas.map((i) => ideaRow(i, opts)).join('')}</ul>
+  </section>`
+
+const optionA = (opts = {}) => `
+  <div class="mx-auto max-w-lg px-4 pb-28 lg:max-w-6xl lg:px-8 lg:pb-12">
+    ${header(true)}
+    ${withState(() => `<div class="lg:grid lg:grid-cols-12 lg:items-start lg:gap-x-8">
+      <div class="lg:col-span-7">${needsYou()}${nowBlock(opts)}</div>
+      <div class="lg:col-span-5">${ideasBlock({ ...opts, wide: true })}${projectsBlock()}</div>
+    </div>`, true)}
+  </div>${state.tt === 'loading' ? '' : newIdeaBar()}`
+
+let bTab = 'now'
+const optionB = () => {
+  const tabs = [['now', 'Now', 'list-checks', 2], ['ideas', 'Ideas', 'lightbulb', null], ['projects', 'Projects', 'folder', null]]
+  const ideaGroups = ['building', 'exploring', 'idea'].map((s) => `
+    <h3 class="mb-1.5 mt-5 px-1 text-sm font-medium text-muted-foreground">${stageLabel[s]} · ${stageCounts[s]}</h3>
+    <ul class="${frame} space-y-0.5 px-1 py-1">${ideas.filter((i) => i.stage === s).map((i) => ideaRow(i, { grouped: true })).join('')}</ul>`).join('')
+  const body = {
+    now: () => `<section data-wf-block="3">${sectionHead('Now', '3 projects')}<ul class="${frame} divide-y divide-border">${now.map((n) => nowRow(n)).join('')}</ul></section>`,
+    ideas: () => `<section data-wf-block="4">${sectionHead('Ideas', '6 active', `<button class="${btn.outline}"><i data-lucide="plus"></i>New idea</button>`)}${ideaGroups}
+      <button class="mt-3 w-full px-1 py-2 text-left text-sm text-muted-foreground hover:text-foreground">Show shipped and dropped (2)</button></section>`,
+    projects: () => projectsBlock(),
+  }
+  return `
+  <div class="mx-auto max-w-lg px-4 pb-24">
+    ${header()}
+    ${withState(body[bTab])}
+  </div>
+  <nav data-wf-block="7" class="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-card pb-[env(safe-area-inset-bottom)]">
+    <div class="mx-auto grid h-16 max-w-lg grid-cols-3">${tabs.map(([id, label, icon, count]) => `
+      <button data-btab="${id}" ${bTab === id ? 'aria-current="page"' : ''} class="relative flex flex-col items-center justify-center gap-1 text-xs ${bTab === id ? 'text-primary' : 'text-muted-foreground'}">
+        <span class="relative"><i data-lucide="${icon}" class="h-5 w-5"></i>${count ? `<span class="absolute -right-2 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-warning px-1 text-[10px] font-semibold text-background">${count}</span>` : ''}</span>${label}</button>`).join('')}
+    </div>
+  </nav>`
+}
+
+const optionC = () => {
+  const strip = `
+  <section data-wf-block="3">
+    ${sectionHead('Now', '3 projects')}
+    <div class="-mx-4 overflow-x-auto px-4 no-scrollbar"><ul class="flex gap-3 pb-1">${now.map((n) => `
+      <li class="w-[260px] shrink-0 ${frame} p-4">
+        <div class="flex items-center justify-between gap-2"><span class="truncate font-semibold">${n.project}</span><span class="shrink-0 text-xs ${n.stale ? 'text-warning' : 'text-muted-foreground'}">${n.stale ? '3 weeks ago' : n.date}</span></div>
+        <p class="mt-1 line-clamp-3 text-sm text-pretty">${n.next}</p>
+        ${n.waiting ? `<p class="mt-2"><span class="${badgeBase} border-transparent bg-warning/10 text-warning">Waiting on you · ${n.waitingAge}</span></p>` : ''}
+      </li>`).join('')}</ul></div>
+  </section>`
+  const capture = `
+  <section data-wf-block="8" class="mt-4">
+    <form class="flex gap-2" onsubmit="return false">
+      <label class="sr-only" for="cap">New idea</label>
+      <input id="cap" placeholder="Catch an idea…" class="h-11 min-w-0 flex-1 rounded-md border border-input bg-card px-3 text-base placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+      <button class="${btn.primary}"><i data-lucide="plus"></i>Add</button>
+    </form>
+  </section>`
+  const groups = `
+  <section data-wf-block="4">
+    ${sectionHead('Ideas', '6 active')}
+    ${['building', 'exploring', 'idea'].map((s) => `
+      <h3 class="mb-1.5 mt-4 px-1 text-sm font-medium text-muted-foreground">${stageLabel[s]} · ${stageCounts[s]}</h3>
+      <ul class="${frame} space-y-0.5 px-1 py-1">${ideas.filter((i) => i.stage === s).map((i) => ideaRow(i, { grouped: true })).join('')}</ul>`).join('')}
+  </section>`
+  const proj = `
+  <section data-wf-block="5" class="mt-6"><button class="${frame} flex w-full items-center justify-between px-4 py-3"><span class="font-semibold">Projects <span class="ml-1 text-sm font-normal text-muted-foreground">3 active · 6 paused or archived</span></span><i data-lucide="chevron-down" class="h-4 w-4 text-muted-foreground"></i></button></section>`
+  return `<div class="mx-auto max-w-lg px-4 pb-10">${header()}${withState(() => capture + strip + groups + proj)}</div>`
+}
+
+const options = {
+  a: { name: 'A · One scroll, needs-you first', rec: true,
+    why: 'You open Hub to see what is waiting on you, so that sits on top and everything else is one scroll away.',
+    pros: ['Everything on one screen, no navigation inside Hub', 'Things waiting on you and quiet ideas are the first thing you see', 'New idea is always under your thumb'],
+    cons: ['Gets long as ideas grow; Projects ends up far down', 'Waiting-on-you lines appear twice: in Needs you and on the Now card (see E)'],
+    when: 'A handful of projects and a few dozen ideas, mostly opened on the phone.',
+    tips: ['Move Needs you below Now', 'Put New idea in the header instead', 'Bolder section titles', 'Drop block 5'], render: () => optionA() },
+  b: { name: 'B · Bottom tabs', why: 'Each job gets its own screen; Now opens first and its tab shows how many things wait on you.',
+    pros: ['Each tab stays short, room for full WIP detail', 'Scales to many ideas, grouped by stage', 'Familiar app pattern'],
+    cons: ['Waiting items and ideas never share a screen', 'One more tap to reach ideas or capture one', 'Hub would be the only Nook app with its own tab bar'],
+    when: 'Ideas grow past about 30 and you browse more than you capture.',
+    tips: ['Put New idea on every tab', 'Use the Ideas tab as the first tab', 'Drop the badge on Now'], render: () => optionB() },
+  c: { name: 'C · Ideas first, quick capture', why: 'Catching ideas is the new habit, so the capture box is the first thing on the page.',
+    pros: ['Type and Add: no dialog, fastest capture', 'Ideas grouped by stage read like a pipeline', 'WIP stays visible as a compact strip'],
+    cons: ['Projects beyond the second card need a sideways swipe', 'Waiting on you is a small chip, easier to miss', 'Projects hidden behind a tap'],
+    when: 'Ideas are the main reason you open Hub, WIP is a glance.',
+    tips: ['Make the Now cards a vertical list', 'Show quiet ideas in their own group', 'Drop block 5'], render: () => optionC() },
+  d: { name: 'D · A, compact text', why: 'Same layout as A; each item keeps only what you decide by, at most three lines.',
+    pros: ['Shorter page, more fits on one screen', 'Next action clamps to two lines, waiting is a small badge'],
+    cons: ['References and In flight move to the detail screen', 'Quiet ideas only show in Needs you'],
+    when: 'You mostly glance and tap through for detail.',
+    tips: ['Keep In flight on the cards', 'Let the next action show in full'], render: () => optionA({ compact: true }) },
+  e: { name: 'E · A, no repeats', why: 'Same layout as A; each fact lives in one place: waiting items and quiet ideas only in Needs you.',
+    pros: ['No line appears twice on the screen', 'Now cards are about the next step only'],
+    cons: ['Opening a project card no longer shows what it waits on at a glance'],
+    when: 'You read the page top to bottom anyway.',
+    tips: ['Keep the waiting line on Now cards', 'Combine with D'], render: () => optionA({ noWaiting: true, noQuiet: true }) },
+}
+
+/* ------------------------------------------------------------------ toolbar + render */
+function render() {
+  const opt = options[state.v] || options.a
+  if (state.kho === 'mobile' && !params.has('frame')) {
+    const src = `?${new URLSearchParams({ ...state, kho: 'desktop', frame: '1' })}`
+    document.getElementById('wf-design').innerHTML = `<div style="display:grid;place-items:center;padding:24px;background:#f4f4f5"><iframe src="${src}" title="Mobile" style="width:375px;height:812px;border:1px solid #ddd;border-radius:24px;background:#fff"></iframe></div>`
+  } else {
+    document.getElementById('wf-design').innerHTML = opt.render()
+  }
+  const copyIcons = '<svg data-icon="copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg><svg data-icon="done" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>'
+  document.querySelector('[data-wf-reason]').innerHTML = `
+    <summary><span class="wf-reason-name">${opt.name}</span>${opt.rec ? '<span class="wf-reason-tag">Recommended</span>' : ''}<span class="wf-reason-why">${opt.why}</span>
+      <span class="wf-reason-toggle"><span>Pros, cons</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></summary>
+    <div class="wf-reason-body"><div class="wf-reason-cols">
+      <section><h3><i data-tone="uu"></i>Pros</h3><ul>${opt.pros.map((p) => `<li>${p}</li>`).join('')}</ul></section>
+      <section><h3><i data-tone="nhuoc"></i>Cons</h3><ul>${opt.cons.map((p) => `<li>${p}</li>`).join('')}</ul></section>
+      <section><h3><i></i>Best when</h3><p>${opt.when}</p></section></div>
+      <div class="wf-reason-tips"><h3>Feedback ideas</h3>${opt.tips.map((t) => `<button type="button" data-copy="${t}">${t}${copyIcons}</button>`).join('')}</div></div>`
+  for (const b of document.querySelectorAll('[data-copy]')) b.addEventListener('click', async () => { await navigator.clipboard.writeText(b.dataset.copy); b.setAttribute('data-copied', ''); setTimeout(() => b.removeAttribute('data-copied'), 1500) })
+  for (const b of document.querySelectorAll('[data-btab]')) b.addEventListener('click', () => { bTab = b.dataset.btab; render() })
+  requestAnimationFrame(() => requestAnimationFrame(placeBlockNumbers))
+}
+
+for (const set of document.querySelectorAll('[data-wf-param]')) {
+  for (const link of set.querySelectorAll('a')) {
+    link.href = `?${new URLSearchParams({ ...state, [set.dataset.wfParam]: link.dataset.value })}`
+    if (state[set.dataset.wfParam] !== link.dataset.value) continue
+    link.setAttribute('aria-current', 'page')
+    const cur = document.querySelector(`[data-wf-current="${set.dataset.wfParam}"]`)
+    if (cur) cur.textContent = link.textContent
+  }
+}
+for (const toggle of document.querySelectorAll('[data-wf-toggle]')) {
+  const param = toggle.dataset.wfToggle
+  const isOn = state[param] === toggle.dataset.on
+  toggle.setAttribute('aria-checked', String(isOn))
+  toggle.href = `?${new URLSearchParams({ ...state, [param]: isOn ? toggle.dataset.off : toggle.dataset.on })}`
+}
+const statusMenu = document.querySelector('.wf-menu')
+statusMenu.addEventListener('toggle', () => {
+  const r = statusMenu.querySelector('summary').getBoundingClientRect()
+  Object.assign(statusMenu.querySelector('.wf-popover').style, { top: `${r.bottom + 6}px`, left: `${r.left}px` })
+})
+document.addEventListener('click', (e) => { if (!statusMenu.contains(e.target)) statusMenu.open = false })
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') statusMenu.open = false })
+
+function placeBlockNumbers() {
+  const hit = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top
+  for (const block of document.querySelectorAll('[data-wf-block]')) {
+    const br = block.getBoundingClientRect()
+    const nr = { left: br.left + 4, top: br.top + 4, right: br.left + 22, bottom: br.top + 22 }
+    const rects = [...block.querySelectorAll('svg, img')].map((n) => n.getBoundingClientRect())
+    const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT)
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      if (!node.textContent.trim()) continue
+      const range = document.createRange(); range.selectNodeContents(node); rects.push(...range.getClientRects())
+    }
+    block.toggleAttribute('data-wf-block-out', rects.some((r) => r.width > 0 && hit(r, nr)))
+  }
+}
+addEventListener('resize', placeBlockNumbers)
+render()
+</script>
+</body>
+</html>
