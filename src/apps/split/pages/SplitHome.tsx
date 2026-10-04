@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Archive, Moon, Plus, Settings, UsersRound, Wallet } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
@@ -10,7 +10,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
 import { HeaderIconLink } from '@/shared/components/HeaderIconLink'
 import { useSplitStore } from '@/apps/split/store/useSplitStore'
 import { PairSheet } from '@/apps/split/components/PairSheet'
-import { computeBalances, computePairBreakdown } from '@/apps/split/lib/calc'
+import { computeBalances, computePairBreakdown, planPairResolve } from '@/apps/split/lib/calc'
+import { toast } from 'sonner'
+import { ConfirmDialog } from '@/shared/components/ConfirmDialog'
+import { ResolvePlanSummary } from '@/apps/split/components/ResolvePlanSummary'
 import type { Debt } from '@/apps/split/types'
 
 export function SplitHome() {
@@ -24,6 +27,39 @@ export function SplitHome() {
   const settledCount = nights.length - activeNights.length
   const balances = useMemo(() => computeBalances(activeNights), [activeNights])
   const [selected, setSelected] = useState<Debt | null>(null)
+  const resolvePair = useSplitStore((s) => s.resolvePair)
+  const restoreNightsSnapshot = useSplitStore((s) => s.restoreNightsSnapshot)
+  const [confirming, setConfirming] = useState<Debt | null>(null)
+  const plan = useMemo(
+    () => (confirming ? planPairResolve(activeNights, confirming.from, confirming.to) : null),
+    [confirming, activeNights],
+  )
+
+  // Undo lives only while you stay on Home: leaving could let you edit a touched
+  // Nomnom, and restoring the snapshot would then wipe that edit.
+  const undoToast = useRef<string | number | null>(null)
+  useEffect(() => () => {
+    if (undoToast.current != null) toast.dismiss(undoToast.current)
+  }, [])
+
+  function confirmResolve() {
+    if (!confirming || !plan) return
+    const { from, to } = confirming
+    const snapshot = resolvePair(from, to)
+    setSelected(null)
+    const n = plan.toArchive.length
+    const msg = `${from} → ${to} resolved${n ? ` · ${n} Nomnom${n === 1 ? '' : 's'} archived` : ''}`
+    undoToast.current = toast.success(msg, {
+      duration: 8000,
+      action: {
+        label: 'Undo',
+        onClick: () => {
+          restoreNightsSnapshot(snapshot)
+          toast.success('Resolve undone')
+        },
+      },
+    })
+  }
   const sourceCount = useMemo(() => {
     const m = new Map<string, number>()
     for (const d of balances) {
@@ -101,7 +137,16 @@ export function SplitHome() {
         debt={selected}
         nights={activeNights}
         onOpenChange={(open) => !open && setSelected(null)}
-        onResolve={() => {}}
+        onResolve={setConfirming}
+      />
+      <ConfirmDialog
+        open={confirming != null}
+        onOpenChange={(open) => !open && setConfirming(null)}
+        title={confirming ? `Resolve ${confirming.from} → ${confirming.to}?` : ''}
+        description={plan ? <ResolvePlanSummary plan={plan} /> : undefined}
+        confirmLabel="Resolve"
+        variant="success"
+        onConfirm={confirmResolve}
       />
 
       <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/90 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur">
