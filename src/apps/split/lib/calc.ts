@@ -167,6 +167,68 @@ export function computePairBreakdown(nights: Night[], from: string, to: string):
   return { entries, settledCount, net }
 }
 
+export type PairChangeKind = 'tick' | 'adjust' | 'remove'
+
+export interface PairChange {
+  nightId: string
+  title: string
+  from: string // payment direction
+  to: string
+  kind: PairChangeKind // tick: paid < owed · adjust: paid > owed · remove: no line left
+  before: number
+  after: number // 0 = remove the payment
+}
+
+export interface PairResolvePlan {
+  changes: PairChange[]
+  toArchive: { nightId: string; title: string }[]
+}
+
+/** Apply a plan's payment changes to one night (pure). One payment per directed pair. */
+export function applyPairChanges(night: Night, changes: PairChange[]): Night {
+  const mine = changes.filter((c) => c.nightId === night.id)
+  if (mine.length === 0) return night
+  let payments = night.payments ?? []
+  for (const c of mine) {
+    payments = payments.filter((p) => !(p.from === c.from && p.to === c.to))
+    if (c.after > 0) payments = [...payments, { from: c.from, to: c.to, amount: c.after }]
+  }
+  return { ...night, payments }
+}
+
+/**
+ * What resolving a <-> b would do across `nights` (pass active ones). Every
+ * pair payment is set to its line's owed amount, so the pair nets to exactly 0.
+ * Changes nothing.
+ */
+export function planPairResolve(nights: Night[], a: string, b: string): PairResolvePlan {
+  const changes: PairChange[] = []
+  const toArchive: PairResolvePlan['toArchive'] = []
+  for (const night of nights) {
+    const nightChanges: PairChange[] = []
+    for (const e of pairEntriesFor(night, a, b)) {
+      if (e.paid === e.owed) continue
+      const kind: PairChangeKind = e.owed === 0 ? 'remove' : e.paid < e.owed ? 'tick' : 'adjust'
+      nightChanges.push({
+        nightId: night.id,
+        title: e.title,
+        from: e.lineFrom,
+        to: e.lineTo,
+        kind,
+        before: e.paid,
+        after: e.owed,
+      })
+    }
+    if (nightChanges.length === 0) continue
+    changes.push(...nightChanges)
+    const lines = computeNightLines(applyPairChanges(night, nightChanges))
+    if (lines.length > 0 && lines.every((l) => l.remaining === 0)) {
+      toArchive.push({ nightId: night.id, title: nightChanges[0].title })
+    }
+  }
+  return { changes, toArchive }
+}
+
 /**
  * Split `amount` equally across `names`, distributing the rounding remainder
  * to the first people so the shares always sum exactly to `amount`.

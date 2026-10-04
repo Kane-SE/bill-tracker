@@ -3,6 +3,8 @@ import {
   computeBalances,
   computeNightLines,
   computePairBreakdown,
+  planPairResolve,
+  applyPairChanges,
   equalShares,
   redistribute,
   shareRemainder,
@@ -317,5 +319,70 @@ describe('computePairBreakdown', () => {
     const b = computePairBreakdown([pizza(), bbq()], 'Huy', 'Lan')
     expect(b.entries.map((e) => e.nightId)).toEqual(['pizza'])
     expect(b.net).toBe(100000)
+  })
+})
+
+describe('planPairResolve + applyPairChanges', () => {
+  function applyAll(nights: Night[], plan: ReturnType<typeof planPairResolve>): Night[] {
+    return nights.map((n) => applyPairChanges(n, plan.changes))
+  }
+
+  it('ticks both directions and archives only Nomnoms that end fully paid', () => {
+    const nights = [pizza(), bbq()]
+    const plan = planPairResolve(nights, 'Minh', 'Lan')
+    expect(plan.changes).toEqual([
+      { nightId: 'pizza', title: 'Pizza Fri', from: 'Minh', to: 'Lan', kind: 'tick', before: 0, after: 100000 },
+      { nightId: 'bbq', title: 'BBQ Sun', from: 'Lan', to: 'Minh', kind: 'tick', before: 0, after: 30000 },
+    ])
+    expect(plan.toArchive).toEqual([{ nightId: 'bbq', title: 'BBQ Sun' }]) // pizza still has Huy -> Lan
+    const after = applyAll(nights, plan)
+    expect(netFor(after, 'Minh', 'Lan')).toBe(0)
+    expect(computeBalances(after)).toEqual([{ from: 'Huy', to: 'Lan', amount: 100000 }])
+  })
+
+  it('tops up a partial payment', () => {
+    const plan = planPairResolve([pizza([{ from: 'Minh', to: 'Lan', amount: 40000 }])], 'Minh', 'Lan')
+    expect(plan.changes[0]).toMatchObject({ kind: 'tick', before: 40000, after: 100000 })
+  })
+
+  it('trims an over-payment', () => {
+    const nights = [pizza([{ from: 'Minh', to: 'Lan', amount: 120000 }])]
+    const plan = planPairResolve(nights, 'Minh', 'Lan')
+    expect(plan.changes).toEqual([
+      { nightId: 'pizza', title: 'Pizza Fri', from: 'Minh', to: 'Lan', kind: 'adjust', before: 120000, after: 100000 },
+    ])
+    expect(netFor(applyAll(nights, plan), 'Minh', 'Lan')).toBe(0)
+  })
+
+  it('removes an orphan payment', () => {
+    const old: Night = { ...night('old', [], [{ from: 'Lan', to: 'Minh', amount: 50000 }]), title: 'Old' }
+    const plan = planPairResolve([old], 'Minh', 'Lan')
+    expect(plan.changes).toEqual([
+      { nightId: 'old', title: 'Old', from: 'Lan', to: 'Minh', kind: 'remove', before: 50000, after: 0 },
+    ])
+    expect(plan.toArchive).toEqual([]) // no lines, nothing to archive
+    expect(applyPairChanges(old, plan.changes).payments).toEqual([])
+  })
+
+  it('changes nothing when payments already match', () => {
+    const nights = [pizza([{ from: 'Minh', to: 'Lan', amount: 100000 }])]
+    expect(planPairResolve(nights, 'Minh', 'Lan')).toEqual({ changes: [], toArchive: [] })
+  })
+
+  it('never archives a Nomnom it did not touch', () => {
+    const doneHuy = {
+      ...pizza([
+        { from: 'Minh', to: 'Lan', amount: 100000 },
+        { from: 'Huy', to: 'Lan', amount: 100000 },
+      ]),
+      id: 'done',
+    }
+    const plan = planPairResolve([doneHuy, bbq()], 'Minh', 'Lan')
+    expect(plan.toArchive.map((t) => t.nightId)).toEqual(['bbq'])
+  })
+
+  it('applyPairChanges ignores changes for other nights', () => {
+    const p = pizza()
+    expect(applyPairChanges(p, [{ nightId: 'bbq', title: 'BBQ Sun', from: 'Lan', to: 'Minh', kind: 'tick', before: 0, after: 1 }])).toBe(p)
   })
 })
