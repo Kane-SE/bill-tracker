@@ -307,6 +307,30 @@ describe('computePairBreakdown', () => {
     expect(b.net).toBe(netFor(nights, 'Minh', 'Lan'))
   })
 
+  it('counts a reverse-direction payment against the existing line', () => {
+    // Lan -> Minh 20000 was paid while the line is Minh -> Lan 100000: the reverse payment is its
+    // own entry (orphan-style) and adds to what Minh still owes.
+    const nights = [pizza([{ from: 'Lan', to: 'Minh', amount: 20000 }])]
+    const b = computePairBreakdown(nights, 'Minh', 'Lan')
+    expect(b.entries.map((e) => [e.nightId, e.lineFrom, e.lineTo, e.owed, e.paid, e.contribution])).toEqual([
+      ['pizza', 'Minh', 'Lan', 100000, 0, 100000],
+      ['pizza', 'Lan', 'Minh', 0, 20000, 20000],
+    ])
+    expect(b.net).toBe(120000)
+    expect(b.net).toBe(netFor(nights, 'Minh', 'Lan'))
+  })
+
+  it('sums duplicate same-direction payments for one pair', () => {
+    const nights = [pizza([
+      { from: 'Minh', to: 'Lan', amount: 30000 },
+      { from: 'Minh', to: 'Lan', amount: 30000 },
+    ])]
+    const b = computePairBreakdown(nights, 'Minh', 'Lan')
+    expect(b.entries.find((e) => e.nightId === 'pizza')!.contribution).toBe(100000 - 60000)
+    expect(b.net).toBe(40000)
+    expect(b.net).toBe(netFor(nights, 'Minh', 'Lan'))
+  })
+
   it('includes an orphan payment (its line no longer exists)', () => {
     const old: Night = { ...night('old', [], [{ from: 'Lan', to: 'Minh', amount: 50000 }]), date: '2026-09-01' }
     const nights = [pizza(), old]
@@ -352,7 +376,33 @@ describe('planPairResolve + applyPairChanges', () => {
     expect(plan.changes).toEqual([
       { nightId: 'pizza', title: 'Pizza Fri', from: 'Minh', to: 'Lan', kind: 'adjust', before: 120000, after: 100000 },
     ])
+    expect(plan.toArchive).toEqual([]) // pizza still has Huy -> Lan open
     expect(netFor(applyAll(nights, plan), 'Minh', 'Lan')).toBe(0)
+  })
+
+  it('collapses duplicate same-direction payments into one', () => {
+    const nights = [pizza([
+      { from: 'Minh', to: 'Lan', amount: 30000 },
+      { from: 'Minh', to: 'Lan', amount: 30000 },
+    ])]
+    const plan = planPairResolve(nights, 'Minh', 'Lan')
+    const after = applyAll(nights, plan)
+    expect(after[0].payments).toEqual([{ from: 'Minh', to: 'Lan', amount: 100000 }])
+    expect(netFor(after, 'Minh', 'Lan')).toBe(0)
+  })
+
+  it('removes a reverse-direction payment and ticks the line', () => {
+    const nights = [pizza([{ from: 'Lan', to: 'Minh', amount: 20000 }])]
+    const plan = planPairResolve(nights, 'Minh', 'Lan')
+    expect(plan.changes).toContainEqual(
+      { nightId: 'pizza', title: 'Pizza Fri', from: 'Minh', to: 'Lan', kind: 'tick', before: 0, after: 100000 },
+    )
+    expect(plan.changes).toContainEqual(
+      { nightId: 'pizza', title: 'Pizza Fri', from: 'Lan', to: 'Minh', kind: 'remove', before: 20000, after: 0 },
+    )
+    const after = applyAll(nights, plan)
+    expect(after[0].payments).toEqual([{ from: 'Minh', to: 'Lan', amount: 100000 }])
+    expect(netFor(after, 'Minh', 'Lan')).toBe(0)
   })
 
   it('removes an orphan payment', () => {

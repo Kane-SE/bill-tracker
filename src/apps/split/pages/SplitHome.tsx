@@ -64,6 +64,8 @@ export function SplitHome() {
   function confirmResolve() {
     if (!confirming || !plan) return
     const { from, to } = confirming
+    // Only one Undo may live: a stale one would restore an older whole-night snapshot.
+    if (undoToast.current != null) toast.dismiss(undoToast.current)
     const snapshot = resolvePair(from, to)
     setSelected(null)
     const n = plan.toArchive.length
@@ -125,6 +127,8 @@ export function SplitHome() {
             <p className="text-sm text-muted-foreground">
               No active Nomnoms yet. Start one below to begin tracking.
             </p>
+          ) : person && rows.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{person} is all settled.</p>
           ) : (
             <>
               <BalanceList debts={visibleRows} onSelect={setSelected} subtitle={subtitle} />
