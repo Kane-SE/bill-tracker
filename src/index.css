@@ -135,6 +135,25 @@
 @layer base {
   * {
     @apply border-border;
+    /* Thin scrollbar in the palette's own colors (Firefox, Chrome 121+). */
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.35) transparent;
+  }
+  /* Older WebKit/Blink. iOS overlay scrollbars can't be styled. */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 9999px;
+    background: hsl(var(--border)) padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--muted-foreground));
   }
   html,
   body,
