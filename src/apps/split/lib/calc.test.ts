@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   computeBalances,
   computeNightLines,
+  computePairBreakdown,
   equalShares,
   redistribute,
   shareRemainder,
@@ -239,5 +240,82 @@ describe('payments', () => {
       { from: 'C', to: 'A', amount: 60000 },
       { from: 'B', to: 'A', amount: 30000 },
     ])
+  })
+})
+
+// ---- pair fixtures (the explainer's example) ------------------------------
+const pizzaItem = item({
+  id: 'p', label: 'Pizza', payer: 'Lan', amount: 300000,
+  shares: [{ name: 'Minh', amount: 100000 }, { name: 'Lan', amount: 100000 }, { name: 'Huy', amount: 100000 }],
+})
+const bbqItem = item({
+  id: 'b', label: 'Drinks', payer: 'Minh', amount: 60000,
+  shares: [{ name: 'Minh', amount: 30000 }, { name: 'Lan', amount: 30000 }],
+})
+function pizza(payments?: Payment[]): Night {
+  return { ...night('pizza', [pizzaItem], payments), title: 'Pizza Fri', date: '2026-10-02', participants: ['Minh', 'Lan', 'Huy'] }
+}
+function bbq(payments?: Payment[]): Night {
+  return { ...night('bbq', [bbqItem], payments), title: 'BBQ Sun', date: '2026-10-04', participants: ['Minh', 'Lan'] }
+}
+/** Signed home balance for from → to (negative = the other way). */
+function netFor(nights: Night[], from: string, to: string): number {
+  const d = computeBalances(nights).find(
+    (x) => (x.from === from && x.to === to) || (x.from === to && x.to === from),
+  )
+  if (!d) return 0
+  return d.from === from ? d.amount : -d.amount
+}
+
+describe('computePairBreakdown', () => {
+  it('lists both directions, newest first, and sums to the home row', () => {
+    const nights = [pizza(), bbq()]
+    const b = computePairBreakdown(nights, 'Minh', 'Lan')
+    expect(b.entries.map((e) => [e.nightId, e.lineFrom, e.lineTo, e.contribution])).toEqual([
+      ['bbq', 'Lan', 'Minh', -30000],
+      ['pizza', 'Minh', 'Lan', 100000],
+    ])
+    expect(b.entries[0].title).toBe('BBQ Sun')
+    expect(b.settledCount).toBe(0)
+    expect(b.net).toBe(70000)
+    expect(b.net).toBe(netFor(nights, 'Minh', 'Lan'))
+  })
+
+  it('counts a partial payment as owed minus paid', () => {
+    const nights = [pizza([{ from: 'Minh', to: 'Lan', amount: 40000 }]), bbq()]
+    const b = computePairBreakdown(nights, 'Minh', 'Lan')
+    expect(b.entries.find((e) => e.nightId === 'pizza')!.contribution).toBe(60000)
+    expect(b.net).toBe(netFor(nights, 'Minh', 'Lan'))
+  })
+
+  it('leaves out fully paid Nomnoms and counts them in settledCount', () => {
+    const nights = [pizza([{ from: 'Minh', to: 'Lan', amount: 100000 }]), bbq()]
+    const b = computePairBreakdown(nights, 'Minh', 'Lan')
+    expect(b.entries.map((e) => e.nightId)).toEqual(['bbq'])
+    expect(b.settledCount).toBe(1)
+    expect(b.net).toBe(netFor(nights, 'Minh', 'Lan'))
+  })
+
+  it('shows an over-payment as a negative contribution', () => {
+    const nights = [pizza([{ from: 'Minh', to: 'Lan', amount: 120000 }]), bbq()]
+    const b = computePairBreakdown(nights, 'Minh', 'Lan')
+    expect(b.entries.find((e) => e.nightId === 'pizza')!.contribution).toBe(-20000)
+    expect(b.net).toBe(-50000)
+    expect(b.net).toBe(netFor(nights, 'Minh', 'Lan'))
+  })
+
+  it('includes an orphan payment (its line no longer exists)', () => {
+    const old: Night = { ...night('old', [], [{ from: 'Lan', to: 'Minh', amount: 50000 }]), date: '2026-09-01' }
+    const nights = [pizza(), old]
+    const b = computePairBreakdown(nights, 'Minh', 'Lan')
+    const e = b.entries.find((x) => x.nightId === 'old')!
+    expect([e.owed, e.paid, e.contribution]).toEqual([0, 50000, 50000])
+    expect(b.net).toBe(netFor(nights, 'Minh', 'Lan'))
+  })
+
+  it('ignores Nomnoms where the pair has nothing', () => {
+    const b = computePairBreakdown([pizza(), bbq()], 'Huy', 'Lan')
+    expect(b.entries.map((e) => e.nightId)).toEqual(['pizza'])
+    expect(b.net).toBe(100000)
   })
 })

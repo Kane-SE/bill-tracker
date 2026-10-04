@@ -1,4 +1,5 @@
 import type { Debt, Item, Night, Payment } from '@/apps/split/types'
+import { formatDate } from '@/apps/split/lib/format'
 
 /**
  * Pure debt calculation. No React, no storage — just data in, data out, so it
@@ -98,6 +99,72 @@ export function totalFronted(nights: Night[]): number {
   let sum = 0
   for (const night of nights) for (const item of night.items) sum += item.amount
   return sum
+}
+
+/** One Nomnom's share of the balance between a pair, seen from `from → to`. */
+export interface PairEntry {
+  nightId: string
+  title: string
+  date: string
+  lineFrom: string // direction of the debt line (or of the orphan payment)
+  lineTo: string
+  owed: number // the line's owed amount, 0 for an orphan payment
+  paid: number // payment recorded lineFrom -> lineTo
+  contribution: number // signed, in the from -> to direction: ±(owed - paid)
+}
+
+export interface PairBreakdown {
+  entries: PairEntry[] // contribution !== 0, newest Nomnom first
+  settledCount: number // Nomnoms with a pair line whose contribution is 0
+  net: number // equals the home row amount for from -> to
+}
+
+function isPair(a: string, b: string) {
+  return (x: { from: string; to: string }) =>
+    (x.from === a && x.to === b) || (x.from === b && x.to === a)
+}
+
+/**
+ * Every directed a<->b pair in one night that has a debt line or a payment.
+ * Contributions use owed - paid (not `remaining`) so over-payments and orphan
+ * payments still count, exactly as they do in computeBalances.
+ */
+function pairEntriesFor(night: Night, from: string, to: string): PairEntry[] {
+  const byDirection = new Map<string, { lineFrom: string; lineTo: string; owed: number; paid: number }>()
+  for (const line of computeNightLines(night).filter(isPair(from, to))) {
+    byDirection.set(`${line.from}>${line.to}`, { lineFrom: line.from, lineTo: line.to, owed: line.owed, paid: 0 })
+  }
+  for (const p of (night.payments ?? []).filter(isPair(from, to))) {
+    if (!(p.amount > 0)) continue
+    const key = `${p.from}>${p.to}`
+    const existing = byDirection.get(key)
+    if (existing) existing.paid += p.amount
+    else byDirection.set(key, { lineFrom: p.from, lineTo: p.to, owed: 0, paid: p.amount })
+  }
+  const title = night.title || formatDate(night.date)
+  return [...byDirection.values()].map((d) => ({
+    nightId: night.id,
+    title,
+    date: night.date,
+    ...d,
+    contribution: (d.lineFrom === from ? 1 : -1) * (d.owed - d.paid),
+  }))
+}
+
+/** Which Nomnoms make up the home row `from -> to`, and by how much. */
+export function computePairBreakdown(nights: Night[], from: string, to: string): PairBreakdown {
+  const entries: PairEntry[] = []
+  let settledCount = 0
+  const newestFirst = [...nights].sort((x, y) => y.date.localeCompare(x.date))
+  for (const night of newestFirst) {
+    const all = pairEntriesFor(night, from, to)
+    if (all.length === 0) continue
+    const contributing = all.filter((e) => e.contribution !== 0)
+    if (contributing.length === 0) settledCount++
+    entries.push(...contributing)
+  }
+  const net = entries.reduce((sum, e) => sum + e.contribution, 0)
+  return { entries, settledCount, net }
 }
 
 /**
