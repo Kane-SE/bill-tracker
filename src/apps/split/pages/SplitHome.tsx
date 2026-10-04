@@ -10,7 +10,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
 import { HeaderIconLink } from '@/shared/components/HeaderIconLink'
 import { useSplitStore } from '@/apps/split/store/useSplitStore'
 import { PairSheet } from '@/apps/split/components/PairSheet'
-import { computeBalances, computePairBreakdown, planPairResolve } from '@/apps/split/lib/calc'
+import { computeBalances, computePairBreakdown, planPairResolve, summarizePeople } from '@/apps/split/lib/calc'
+import { PersonFilter, useActivePerson } from '@/apps/split/components/PersonFilter'
+import { formatMoney } from '@/apps/split/lib/format'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog'
 import { ResolvePlanSummary } from '@/apps/split/components/ResolvePlanSummary'
@@ -26,6 +28,22 @@ export function SplitHome() {
   )
   const settledCount = nights.length - activeNights.length
   const balances = useMemo(() => computeBalances(activeNights), [activeNights])
+  const people = useMemo(() => summarizePeople(nights, balances), [nights, balances])
+  const person = useActivePerson(people)
+  const [showAll, setShowAll] = useState(false)
+  const rows = person ? balances.filter((d) => d.from === person || d.to === person) : balances
+  const visibleRows = person || showAll ? rows : rows.slice(0, 5)
+  const shownNights = person ? activeNights.filter((n) => n.participants.includes(person)) : activeNights
+  const homeSummary = (name: string) => {
+    const p = people.find((x) => x.name === name)!
+    if (p.owes === 0 && p.owed === 0) return 'all settled'
+    return (
+      <>
+        owes <b className="text-destructive">{formatMoney(p.owes)}</b> · is owed{' '}
+        <b className="text-success">{formatMoney(p.owed)}</b>
+      </>
+    )
+  }
   const [selected, setSelected] = useState<Debt | null>(null)
   const resolvePair = useSplitStore((s) => s.resolvePair)
   const restoreNightsSnapshot = useSplitStore((s) => s.restoreNightsSnapshot)
@@ -94,6 +112,8 @@ export function SplitHome() {
         }
       />
 
+      <PersonFilter people={people} summary={homeSummary} />
+
       <Card className="mb-5 overflow-hidden">
         <CardHeader className="flex-row items-center gap-2 space-y-0">
           <Wallet className="h-5 w-5 text-primary" />
@@ -105,14 +125,25 @@ export function SplitHome() {
               No active Nomnoms yet. Start one below to begin tracking.
             </p>
           ) : (
-            <BalanceList debts={balances} onSelect={setSelected} subtitle={subtitle} />
+            <>
+              <BalanceList debts={visibleRows} onSelect={setSelected} subtitle={subtitle} />
+              {!person && rows.length > 5 && (
+                <button
+                  type="button"
+                  onClick={() => setShowAll((v) => !v)}
+                  className="mt-2.5 h-10 w-full rounded-md border border-dashed border-border text-sm font-semibold"
+                >
+                  {showAll ? 'Show less' : `Show all (${rows.length})`}
+                </button>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
 
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Active Nomnoms
+          Active Nomnoms{person ? ` · with ${person}` : ''}
         </h2>
         {settledCount > 0 && (
           <span className="text-xs text-muted-foreground">{settledCount} archived</span>
@@ -125,9 +156,11 @@ export function SplitHome() {
           title="No active Nomnoms"
           description="Create a Nomnom, add who came and what was paid, and balances appear here."
         />
+      ) : shownNights.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No active Nomnoms with {person}.</p>
       ) : (
         <div className="space-y-3">
-          {activeNights.map((night) => (
+          {shownNights.map((night) => (
             <NightCard key={night.id} night={night} />
           ))}
         </div>
