@@ -158,9 +158,8 @@
 }
 
 /* ---- Screen transitions (see AnimatedRoutes in App.tsx) ------------------ */
-.route {
-  overflow-x: clip; /* hide the off-screen half of a slide; unlike hidden, keeps sticky headers */
-}
+/* The off-screen half of a slide is clipped by the non-animated wrapper in App.tsx
+   (overflow-x-clip): clipping on the animated element itself would not shrink its own box. */
 .route-forward {
   animation: route-in-right 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }

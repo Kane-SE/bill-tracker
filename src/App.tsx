@@ -39,7 +39,8 @@ function AnimatedRoutes() {
 export default function App() {
   return (
     <HashRouter>
-      <div className="min-h-full py-2">
+      {/* clip (not hidden) hides the off-screen half of a slide without making a scroll container, so sticky headers keep working */}
+      <div className="min-h-full overflow-x-clip py-2">
         <AnimatedRoutes />
       </div>
       <Toaster />
