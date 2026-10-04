@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Archive, Moon, Plus, Settings, UsersRound, Wallet } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
@@ -9,7 +9,9 @@ import { Button } from '@/shared/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
 import { HeaderIconLink } from '@/shared/components/HeaderIconLink'
 import { useSplitStore } from '@/apps/split/store/useSplitStore'
-import { computeBalances } from '@/apps/split/lib/calc'
+import { PairSheet } from '@/apps/split/components/PairSheet'
+import { computeBalances, computePairBreakdown } from '@/apps/split/lib/calc'
+import type { Debt } from '@/apps/split/types'
 
 export function SplitHome() {
   const navigate = useNavigate()
@@ -21,6 +23,19 @@ export function SplitHome() {
   )
   const settledCount = nights.length - activeNights.length
   const balances = useMemo(() => computeBalances(activeNights), [activeNights])
+  const [selected, setSelected] = useState<Debt | null>(null)
+  const sourceCount = useMemo(() => {
+    const m = new Map<string, number>()
+    for (const d of balances) {
+      const ids = new Set(computePairBreakdown(activeNights, d.from, d.to).entries.map((e) => e.nightId))
+      m.set(`${d.from}->${d.to}`, ids.size)
+    }
+    return m
+  }, [balances, activeNights])
+  const subtitle = (d: Debt) => {
+    const n = sourceCount.get(`${d.from}->${d.to}`) ?? 0
+    return `from ${n} ${n === 1 ? 'Nomnom' : 'Nomnoms'}`
+  }
 
   return (
     <div className="mx-auto max-w-lg px-4 pb-28">
@@ -54,7 +69,7 @@ export function SplitHome() {
               No active Nomnoms yet. Start one below to begin tracking.
             </p>
           ) : (
-            <BalanceList debts={balances} />
+            <BalanceList debts={balances} onSelect={setSelected} subtitle={subtitle} />
           )}
         </CardContent>
       </Card>
@@ -81,6 +96,13 @@ export function SplitHome() {
           ))}
         </div>
       )}
+
+      <PairSheet
+        debt={selected}
+        nights={activeNights}
+        onOpenChange={(open) => !open && setSelected(null)}
+        onResolve={() => {}}
+      />
 
       <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/90 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur">
         <div className="mx-auto max-w-lg">
