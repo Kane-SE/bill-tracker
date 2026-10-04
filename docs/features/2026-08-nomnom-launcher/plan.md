@@ -1580,7 +1580,7 @@ git add -A && git commit -m "chore(pwa): palette-agnostic install identity (neut
 
 **Files:**
 - Modify: `bill-splitter/README.md` (new structure, launcher, custom palette, Nomnom), `D:\study\CLAUDE.md` (Split row description if needed)
-- Create: `bill-splitter/docs/superpowers/specs/2026-08-11-nomnom-launcher-design.md` (record the grilling outcome table from this plan's Design summary)
+- Create: `bill-splitter/docs/features/2026-08-nomnom-launcher/spec.md` (record the grilling outcome table from this plan's Design summary)
 
 - [ ] **Step 1: Update README**
 

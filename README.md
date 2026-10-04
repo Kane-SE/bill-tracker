@@ -13,7 +13,7 @@ apps get added.
 
 - **Nomnoms** — each hangout is a "Nomnom" in the UI (the code/type is still
   `Night`, unchanged from before the rename — see
-  [Design record](docs/superpowers/specs/2026-08-11-nomnom-launcher-design.md)).
+  [Design record](docs/features/2026-08-nomnom-launcher/spec.md)).
   Creating one is **deferred**: `/split/new` shows a name field + people editor
   and only enables **Create** once you've typed a name or added a person;
   leaving the page without pressing Create discards the draft. An empty name
@@ -33,7 +33,7 @@ apps get added.
   Paid check. A tick records the amount paid (`night.payments`), so if an item
   is edited later the line reopens showing only what's left. Home balances only
   count unpaid money. Ticking the last line offers to archive the Nomnom (see
-  [spec](docs/superpowers/specs/2026-09-29-nomnom-per-line-payments-design.md)).
+  [spec](docs/features/2026-09-per-line-payments/spec.md)).
 - **Mark a Nomnom done** — settled Nomnoms move to an Archive (still viewable /
   restorable).
 - **Backup** — export/import all app data *and* your appearance settings as one
