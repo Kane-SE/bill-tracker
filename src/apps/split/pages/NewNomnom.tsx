@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Check } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
+import { BottomBar } from '@/shared/components/BottomBar'
 import { ParticipantEditor } from '@/apps/split/components/ParticipantEditor'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
@@ -50,14 +51,12 @@ export function NewNomnom() {
         </CardContent>
       </Card>
 
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/90 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur">
-        <div className="mx-auto max-w-lg">
-          <Button size="lg" className="w-full" onClick={create} disabled={!canCreate}>
-            <Check className="h-5 w-5" />
-            Create
-          </Button>
-        </div>
-      </div>
+      <BottomBar>
+        <Button size="lg" className="w-full" onClick={create} disabled={!canCreate}>
+          <Check className="h-5 w-5" />
+          Create
+        </Button>
+      </BottomBar>
     </div>
   )
 }

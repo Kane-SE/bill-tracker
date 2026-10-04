@@ -156,3 +156,28 @@
     font-size: 16px;
   }
 }
+
+/* ---- Screen transitions (see AnimatedRoutes in App.tsx) ------------------ */
+.route {
+  overflow-x: clip; /* hide the off-screen half of a slide; unlike hidden, keeps sticky headers */
+}
+.route-forward {
+  animation: route-in-right 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.route-back {
+  animation: route-in-left 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes route-in-right {
+  from { transform: translateX(100%); }
+  to { transform: none; }
+}
+@keyframes route-in-left {
+  from { transform: translateX(-30%); opacity: 0.6; }
+  to { transform: none; opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .route-forward,
+  .route-back {
+    animation: none;
+  }
+}

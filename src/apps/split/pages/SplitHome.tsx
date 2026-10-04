@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Archive, Moon, Plus, Settings, UsersRound, Wallet } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
+import { BottomBar } from '@/shared/components/BottomBar'
 import { BalanceList } from '@/apps/split/components/BalanceList'
 import { NightCard } from '@/apps/split/components/NightCard'
 import { EmptyState } from '@/shared/components/EmptyState'
@@ -182,14 +183,12 @@ export function SplitHome() {
         onConfirm={confirmResolve}
       />
 
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/90 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur">
-        <div className="mx-auto max-w-lg">
-          <Button size="lg" className="w-full" onClick={() => navigate('/split/new')}>
-            <Plus className="h-5 w-5" />
-            New Nomnom
-          </Button>
-        </div>
-      </div>
+      <BottomBar>
+        <Button size="lg" className="w-full" onClick={() => navigate('/split/new')}>
+          <Plus className="h-5 w-5" />
+          New Nomnom
+        </Button>
+      </BottomBar>
     </div>
   )
 }
