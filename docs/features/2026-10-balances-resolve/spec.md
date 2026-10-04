@@ -1,7 +1,8 @@
-# Balances: Details, Resolve, Long List + Polish — Design
+# Balances: Details, Resolve, Person Filter + Polish — Design
 
-**Date:** 2026-10-04 · **Status:** approved in brainstorming, awaiting spec review
-**Explainer (real screens + mockups):** https://claude.ai/artifact/TmrnZ3PofbjKp8Ped4ZFs4, sections 4–5
+**Date:** 2026-10-04 · **Status:** approved (brainstorm + grilling), ready for planning
+**Branch:** `feature/balances-resolve` → one PR, one commit per item
+**Explainer (real screens + mockups):** https://claude.ai/artifact/TmrnZ3PofbjKp8Ped4ZFs4, sections 4, 5, 5b
 
 ## Problem
 
@@ -13,165 +14,227 @@ across **all** active Nomnoms (`computeBalances`). Debt lines and their payments
    Nomnom and subtracting by hand.
 2. Settling a pair means opening each Nomnom and ticking its line, in both directions.
 3. With many unpaid debts the card grows without limit (26 rows with 8 friends × 8
-   Nomnoms) and pushes the Nomnom list off screen.
+   Nomnoms) and pushes the Nomnom list off screen. Archive grows without limit too.
 
 There's also some polish: screen changes have no animation, the scrollbar is the browser
 default, and "Mark Nomnom as done" is too long.
 
-## Decisions (from brainstorming)
+## Decisions
 
 | # | Decision |
 |---|---|
-| 1 | Tapping a home row opens a **bottom sheet** with the pair's per-Nomnom breakdown. Each entry links to its Nomnom. |
-| 2 | **Resolve** works on **one pair** (row). It ticks every line between the two people, in **both directions**, in every active Nomnom. |
-| 3 | Resolve is confirmed in a modal that **lists every change first**. Nomnoms that become fully paid are **archived automatically** and named in that modal. A toast offers **Undo**. |
-| 4 | Long list: show the **top 5** rows plus "Show all (N)", and add a **name filter** (chips). |
-| 5 | Screen transitions: **slide**. Going deeper slides in from the right, going back slides from the left. CSS keyframes only; no motion under `prefers-reduced-motion`. |
-| 6 | Scrollbar: thin and rounded, colored from palette tokens. |
-| 7 | "Mark Nomnom as done" becomes **"Mark done"**. |
+| 1 | Tapping a home row opens a **bottom sheet** with the pair's per-Nomnom breakdown. It lists only Nomnoms that **contribute** to the number, plus a "+N already paid" note. Each entry links to its Nomnom. The row subtitle "from N Nomnom(s)" counts the contributing ones. |
+| 2 | **Resolve** works on **one pair**. It settles every line between the two people, in **both directions**, in every active Nomnom. |
+| 3 | Resolve is confirmed in a modal that lists **every change**: lines ticked, payments **adjusted** (over-payments trimmed) or **removed** (no matching line), and Nomnoms that will be **archived automatically**. |
+| 4 | After Resolve, a toast offers **Undo** for **8 s**. It's dismissed as soon as you leave the home screen. |
+| 5 | Ticking the last line *inside* a Nomnom still **asks** before archiving (unchanged). Only Resolve archives automatically. |
+| 6 | **Person filter** = a **picker**: a one-line "Showing everyone ▾" button opens a sheet listing **everyone who took part in any Nomnom** (active or archived), **alphabetically**, each with "owes X · is owed Y" or "all settled". |
+| 7 | On **Home** the filter narrows the balance rows (all of the person's rows) **and** the Nomnom list (Nomnoms the person **took part in**). With "everyone" selected, balances show the **top 5** + "Show all (N)" / "Show less". |
+| 8 | On **Archive** the same filter applies (same picker, same chosen person). Summary: "Lan · 3 archived Nomnoms". |
+| 9 | The filter is **shared** between Home and Archive and **lasts while the app is open** (in memory, not persisted). It goes back to "everyone" if the chosen person no longer appears in any Nomnom. |
+| 10 | The picker shows when **3 or more different people** appear across all Nomnoms. |
+| 11 | Names are matched **exactly** (case-sensitive), the same way the debt math does. |
+| 12 | Screen transitions: **slide**. Deeper slides in from the right, shallower from the left. CSS keyframes; none under `prefers-reduced-motion`. |
+| 13 | Scrollbar: thin and rounded, colored from palette tokens. |
+| 14 | "Mark Nomnom as done" becomes **"Mark done"**. |
 
 ## Math (`src/apps/split/lib/calc.ts`, pure)
 
-Two new functions. Both reuse `computeNightLines`, so their numbers always match what a
-Nomnom's own screen shows.
+### Pair breakdown
 
 ```ts
-/** One Nomnom's line between a and b (either direction). */
+/** One Nomnom's share of the balance between a pair, seen from `from → to`. */
 export interface PairEntry {
   nightId: string
-  title: string          // night.title || formatted date
+  title: string            // night.title || formatDate(night.date)
   date: string
-  line: DebtLine         // from/to tell the direction
+  lineFrom: string         // direction of the debt line (or of the orphan payment)
+  lineTo: string
+  owed: number             // the line's owed amount, 0 for an orphan payment
+  paid: number             // payment recorded lineFrom → lineTo
+  contribution: number     // signed, in the from → to direction: ±(owed − paid)
 }
 
-/** Lines between a and b across the given (active) nights, newest first. */
-export function computePairBreakdown(nights: Night[], a: string, b: string): PairEntry[]
+export interface PairBreakdown {
+  entries: PairEntry[]     // contribution !== 0, newest Nomnom first
+  settledCount: number     // Nomnoms with a pair line whose contribution is 0
+  net: number              // sum of contributions, equals the home row amount
+}
+
+export function computePairBreakdown(nights: Night[], from: string, to: string): PairBreakdown
+```
+
+- For each night, consider its pair line (from `computeNightLines`, either direction)
+  and every payment between the two people. One entry per directed pair present.
+- `contribution = (owed − paid)` when `lineFrom === from`, else `−(owed − paid)`.
+  An over-payment gives a negative contribution in its own direction; an orphan payment
+  (no line) has `owed = 0`.
+- **Guarantee:** `net` equals the amount `computeBalances` shows for `from → to`.
+  That's why entries show owed − paid and not `remaining`, which hides over-payment.
+
+### Resolve plan
+
+```ts
+export type PairChangeKind = 'tick' | 'adjust' | 'remove'
+
+export interface PairChange {
+  nightId: string
+  title: string
+  from: string; to: string // payment direction
+  kind: PairChangeKind     // tick: paid < owed → owed · adjust: paid > owed → owed · remove: orphan → 0
+  before: number           // payment amount before
+  after: number            // payment amount after (0 = remove)
+}
 
 export interface PairResolvePlan {
-  /** Payments to write: one per pair line, amount = line.owed. */
-  writes: { nightId: string; from: string; to: string; amount: number }[]
-  /** Night ids whose every line will be paid once the writes are applied. */
-  toArchive: string[]
+  changes: PairChange[]
+  toArchive: { nightId: string; title: string }[]
 }
 
 /** What resolving a ↔ b would do. Changes nothing. */
 export function planPairResolve(nights: Night[], a: string, b: string): PairResolvePlan
+
+/** Apply a plan's payment changes to one night (pure). Used by the store and by tests. */
+export function applyPairChanges(night: Night, changes: PairChange[]): Night
 ```
 
-Rules for `planPairResolve`:
+- Lines where `paid === owed` produce no change.
+- `toArchive` = Nomnoms with ≥ 1 change that have ≥ 1 line and all lines at
+  `remaining === 0` once the changes are applied. Untouched Nomnoms are never archived.
+- **Guarantee:** after applying the plan, `computeBalances` has no row for the pair.
+- Money is whole VND (shares from `equalShares` and `parseMoney`), so no rounding residue.
 
-- Every line between `a` and `b` in either direction gets `payment = line.owed`. That
-  includes lines that are already paid, which trims any over-payment left by later item
-  edits. **Guarantee:** afterwards the pair nets to exactly 0 in `computeBalances`.
-- A payment between `a` and `b` that no longer matches any line (its items were deleted)
-  is planned for removal, so it can't leave a stray balance behind.
-- `toArchive` only contains Nomnoms the resolve **touches**. A Nomnom qualifies if it
-  has ≥ 1 line and all of its lines would have `remaining === 0` afterwards. Untouched
-  Nomnoms are never archived.
-- Money is whole VND (shares come from `equalShares` and `parseMoney`), so per-Nomnom
-  rounding can't leave a 1 ₫ residue.
+### Person summaries (for the picker)
+
+```ts
+export interface PersonSummary { name: string; owes: number; owed: number }
+
+/** Everyone who took part in any of `allNights`, alphabetical, with totals from `debts`. */
+export function summarizePeople(allNights: Night[], debts: Debt[]): PersonSummary[]
+```
+
+`owes = 0 && owed = 0` is shown as "all settled".
 
 ## Store (`useSplitStore.ts`)
 
 ```ts
-resolvePair(a: string, b: string): Night[]          // returns the touched nights *before* the change
-restoreNightsSnapshot(snapshot: Night[]): void       // puts those nights back exactly as they were
+resolvePair(a: string, b: string): Night[]          // touched nights *before* the change
+restoreNightsSnapshot(snapshot: Night[]): void       // put them back exactly
 ```
 
-- `resolvePair` calls `planPairResolve` on the active nights and applies the result in
-  **one** `set()`: it upserts or removes payments, and archives `toArchive` with the same
+- `resolvePair` calls `planPairResolve` on the active nights. In **one** `set()` it applies
+  `applyPairChanges` to each touched night and archives `toArchive` with the same
   `status: 'settled'` + `settledAt` as `markDone`. The modal preview and the action share
   one plan, so they can't disagree.
-- `restoreNightsSnapshot` replaces each night by id, which restores earlier partial
-  payments too. Ids that no longer exist are ignored.
-- No schema change, no persist-version bump, no backup change.
+- `restoreNightsSnapshot` replaces each night by id, restoring earlier payments exactly.
+  Ids that no longer exist are ignored.
+- No schema, persist-version or backup change.
+
+### Person filter state (`apps/split/store/usePersonFilter.ts`, new)
+
+A tiny zustand store **without** `persist`: `{ person: string | null, setPerson(name | null) }`.
+It's in memory, so it survives navigation and resets on app restart.
 
 ## UI
 
+### `PersonFilter` (new, `apps/split/components/PersonFilter.tsx`)
+
+- Props: `people: PersonSummary[]`, `summary: ReactNode` (what to show when a person is
+  chosen). It reads and writes `usePersonFilter`.
+- Renders nothing when `people.length < 3`. If the chosen person isn't in `people`, it
+  calls `setPerson(null)`.
+- Collapsed: "Showing **everyone** ▾ / Tap to see one person". Chosen: avatar initial, name,
+  `summary`, and × (clears).
+- Sheet (existing `Dialog`): "Show balances for", an "Everyone" row, then one row per
+  person (initial, name, "owes X · owed Y" or "all settled"). Tapping a row picks it and
+  closes the sheet.
+
 ### Home (`SplitHome` + `BalanceList`)
 
-- Each row becomes a `<button>` with a subtitle "from N Nomnom(s)" (from the breakdown
-  length) and a ›. `BalanceList` gains `onSelect(debt)`.
-- **Long list:** when there are more than 5 rows, show
-  - **name chips** ("All" plus everyone who appears in a row, alphabetical, scrolling
-    sideways). Picking a name shows *all* of that person's rows plus a summary
-    "owes X · is owed Y".
-  - with "All" selected, the **top 5** rows (already sorted biggest first) plus
-    "Show all (N)" / "Show less".
-- Filter and expanded state are kept in component state, so they reset when you leave
-  the screen. If a resolve removes the filtered person's last row, the filter goes back
-  to "All".
+- `PersonFilter` sits above the "Current balances" card. Home summary: "owes X · is owed Y"
+  from the filtered rows.
+- Balance rows are `<button>`s with a "from N Nomnom(s)" subtitle and a ›.
+  `BalanceList` gains `onSelect(debt)` and a `subtitle(debt)` render prop.
+- Everyone: top 5 + "Show all (N)" / "Show less" (component state). With a person
+  chosen, all of their rows are shown.
+- The Nomnom list is filtered by `participants.includes(person)`. The header becomes
+  "Active Nomnoms · with Lan".
+- Fixed "New Nomnom" bar goes through `BottomBar` (see Transitions).
 
 ### `PairSheet` (new, `apps/split/components/PairSheet.tsx`)
 
-- Uses the existing `Dialog`, which already appears as a bottom sheet on phones.
 - Header "Minh → Lan" and "Minh owes Lan 70.000 ₫ across 2 Nomnoms".
-- One row per `PairEntry`: title · date, direction, and a signed amount (+ for the
-  row's direction in the owe color, − for the opposite direction in the paid color).
-  Lines that are already paid show as paid. Tapping a row closes the sheet and
+- One row per entry: title · date, `lineFrom → lineTo`, and the signed contribution
+  (+ in the owe color, − in the paid color). Tapping a row closes the sheet and
   navigates to `/split/night/:id`.
-- Net line, then a **Resolve Minh → Lan** button (success variant).
+- "+N already paid" note when `settledCount > 0`, then the net line, then a
+  **Resolve Minh → Lan** button (success).
 
 ### Resolve confirmation
 
 - `ConfirmDialog.description` widens from `string` to `ReactNode`. Existing callers keep
   passing strings.
-- Content: one ✓ line per write (e.g. "Pizza Fri: Minh → Lan 100.000 ₫ paid"), then, if
-  `toArchive` isn't empty, a note: "**BBQ Sun** will be fully paid and move to the
-  archive."
-- On confirm: call `resolvePair`, close the dialog and the sheet, and show
-  `toast.success('Minh → Lan resolved · 1 Nomnom archived', { action: { label: 'Undo',
-  onClick: () => restoreNightsSnapshot(snapshot) } })`.
+- One line per change: "✓ Pizza Fri: Minh → Lan 100.000 ₫ paid" (tick), "Pizza Fri:
+  Minh's 120.000 ₫ payment adjusted to 100.000 ₫" (adjust), "Pizza Fri: old 50.000 ₫
+  payment Lan → Minh removed" (remove). Then, when `toArchive` isn't empty:
+  "**BBQ Sun** will be fully paid and move to the archive."
+- On confirm: `const snapshot = resolvePair(a, b)`, close the dialog and the sheet, then
+  `toast.success('Minh → Lan resolved · 1 Nomnom archived', { duration: 8000,
+  action: { label: 'Undo', onClick: () => restoreNightsSnapshot(snapshot) } })`.
+  Keep the toast id. `SplitHome`'s unmount effect calls `toast.dismiss(id)`.
+
+### Archive (`pages/Archive.tsx`)
+
+- `PersonFilter` with the same people list (all Nomnoms) and the summary
+  "N archived Nomnom(s)". The list is filtered by participant.
 
 ### Screen transitions
 
-- In `App.tsx`, the routed content is wrapped in a container keyed by `location.pathname`.
-  A ref stores the previous path depth (number of segments). Deeper or equal depth gives
-  `route-forward`, shallower gives `route-back`.
-- `index.css`: two keyframes (`translateX(100%) → 0` and `translateX(-30%), opacity .6 → 1`),
-  240 ms `cubic-bezier(.2,.8,.2,1)`, no fill-mode, so no transform stays after the
-  animation. The container gets `overflow-x: clip` during the slide.
-  `@media (prefers-reduced-motion: reduce)` turns the animation off.
-- **Gotcha:** an element being transformed becomes the containing block for its
-  `position: fixed` children. The bottom bars ("New Nomnom", Nomnom actions) would jump
-  mid-slide. Fix: a small shared `BottomBar` component renders them through a portal to
-  `document.body`, so they stay put like a native tab bar.
-- Dialogs and sheets keep their existing slide-up animation.
+- `App.tsx`: the routed content is wrapped in a container keyed by `location.pathname`.
+  A ref keeps the previous path depth (number of segments). Deeper or equal gives
+  `route-forward`, shallower gives `route-back`. No class on the first render.
+- `index.css`: keyframes `route-in-right` (`translateX(100%) → 0`) and `route-in-left`
+  (`translateX(-30%)` + `opacity .6 → 1`), 240 ms `cubic-bezier(.2,.8,.2,1)`, no
+  fill-mode. `overflow-x: clip` on the wrapper. `@media (prefers-reduced-motion: reduce)`
+  turns the animation off.
+- **Gotcha:** a transformed element becomes the containing block for its
+  `position: fixed` children. The fixed bottom bars on **SplitHome** and **NewNomnom**
+  move into a shared `BottomBar` (`shared/components/BottomBar.tsx`) that renders through
+  a portal to `document.body`. Dialogs and toasts already render outside the routes.
 
 ### Scrollbar (`index.css`)
 
 - `scrollbar-width: thin; scrollbar-color: hsl(var(--muted-foreground) / .35) transparent`,
-  plus `::-webkit-scrollbar` rules for older WebKit (8 px, rounded thumb in
-  `--border`, `--muted-foreground` on hover).
-- Follows every palette because it only reads tokens. iOS draws its own overlay
-  scrollbar, which can't be styled; that's acceptable.
+  plus `::-webkit-scrollbar` rules (8 px, rounded thumb in `--border`, hover in
+  `--muted-foreground`). iOS overlay scrollbars can't be styled.
 
 ### Copy
 
-- `NightDetail`: the button reads **"Mark done"**. The dialog ("Mark this Nomnom as
-  done?") and its "Mark done" confirm button stay as they are.
+- `NightDetail`: the button reads **"Mark done"**. The dialog stays as it is.
 
 ## Testing (Vitest)
 
 - `calc.test.ts`
-  - `computePairBreakdown`: both directions, a pair in only some Nomnoms, newest first,
-    already-paid lines included.
-  - `planPairResolve`: writes `owed` for every pair line, trims over-payment, removes
-    orphan pair payments, archives only touched Nomnoms that end fully paid, and after
-    applying the writes `computeBalances` has no row for the pair.
-- `useSplitStore.test.ts`
-  - `resolvePair` writes payments and archives in one update and returns the
-    before-snapshot.
-  - `restoreNightsSnapshot` after `resolvePair` gives a deep-equal of the original nights.
-- Manual: run the dev server with the explainer's example data, walk the story
-  (tap row → sheet → resolve → Undo), check the long-list chips, check transitions
-  forward and back, and check reduce-motion.
-- **Explainer:** retake the screenshots. The mockups in sections 4–5 become REAL screens.
+  - `computePairBreakdown`: both directions, a pair in only some Nomnoms, a partial
+    payment, an over-payment, an orphan payment, `settledCount`, newest first, and
+    **`net` equals the `computeBalances` row** in each case.
+  - `planPairResolve` + `applyPairChanges`: tick, adjust and remove kinds, no change for
+    exact payments, archives only touched Nomnoms that end fully paid, and **no
+    `computeBalances` row for the pair afterwards**.
+  - `summarizePeople`: alphabetical, includes people only in archived Nomnoms,
+    owes/owed totals.
+- `useSplitStore.test.ts`: `resolvePair` writes and archives in one update and returns the
+  before-snapshot. `restoreNightsSnapshot` gives a deep-equal of the original nights.
+- Manual run with the explainer's example data: tap row → sheet → resolve → Undo; leaving
+  home dismisses Undo; filter across Home → Nomnom → back → Archive; transitions forward
+  and back; reduce-motion; scrollbar in each palette.
+- **Explainer:** retake the screenshots before the PR. The MOCKUP screens in sections 4,
+  5 and 5b become REAL.
 
 ## Out of scope
 
 - Desktop layout (its own brainstorm).
-- Resolving everything one person owes (options B/C in brainstorming).
-- Partial-amount resolve, and remembering the filter between visits.
+- Resolving everything one person owes; partial-amount resolve.
+- Case-insensitive name matching (it would mean changing the debt math).
 - Pairs that net to 0 overall but still have open lines in individual Nomnoms (they
   don't appear on home, same as today).
