@@ -286,3 +286,29 @@ export function redistribute(rows: SplitRow[], total: number): SplitRow[] {
     return { ...r, amount: autoValues[i++] ?? 0 }
   })
 }
+
+/** One person's open totals, for the person picker. */
+export interface PersonSummary {
+  name: string
+  owes: number
+  owed: number
+}
+
+/**
+ * Everyone who took part in any of `allNights` (active or archived), plus anyone
+ * in `debts`, alphabetical, with totals from the netted `debts`.
+ */
+export function summarizePeople(allNights: Night[], debts: Debt[]): PersonSummary[] {
+  const totals = new Map<string, PersonSummary>()
+  const get = (name: string) => {
+    let s = totals.get(name)
+    if (!s) totals.set(name, (s = { name, owes: 0, owed: 0 }))
+    return s
+  }
+  for (const n of allNights) for (const p of n.participants) if (p) get(p)
+  for (const d of debts) {
+    get(d.from).owes += d.amount
+    get(d.to).owed += d.amount
+  }
+  return [...totals.values()].sort((x, y) => x.name.localeCompare(y.name))
+}

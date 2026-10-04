@@ -8,6 +8,7 @@ import {
   equalShares,
   redistribute,
   shareRemainder,
+  summarizePeople,
   type SplitRow,
 } from './calc'
 import type { Item, Night, Payment } from '@/apps/split/types'
@@ -384,5 +385,18 @@ describe('planPairResolve + applyPairChanges', () => {
   it('applyPairChanges ignores changes for other nights', () => {
     const p = pizza()
     expect(applyPairChanges(p, [{ nightId: 'bbq', title: 'BBQ Sun', from: 'Lan', to: 'Minh', kind: 'tick', before: 0, after: 1 }])).toBe(p)
+  })
+})
+
+describe('summarizePeople', () => {
+  it('lists everyone from any Nomnom alphabetically with their totals', () => {
+    const archived: Night = { ...night('arch', []), status: 'settled', participants: ['An', 'Minh'] }
+    const debts = computeBalances([pizza(), bbq()])
+    expect(summarizePeople([pizza(), bbq(), archived], debts)).toEqual([
+      { name: 'An', owes: 0, owed: 0 },
+      { name: 'Huy', owes: 100000, owed: 0 },
+      { name: 'Lan', owes: 0, owed: 170000 },
+      { name: 'Minh', owes: 70000, owed: 0 },
+    ])
   })
 })
