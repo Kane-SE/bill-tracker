@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import fixture from './__fixtures__/ideas.md?raw'
-import { parseIdeas } from './ideas'
+import { addIdeaText, addNoteText, moveStageText, IdeaNotFoundError, parseIdeas } from './ideas'
 
 export const MESSY = [
   '# Ideas',
@@ -71,5 +71,90 @@ describe('parseIdeas', () => {
     expect(parseIdeas('## X\nStage: someday\n')[0].stage).toBe('idea')
     expect(parseIdeas(null)).toEqual([])
     expect(parseIdeas('')).toEqual([])
+  })
+})
+
+const TODAY = '2026-10-05'
+const lines = (text: string) => text.split('\n')
+
+describe('addNoteText', () => {
+  it('inserts one line after the last progress line and changes nothing else', () => {
+    const out = addNoteText(MESSY, 'photo-tagging-for-nomnoms', 'Round 5 answered', TODAY)
+    const expected = lines(MESSY)
+    expected.splice(expected.indexOf('- 2026-09-02 - Grilled the design') + 1, 0, '- 2026-10-05 — Round 5 answered')
+    expect(out).toBe(expected.join('\n'))
+  })
+
+  it('starts a list after the last content line when the idea has no progress yet', () => {
+    const out = addNoteText(MESSY, 'dat-mon-nhom', 'First note', TODAY)
+    const expected = lines(MESSY)
+    // after the closing fence, which is the block's last non-blank line
+    expected.splice(expected.indexOf('## not a heading inside a code fence') + 2, 0, '', '- 2026-10-05 — First note')
+    expect(out).toBe(expected.join('\n'))
+  })
+
+  it('targets the right duplicate', () => {
+    const out = addNoteText(MESSY, 'photo-tagging-for-nomnoms-2', 'Second one', TODAY)
+    expect(lines(out).slice(-4)).toEqual(['Stage: idea', '', '- 2026-10-05 — Second one', ''])
+  })
+
+  it('flattens a multi-line note', () => {
+    const out = addNoteText(MESSY, 'photo-tagging-for-nomnoms', 'one\ntwo', TODAY)
+    expect(out).toContain('- 2026-10-05 — one two')
+  })
+
+  it('keeps CRLF endings and a missing trailing newline', () => {
+    const crlf = MESSY.replace(/\n/g, '\r\n').replace(/\r\n$/, '')
+    const out = addNoteText(crlf, 'photo-tagging-for-nomnoms', 'x', TODAY)
+    expect(out.replace(/\r\n/g, '')).not.toContain('\n')
+    expect(out.endsWith('\r\n')).toBe(false)
+    expect(out).toContain('- 2026-10-05 — x\r\n')
+  })
+
+  it('throws IdeaNotFoundError for an unknown id', () => {
+    expect(() => addNoteText(MESSY, 'nope', 'x', TODAY)).toThrow(IdeaNotFoundError)
+  })
+})
+
+describe('moveStageText', () => {
+  it('rewrites only the Stage line and logs the move with the reason', () => {
+    const out = moveStageText(MESSY, 'photo-tagging-for-nomnoms', 'building', TODAY, 'Spec approved')
+    const expected = lines(MESSY)
+    expected[expected.indexOf('Stage: exploring')] = 'Stage: building'
+    expected.splice(expected.indexOf('- 2026-09-02 - Grilled the design') + 1, 0, '- 2026-10-05 — Moved to building · Spec approved')
+    expect(out).toBe(expected.join('\n'))
+  })
+
+  it('inserts a Stage line under the heading when the idea has none', () => {
+    const out = moveStageText(MESSY, 'dat-mon-nhom', 'exploring', TODAY)
+    const outLines = lines(out)
+    const at = outLines.indexOf('## Đặt món nhóm 🍜')
+    expect(outLines[at + 1]).toBe('Stage: exploring')
+    expect(outLines[at + 2]).toBe('Added: 2026-09-01')
+    expect(out).toContain('- 2026-10-05 — Moved to exploring')
+  })
+})
+
+describe('addIdeaText', () => {
+  it('appends a block at the end of the file, after one blank line', () => {
+    const out = addIdeaText('# Ideas\n\n## Old\nStage: idea\n\n\n', { title: 'New one', note: 'Why\nit matters' }, TODAY)
+    expect(out).toBe(
+      '# Ideas\n\n## Old\nStage: idea\n\n## New one\nStage: idea\nAdded: 2026-10-05\n\nWhy it matters\n\n- 2026-10-05 — Idea captured\n',
+    )
+  })
+
+  it('creates the file when it does not exist yet', () => {
+    expect(addIdeaText(null, { title: 'First' }, TODAY)).toBe(
+      '# Ideas\n\n## First\nStage: idea\nAdded: 2026-10-05\n\n- 2026-10-05 — Idea captured\n',
+    )
+  })
+
+  it('keeps CRLF endings', () => {
+    const out = addIdeaText('# Ideas\r\n', { title: 'X' }, TODAY)
+    expect(out.replace(/\r\n/g, '')).not.toContain('\n')
+  })
+
+  it('rejects an empty title', () => {
+    expect(() => addIdeaText(null, { title: '   ' }, TODAY)).toThrow('Title is required')
   })
 })

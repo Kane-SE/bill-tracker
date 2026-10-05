@@ -1,5 +1,5 @@
 import { STAGES, type Idea, type Stage } from '@/apps/hub/lib/types'
-import { slugify, splitLines } from '@/apps/hub/lib/text'
+import { joinLines, oneLine, slugify, splitLines } from '@/apps/hub/lib/text'
 import { isIsoDate } from '@/apps/hub/lib/dates'
 
 /** `- 2026-09-02 — text`; also accepts ` - ` and ` – ` separators and `*` bullets. */
@@ -105,4 +105,74 @@ export function parseIdeas(text: string | null): Idea[] {
       progress,
     }
   })
+}
+
+export class IdeaNotFoundError extends Error {
+  readonly id: string
+  constructor(id: string) {
+    super(`Idea "${id}" not found`)
+    this.name = 'IdeaNotFoundError'
+    this.id = id
+  }
+}
+
+function locate(text: string, id: string) {
+  const parts = splitLines(text)
+  const block = findBlocks(parts.lines).find((b) => b.id === id)
+  if (!block) throw new IdeaNotFoundError(id)
+  return { ...parts, block }
+}
+
+/** Insert a progress line after the block's last progress line, or start a list after its last content line. */
+function insertProgress(lines: string[], block: Block, entry: string): void {
+  let lastProgress = -1
+  for (let i = block.start + 1; i < block.end; i++) if (PROGRESS_LINE.test(lines[i])) lastProgress = i
+  if (lastProgress >= 0) {
+    lines.splice(lastProgress + 1, 0, entry)
+    return
+  }
+  let last = block.end - 1
+  while (last > block.start && lines[last].trim() === '') last--
+  lines.splice(last + 1, 0, '', entry)
+}
+
+export function addNoteText(text: string, id: string, note: string, today: string): string {
+  const { lines, eol, trailingNewline, block } = locate(text, id)
+  insertProgress(lines, block, `- ${today} — ${oneLine(note)}`)
+  return joinLines(lines, eol, trailingNewline)
+}
+
+export function moveStageText(text: string, id: string, stage: Stage, today: string, why?: string): string {
+  const { lines, eol, trailingNewline, block } = locate(text, id)
+  let stageAt = -1
+  for (let i = block.start + 1; i < block.end; i++) {
+    if (STAGE_LINE.test(lines[i].trim())) {
+      stageAt = i
+      break
+    }
+  }
+  if (stageAt >= 0) {
+    lines[stageAt] = `Stage: ${stage}`
+  } else {
+    lines.splice(block.start + 1, 0, `Stage: ${stage}`)
+    block.end++
+  }
+  const reason = why ? oneLine(why) : ''
+  insertProgress(lines, block, `- ${today} — Moved to ${stage}${reason ? ` · ${reason}` : ''}`)
+  return joinLines(lines, eol, trailingNewline)
+}
+
+export function addIdeaText(text: string | null, input: { title: string; note?: string }, today: string): string {
+  const title = oneLine(input.title)
+  if (!title) throw new Error('Title is required')
+  const note = input.note ? oneLine(input.note) : ''
+  const block = [`## ${title}`, 'Stage: idea', `Added: ${today}`, '']
+  if (note) block.push(note, '')
+  block.push(`- ${today} — Idea captured`)
+
+  if (!text || !text.trim()) return `${['# Ideas', '', ...block].join('\n')}\n`
+  const { lines, eol } = splitLines(text)
+  while (lines.length && lines[lines.length - 1].trim() === '') lines.pop()
+  lines.push('', ...block)
+  return joinLines(lines, eol, true)
 }
