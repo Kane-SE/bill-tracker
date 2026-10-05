@@ -41,12 +41,13 @@ export function IdeaDetail() {
 
   return (
     <div className="mx-auto max-w-lg px-4 pb-32">
-      <PageHeader title={idea.title} backTo="/hub" />
+      <PageHeader title="Idea" backTo="/hub" />
+      <h2 className="mb-2 text-xl font-bold text-pretty break-words">{idea.title}</h2>
       <div className="flex flex-wrap items-center gap-2">
         <StageBadge stage={idea.stage} />
         {idea.added && <span className="text-sm text-muted-foreground">Added {formatDay(idea.added, today)}</span>}
       </div>
-      {idea.note && <p className="mt-3 text-pretty">{idea.note}</p>}
+      {idea.note && <p className="mt-3 text-pretty break-words">{idea.note}</p>}
 
       <h2 className="mb-3 mt-6 text-base font-semibold">Progress</h2>
       {idea.progress.length === 0 ? (
@@ -57,7 +58,7 @@ export function IdeaDetail() {
             <li key={i} className="relative">
               <span className="absolute -left-[21px] top-1.5 h-2.5 w-2.5 rounded-full border-2 border-background bg-muted-foreground" aria-hidden />
               <p className="text-xs text-muted-foreground">{formatDay(p.date, today)}</p>
-              <p className="text-pretty text-sm">{p.text}</p>
+              <p className="text-pretty break-words text-sm">{p.text}</p>
             </li>
           ))}
         </ol>
@@ -69,15 +70,19 @@ export function IdeaDetail() {
 
       <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/80 pb-[env(safe-area-inset-bottom)] backdrop-blur">
         <div className="mx-auto flex max-w-lg gap-2 px-4 py-3">
-          <Button className="flex-1" disabled={!online} onClick={() => setNoteOpen(true)}>
+          <Button className="flex-1" disabled={!online} aria-describedby={online ? undefined : 'idea-offline-note'} onClick={() => setNoteOpen(true)}>
             <Plus />
             Add note
           </Button>
-          <Button className="flex-1" variant="outline" disabled={!online} onClick={() => setStageOpen(true)}>
+          <Button className="flex-1" variant="outline" disabled={!online} aria-describedby={online ? undefined : 'idea-offline-note'} onClick={() => setStageOpen(true)}>
             Move stage
           </Button>
         </div>
-        {!online && <p className="pb-2 text-center text-xs text-muted-foreground">Needs connection</p>}
+        {!online && (
+          <p id="idea-offline-note" className="pb-2 text-center text-xs text-muted-foreground">
+            Needs connection
+          </p>
+        )}
       </div>
 
       <AddNoteDialog ideaId={idea.id} open={noteOpen} onOpenChange={setNoteOpen} />

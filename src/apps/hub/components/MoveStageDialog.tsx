@@ -23,11 +23,12 @@ export function MoveStageDialog({ idea, open, onOpenChange }: Props) {
   const [why, setWhy] = useState('')
   const [saving, setSaving] = useState(false)
 
+  // Reset on open only: keying on idea.stage would clear the form during the close animation after a successful move.
   useEffect(() => {
     if (!open) return
     setStage(idea.stage)
     setWhy('')
-  }, [open, idea.stage])
+  }, [open])
 
   async function submit(event: FormEvent) {
     event.preventDefault()
@@ -52,18 +53,20 @@ export function MoveStageDialog({ idea, open, onOpenChange }: Props) {
             <DialogTitle>Move stage</DialogTitle>
             <DialogDescription>Dropped ideas stay in ideas.md; nothing is deleted.</DialogDescription>
           </DialogHeader>
-          <div role="radiogroup" aria-label="Stage" className="overflow-hidden rounded-lg border border-border">
+          <div role="group" aria-label="Stage" className="overflow-hidden rounded-lg border border-border">
             {STAGES.map((s) => (
               <button
                 key={s}
                 type="button"
-                role="radio"
-                aria-checked={stage === s}
+                aria-pressed={stage === s}
+                autoFocus={s === idea.stage}
                 onClick={() => setStage(s)}
                 className={cn('flex h-11 w-full items-center justify-between border-b border-border px-3 text-left text-sm last:border-b-0 hover:bg-foreground/5', stage === s && 'font-medium')}
               >
-                {STAGE_LABEL[s]}
-                {s === idea.stage && <span className="ml-2 text-xs text-muted-foreground">current</span>}
+                <span>
+                  {STAGE_LABEL[s]}
+                  {s === idea.stage && <span className="ml-2 text-xs text-muted-foreground">current</span>}
+                </span>
                 {stage === s && <Check className="ml-auto h-4 w-4 text-primary" />}
               </button>
             ))}
