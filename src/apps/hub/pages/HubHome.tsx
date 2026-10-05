@@ -7,17 +7,20 @@ import { NoAccess } from '@/apps/hub/pages/NoAccess'
 export function HubHome() {
   const session = useAuthStore((s) => s.session)
   const access = useAuthStore((s) => s.access)
+  const signedIn = !!session
 
   // Signed in but access never confirmed (the check failed during sign-in): re-check in the background.
   // The signed-in body keeps rendering meanwhile, so the cached dashboard stays usable offline.
+  // Deps are primitives on purpose: a token refresh rehydrates the store (session.ts), which yields a new `session`
+  // object for the same sign-in; keying on it would re-run this check after every failed refresh, in a tight loop.
   useEffect(() => {
-    if (!session || access !== 'unknown') return
+    if (!signedIn || access !== 'unknown') return
     let active = true
     verifyAccess(undefined, () => active).catch(() => {})
     return () => {
       active = false
     }
-  }, [session, access])
+  }, [signedIn, access])
 
   if (!session) return <SignIn />
   if (access === 'none') return <NoAccess />
