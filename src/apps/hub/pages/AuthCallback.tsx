@@ -6,7 +6,7 @@ import { EmptyState } from '@/shared/components/EmptyState'
 import { Button } from '@/shared/ui/button'
 import { AuthError, completeSignIn } from '@/apps/hub/auth/github-auth'
 import { useAuthStore } from '@/apps/hub/auth/useAuthStore'
-import { getHubClient } from '@/apps/hub/github/instance'
+import { verifyAccess } from '@/apps/hub/auth/verify-access'
 
 let finishing: Promise<void> | null = null
 
@@ -17,10 +17,8 @@ function finishSignIn(): Promise<void> {
     window.history.replaceState(null, '', `${window.location.pathname}#/hub/callback`)
     const session = await completeSignIn(search)
     useAuthStore.getState().setSession(session)
-    const client = getHubClient()
-    const [user, hasAccess] = await Promise.all([client.getUser(), client.checkAccess()])
-    useAuthStore.getState().setUser(user)
-    useAuthStore.getState().setAccess(hasAccess ? 'ok' : 'none')
+    // The session is saved: a failure here must not fail the sign-in. HubHome re-checks while access is 'unknown'.
+    await verifyAccess().catch(() => {})
   })()
   return finishing
 }
@@ -39,7 +37,12 @@ export function AuthCallback() {
     let active = true
     finishSignIn()
       .then(() => active && navigate('/hub', { replace: true }))
-      .catch((e: unknown) => active && setError(messageFor(e)))
+      .catch((e: unknown) => {
+        if (!active) return
+        // A stale callback while already signed in (reload, or Back from Hub): just go to Hub.
+        if (e instanceof AuthError && e.code === 'state_mismatch' && useAuthStore.getState().session) navigate('/hub', { replace: true })
+        else setError(messageFor(e))
+      })
     return () => {
       active = false
     }
