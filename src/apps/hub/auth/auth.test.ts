@@ -237,6 +237,26 @@ describe('session', () => {
     expect(useAuthStore.getState().session).toEqual(newer)
   })
 
+  it('passes an in-flight refresh failure on to every caller that joined it, then refreshes anew', async () => {
+    useAuthStore.setState({ session: base })
+    const pending = deferred<Session>()
+    const refresh = vi.fn(() => pending.promise)
+    const deps = { now: () => 9_900_000, refresh }
+    const owner = settled(forceRefresh(deps))
+    await vi.waitFor(() => expect(refresh).toHaveBeenCalledTimes(1))
+    const joiners = [settled(getAccessToken(deps)), settled(forceRefresh(deps))]
+    const offline = new TypeError('offline')
+    pending.reject(offline)
+    expect(await owner).toBe(offline)
+    for (const error of await Promise.all(joiners)) expect(error).toBe(offline)
+    expect(refresh).toHaveBeenCalledTimes(1)
+    // The failed refresh no longer counts as in flight: the next call starts its own.
+    const next: Session = { accessToken: 'fresh', accessExpiresAt: 60_000_000, refreshToken: 'r-fresh', refreshExpiresAt: 99_000_000 }
+    refresh.mockImplementationOnce(async () => next)
+    expect(await forceRefresh(deps)).toBe('fresh')
+    expect(refresh).toHaveBeenCalledTimes(2)
+  })
+
   describe('another tab already refreshed', () => {
     const persistNewer = (session: Session) =>
       localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ state: { session, user: null, access: 'unknown' }, version: 0 }))
@@ -360,6 +380,77 @@ describe('session', () => {
       expect(await result).toBe('newer')
       expect(persisted()).toEqual(newer)
       expect(useAuthStore.getState().session).toEqual(newer)
+    })
+
+    // Loser-first race through the real session code in two module graphs (own store, own `refreshing`, same storage):
+    // this tab (A) and tab B both spend r; GitHub rejects B first and B persists its sign-out; A's 200 is still pending.
+    const persistedState = () => JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY)!).state
+    const outcome = <T>(p: Promise<T>) => p.then((value) => ({ value }), (error: unknown) => ({ error }))
+    const s1: Session = { accessToken: 's1', accessExpiresAt: 50_000_000, refreshToken: 'r1', refreshExpiresAt: 99_000_000 }
+    async function loserRejectedFirst() {
+      vi.resetModules()
+      const tabB = {
+        auth: await import('./github-auth'),
+        store: (await import('./useAuthStore')).useAuthStore,
+        session: await import('./session'),
+      }
+      expect(tabB.store).not.toBe(useAuthStore)
+      expect(tabB.store.getState().session).toEqual(base)
+      const winner = deferred<Session>()
+      const loser = deferred<Session>()
+      const refreshA = vi.fn(() => winner.promise)
+      const refreshB = vi.fn(() => loser.promise)
+      const resultA = outcome(forceRefresh({ now: () => 9_900_000, refresh: refreshA }))
+      const resultB = settled(tabB.session.forceRefresh({ now: () => 9_900_000, refresh: refreshB }))
+      await vi.waitFor(() => {
+        expect(refreshA).toHaveBeenCalledWith('r')
+        expect(refreshB).toHaveBeenCalledWith('r')
+      })
+      loser.reject(new tabB.auth.AuthError('refresh_failed'))
+      expect(await resultB).toMatchObject({ code: 'refresh_failed' })
+      expect(persistedState()).toEqual({ session: null, user: null, access: 'unknown' })
+      return { winner, refreshA, resultA }
+    }
+
+    it.each([
+      ['getAccessToken', getAccessToken],
+      ['forceRefresh', forceRefresh],
+    ])('a second %s caller joins the winning refresh instead of adopting the loser null', async (_name, call) => {
+      useAuthStore.setState({ session: base, user: { login: 'k', avatarUrl: '' }, access: 'ok' })
+      const { winner, refreshA, resultA } = await loserRejectedFirst()
+      // Another caller in this tab needs a token while this tab's refresh is still in flight.
+      const joined = outcome(call({ now: () => 9_900_000, refresh: refreshA }))
+      await new Promise((resolve) => setTimeout(resolve, 0))
+      winner.resolve(s1)
+      expect(await joined).toEqual({ value: 's1' })
+      expect(await resultA).toEqual({ value: 's1' })
+      expect(refreshA).toHaveBeenCalledTimes(1)
+      expect(useAuthStore.getState().session).toEqual(s1)
+      expect(persisted()).toEqual(s1)
+    })
+
+    it('keeps this tab user and access when it wins against a loser that was rejected first', async () => {
+      const user = { login: 'k', avatarUrl: 'https://avatars.example/k' }
+      useAuthStore.setState({ session: base, user, access: 'ok' })
+      const { winner, resultA } = await loserRejectedFirst()
+      winner.resolve(s1)
+      expect(await resultA).toEqual({ value: 's1' })
+      expect(useAuthStore.getState()).toMatchObject({ session: s1, user, access: 'ok' })
+      expect(persistedState()).toEqual({ session: s1, user, access: 'ok' })
+    })
+
+    it('keeps the user and access it adopted along with a newer session another tab stored', async () => {
+      useAuthStore.setState({ session: base, user: { login: 'k', avatarUrl: '' }, access: 'ok' })
+      const pending = deferred<Session>()
+      const refresh = vi.fn(() => pending.promise)
+      const result = forceRefresh({ now: () => 0, refresh })
+      await vi.waitFor(() => expect(refresh).toHaveBeenCalledTimes(1))
+      // e.g. a fresh sign-in in the other tab whose account is not known yet
+      persistNewer(newer)
+      pending.resolve({ accessToken: 'late', accessExpiresAt: 60_000_000, refreshToken: 'r-late', refreshExpiresAt: 99_000_000 })
+      expect(await result).toBe('newer')
+      expect(useAuthStore.getState()).toMatchObject({ session: newer, user: null, access: 'unknown' })
+      expect(persistedState()).toEqual({ session: newer, user: null, access: 'unknown' })
     })
   })
 

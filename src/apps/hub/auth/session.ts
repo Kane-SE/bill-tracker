@@ -19,9 +19,12 @@ let refreshing: Promise<Session> | null = null
  * stale refresh. `persist` is undefined when localStorage is unavailable; then everything runs from memory.
  */
 export async function forceRefresh(deps: SessionDeps = defaultDeps): Promise<string> {
+  // Join a refresh already in flight BEFORE rehydrating: meanwhile storage can hold a race loser's `null`, and copying
+  // it into memory would make this caller, and then the refresh itself, throw away the only live grant.
+  if (refreshing) return (await refreshing).accessToken
   const heldBefore = useAuthStore.getState().session?.accessToken
   await useAuthStore.persist?.rehydrate()
-  const { session, signOut, setSession } = useAuthStore.getState()
+  const { session, signOut, setSession, setUser, setAccess } = useAuthStore.getState()
   if (!session) throw new AuthError('expired')
   if (session.accessToken !== heldBefore && session.accessExpiresAt - deps.now() > REFRESH_MARGIN_MS) return session.accessToken
   if (session.refreshExpiresAt <= deps.now()) {
@@ -35,12 +38,18 @@ export async function forceRefresh(deps: SessionDeps = defaultDeps): Promise<str
       // This tab signed out while the refresh was in flight: respect it. Read memory BEFORE rehydrating, because a
       // persisted `null` is ambiguous (another tab's sign-out, or a race loser's rejected refresh) and GitHub has
       // already rotated the old refresh token, so `next` is the only live grant and must not be thrown away for it.
-      if (!useAuthStore.getState().session) throw new AuthError('expired')
+      const { session: held, user, access } = useAuthStore.getState()
+      if (!held) throw new AuthError('expired')
       await useAuthStore.persist?.rehydrate()
       const current = useAuthStore.getState().session
       if (current && current.refreshToken !== refreshed) return current
       try {
         setSession(next)
+        // If the rehydrate merged a race loser's signed-out `user: null, access: 'unknown'` along with its `null`
+        // session: `next` is still this tab's account, so keep what this tab knew about it.
+        const merged = useAuthStore.getState()
+        if (user && !merged.user) setUser(user)
+        if (access !== 'unknown' && merged.access === 'unknown') setAccess(access)
       } catch {
         // zustand updates memory before persisting. If persisting throws (e.g. storage quota), the tab keeps the new session.
       }
