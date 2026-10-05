@@ -1,18 +1,20 @@
 import { Link } from 'react-router-dom'
 import { ChevronLeft } from 'lucide-react'
 import { Button } from '@/shared/ui/button'
+import { cn } from '@/shared/lib/utils'
 
 interface PageHeaderProps {
   title: string
   subtitle?: string
   backTo?: string
   actions?: React.ReactNode
+  className?: string
 }
 
 /** Sticky top bar used across pages. */
-export function PageHeader({ title, subtitle, backTo, actions }: PageHeaderProps) {
+export function PageHeader({ title, subtitle, backTo, actions, className }: PageHeaderProps) {
   return (
-    <header className="sticky top-0 z-20 -mx-4 mb-4 border-b border-border bg-background/80 px-4 py-3 backdrop-blur">
+    <header className={cn('sticky top-0 z-20 -mx-4 mb-4 border-b border-border bg-background/80 px-4 py-3 backdrop-blur', className)}>
       <div className="flex items-center gap-2">
         {backTo && (
           <Button asChild variant="ghost" size="icon" className="-ml-2 shrink-0">
