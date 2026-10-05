@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { codeChallenge } from './pkce'
 import { AuthError, buildAuthorizeUrl, completeSignIn, hasAuthCallback, refreshSession, startSignIn, type AuthDeps, type Session } from './github-auth'
-import { useAuthStore } from './useAuthStore'
+import { AUTH_STORAGE_KEY, useAuthStore } from './useAuthStore'
 import { forceRefresh, getAccessToken } from './session'
 
 function memoryStorage() {
@@ -85,6 +85,54 @@ describe('sign-in', () => {
     expect(error).not.toBeInstanceOf(AuthError)
     expect(error).not.toBeInstanceOf(TypeError)
   })
+
+  it('rejects a callback with no usable stored state before calling the server', async () => {
+    const callbacks = ['?code=x&state=', '?code=x']
+    for (const search of callbacks) {
+      const fetchImpl = ok(tokenBody)
+      await expect(completeSignIn(search, { storage: memoryStorage(), fetch: fetchImpl, now: () => 0 })).rejects.toMatchObject({ code: 'state_mismatch' })
+      expect(fetchImpl).not.toHaveBeenCalled()
+    }
+    // each half of the stored pair is needed on its own
+    for (const [key, search] of [['hub-oauth-state', '?code=x&state=s'], ['hub-oauth-verifier', '?code=x']] as const) {
+      const storage = memoryStorage()
+      storage.setItem(key, 's')
+      const fetchImpl = ok(tokenBody)
+      await expect(completeSignIn(search, { storage, fetch: fetchImpl, now: () => 0 })).rejects.toMatchObject({ code: 'state_mismatch' })
+      expect(fetchImpl).not.toHaveBeenCalled()
+    }
+  })
+
+  it('does not let a callback be replayed', async () => {
+    const storage = memoryStorage()
+    const fetchImpl = ok(tokenBody)
+    const deps: AuthDeps = { storage, fetch: fetchImpl, now: () => 0 }
+    let target = ''
+    await startSignIn('https://nook.example', deps, (url) => { target = url }, 'Iv1.test')
+    const search = `?code=abc&state=${new URL(target).searchParams.get('state')!}`
+    await completeSignIn(search, deps)
+    expect(storage.getItem('hub-oauth-state')).toBeNull()
+    expect(storage.getItem('hub-oauth-verifier')).toBeNull()
+    await expect(completeSignIn(search, deps)).rejects.toMatchObject({ code: 'state_mismatch' })
+    expect(fetchImpl).toHaveBeenCalledTimes(1)
+  })
+
+  it('binds the authorize request to the verifier sent later and to the app origin', async () => {
+    const fetchImpl = ok(tokenBody)
+    const deps: AuthDeps = { storage: memoryStorage(), fetch: fetchImpl, now: () => 0 }
+    let target = ''
+    await startSignIn('https://nook.example', deps, (url) => { target = url }, 'Iv1.test')
+    const params = new URL(target).searchParams
+    await completeSignIn(`?code=abc&state=${params.get('state')!}`, deps)
+    const sent = JSON.parse((fetchImpl.mock.calls[0] as unknown as [string, RequestInit])[1].body as string)
+    expect(params.get('code_challenge')).toBe(await codeChallenge(sent.code_verifier))
+    expect(params.get('redirect_uri')).toBe('https://nook.example/')
+  })
+
+  it('does not treat a half callback as a callback', () => {
+    expect(hasAuthCallback('?code=a')).toBe(false)
+    expect(hasAuthCallback('?state=b')).toBe(false)
+  })
 })
 
 describe('session', () => {
@@ -136,5 +184,94 @@ describe('session', () => {
     expect(error).not.toBeInstanceOf(AuthError)
     expect(useAuthStore.getState().session).toEqual(base)
     expect(useAuthStore.getState().access).toBe('ok')
+  })
+
+  function deferred<T>() {
+    let resolve!: (value: T) => void
+    let reject!: (reason: unknown) => void
+    const promise = new Promise<T>((res, rej) => {
+      resolve = res
+      reject = rej
+    })
+    return { promise, resolve, reject }
+  }
+  const settled = (p: Promise<unknown>) => p.then(() => null, (e: unknown) => e)
+
+  it('does not undo a sign-out made while a refresh is in flight', async () => {
+    useAuthStore.setState({ session: base, user: { login: 'k', avatarUrl: '' }, access: 'ok' })
+    const pending = deferred<Session>()
+    const refresh = vi.fn(() => pending.promise)
+    const outcome = settled(forceRefresh({ now: () => 0, refresh }))
+    await vi.waitFor(() => expect(refresh).toHaveBeenCalledTimes(1))
+    useAuthStore.getState().signOut()
+    pending.resolve({ ...base, accessToken: 'new', refreshToken: 'r2' })
+    expect(await outcome).toMatchObject({ code: 'expired' })
+    expect(useAuthStore.getState().session).toBeNull()
+    expect(useAuthStore.getState().user).toBeNull()
+    expect(localStorage.getItem(AUTH_STORAGE_KEY)).toContain('"session":null')
+  })
+
+  it('does not let a rejected stale refresh clear a newer session', async () => {
+    useAuthStore.setState({ session: base })
+    const pending = deferred<Session>()
+    const refresh = vi.fn(() => pending.promise)
+    const outcome = settled(forceRefresh({ now: () => 0, refresh }))
+    await vi.waitFor(() => expect(refresh).toHaveBeenCalledTimes(1))
+    const newer: Session = { accessToken: 'newer', accessExpiresAt: 50_000_000, refreshToken: 'r-newer', refreshExpiresAt: 99_000_000 }
+    useAuthStore.setState({ session: newer })
+    pending.reject(new AuthError('refresh_failed'))
+    expect(await outcome).toMatchObject({ code: 'refresh_failed' })
+    expect(useAuthStore.getState().session).toEqual(newer)
+  })
+
+  it('does not overwrite a newer session when a stale refresh succeeds', async () => {
+    useAuthStore.setState({ session: base })
+    const pending = deferred<Session>()
+    const refresh = vi.fn(() => pending.promise)
+    const result = forceRefresh({ now: () => 0, refresh })
+    await vi.waitFor(() => expect(refresh).toHaveBeenCalledTimes(1))
+    const newer: Session = { accessToken: 'newer', accessExpiresAt: 50_000_000, refreshToken: 'r-newer', refreshExpiresAt: 99_000_000 }
+    useAuthStore.setState({ session: newer })
+    pending.resolve({ ...base, accessToken: 'stale-result', refreshToken: 'r-stale' })
+    expect(await result).toBe('newer')
+    expect(useAuthStore.getState().session).toEqual(newer)
+  })
+
+  describe('another tab already refreshed', () => {
+    const persistNewer = (session: Session) =>
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ state: { session, user: null, access: 'unknown' }, version: 0 }))
+
+    it.each([
+      ['getAccessToken', getAccessToken],
+      ['forceRefresh', forceRefresh],
+    ])('%s adopts the persisted session instead of spending the old refresh token', async (_name, call) => {
+      useAuthStore.setState({ session: base })
+      const newer: Session = { accessToken: 'newer', accessExpiresAt: 50_000_000, refreshToken: 'r-newer', refreshExpiresAt: 99_000_000 }
+      persistNewer(newer)
+      const refresh = vi.fn(async () => ({ ...base, accessToken: 'unexpected', refreshToken: 'r-unexpected', accessExpiresAt: 60_000_000 }))
+      expect(await call({ now: () => 9_900_000, refresh })).toBe('newer')
+      expect(refresh).not.toHaveBeenCalled()
+      expect(useAuthStore.getState().session).toEqual(newer)
+    })
+
+    it('refreshes with the persisted refresh token when that session is itself about to expire', async () => {
+      useAuthStore.setState({ session: base })
+      persistNewer({ accessToken: 'newer', accessExpiresAt: 9_950_000, refreshToken: 'r-newer', refreshExpiresAt: 99_000_000 })
+      const next: Session = { accessToken: 'fresh', accessExpiresAt: 60_000_000, refreshToken: 'r-fresh', refreshExpiresAt: 99_000_000 }
+      const refresh = vi.fn(async () => next)
+      expect(await forceRefresh({ now: () => 9_900_000, refresh })).toBe('fresh')
+      expect(refresh).toHaveBeenCalledTimes(1)
+      expect(refresh).toHaveBeenCalledWith('r-newer')
+      expect(useAuthStore.getState().session).toEqual(next)
+    })
+
+    it('signs this tab out when another tab signed out', async () => {
+      useAuthStore.setState({ session: base })
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ state: { session: null, user: null, access: 'unknown' }, version: 0 }))
+      const refresh = vi.fn()
+      await expect(forceRefresh({ now: () => 9_900_000, refresh })).rejects.toMatchObject({ code: 'expired' })
+      expect(refresh).not.toHaveBeenCalled()
+      expect(useAuthStore.getState().session).toBeNull()
+    })
   })
 })
