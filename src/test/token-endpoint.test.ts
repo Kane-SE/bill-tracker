@@ -51,3 +51,70 @@ describe('POST /api/github/token', () => {
     expect((await handleTokenRequest(post({ refresh_token: 'r' }), env, down)).status).toBe(502)
   })
 })
+
+describe('POST /api/github/token: origin handling', () => {
+  it.each(['null', 'not a url'])('rejects an unparseable Origin (%s) with 403 and never calls GitHub', async (origin) => {
+    const fetchImpl = github(tokens)
+    const res = await handleTokenRequest(post({ refresh_token: 'r' }, { origin }), env, fetchImpl)
+    expect(res.status).toBe(403)
+    expect(res.headers.get('cache-control')).toBe('no-store')
+    expect(await res.json()).toEqual({ error: 'forbidden_origin' })
+    expect(fetchImpl).not.toHaveBeenCalled()
+  })
+
+  it('accepts a request whose Origin matches the request host', async () => {
+    const fetchImpl = github(tokens)
+    const res = await handleTokenRequest(post({ refresh_token: 'r' }, { origin: 'https://nook.example' }), env, fetchImpl)
+    expect(res.status).toBe(200)
+    expect(fetchImpl).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('POST /api/github/token: upstream failures', () => {
+  const upstream = (body: string, status = 200) => vi.fn(async () => new Response(body, { status }))
+
+  it('answers 502 when GitHub itself fails (non-2xx)', async () => {
+    const html = await handleTokenRequest(post({ refresh_token: 'r' }), env, upstream('<html>Service Unavailable</html>', 503))
+    expect(html.status).toBe(502)
+    expect(await html.json()).toEqual({ error: 'github_error' })
+    const limited = await handleTokenRequest(post({ refresh_token: 'r' }), env, upstream('{"message":"slow down"}', 429))
+    expect(limited.status).toBe(502)
+    expect(await limited.json()).toEqual({ error: 'github_error' })
+  })
+
+  it('reports bad client credentials as a server config problem without echoing GitHub or the secrets', async () => {
+    const res = await handleTokenRequest(post({ refresh_token: 'r' }), env, upstream(JSON.stringify({ error: 'incorrect_client_credentials' })))
+    expect(res.status).toBe(500)
+    const text = await res.text()
+    expect(JSON.parse(text)).toEqual({ error: 'server_not_configured' })
+    expect(text).not.toContain('incorrect_client_credentials')
+    expect(text).not.toContain('Iv1.client')
+    expect(text).not.toContain('shh-secret')
+  })
+
+  it('answers 502 when a 2xx body is not usable tokens or an error', async () => {
+    const noRefresh = await handleTokenRequest(post({ refresh_token: 'r' }), env, upstream(JSON.stringify({ access_token: 'x' })))
+    expect(noRefresh.status).toBe(502)
+    expect(await noRefresh.json()).toEqual({ error: 'bad_upstream_response' })
+    const notJson = await handleTokenRequest(post({ refresh_token: 'r' }), env, upstream('<html>oops</html>'))
+    expect(notJson.status).toBe(502)
+    expect(await notJson.json()).toEqual({ error: 'bad_upstream_response' })
+  })
+
+  it('returns only the error code, never GitHub error_description (which could echo the request body)', async () => {
+    const echoing = vi.fn(async (_url: string | URL | Request, init?: RequestInit) =>
+      new Response(JSON.stringify({ error: 'bad_refresh_token', error_description: String(init?.body) }), { status: 200 }))
+    const res = await handleTokenRequest(post({ refresh_token: 'bad' }), env, echoing)
+    expect(res.status).toBe(400)
+    const text = await res.text()
+    expect(JSON.parse(text)).toEqual({ error: 'bad_refresh_token' })
+    expect(text).not.toContain('shh-secret')
+  })
+
+  it('gives the GitHub call a timeout signal', async () => {
+    const fetchImpl = github(tokens)
+    await handleTokenRequest(post({ refresh_token: 'r' }), env, fetchImpl)
+    const init = (fetchImpl.mock.calls[0] as unknown as [string, RequestInit])[1]
+    expect(init.signal).toBeInstanceOf(AbortSignal)
+  })
+})

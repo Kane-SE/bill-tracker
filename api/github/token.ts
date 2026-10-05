@@ -32,7 +32,15 @@ function json(status: number, body: unknown): Response {
 export async function handleTokenRequest(request: Request, env: TokenEnv, fetchImpl: typeof fetch = fetch): Promise<Response> {
   if (request.method !== 'POST') return json(405, { error: 'method_not_allowed' })
   const origin = request.headers.get('origin')
-  if (origin && new URL(origin).host !== new URL(request.url).host) return json(403, { error: 'forbidden_origin' })
+  if (origin) {
+    let sameHost = false
+    try {
+      sameHost = new URL(origin).host === new URL(request.url).host
+    } catch {
+      // An Origin that is not a URL ("null", garbage) is never ours.
+    }
+    if (!sameHost) return json(403, { error: 'forbidden_origin' })
+  }
 
   const clientId = env.GITHUB_CLIENT_ID
   const clientSecret = env.GITHUB_CLIENT_SECRET
@@ -57,16 +65,24 @@ export async function handleTokenRequest(request: Request, env: TokenEnv, fetchI
       method: 'POST',
       headers: { accept: 'application/json', 'content-type': 'application/json' },
       body: JSON.stringify({ client_id: clientId, client_secret: clientSecret, ...grant }),
+      signal: AbortSignal.timeout(10_000),
     })
   } catch {
     return json(502, { error: 'github_unreachable' })
   }
 
+  // GitHub reports OAuth errors (bad code, bad refresh token) as HTTP 200 with an `error` body,
+  // so a non-2xx answer means GitHub itself is failing, not that the caller's grant was rejected.
+  if (!upstream.ok) return json(502, { error: 'github_error' })
+
   const data: unknown = await upstream.json().catch(() => null)
   const parsed = githubTokenSchema.safeParse(data)
   if (!parsed.success) {
     const error = (data as { error?: unknown } | null)?.error
-    return json(400, { error: typeof error === 'string' ? error : 'token_exchange_failed' })
+    // Bad client credentials are our misconfiguration, not the caller's fault, and not theirs to see.
+    if (error === 'incorrect_client_credentials') return json(500, { error: 'server_not_configured' })
+    if (typeof error === 'string') return json(400, { error })
+    return json(502, { error: 'bad_upstream_response' })
   }
   const { access_token, expires_in, refresh_token, refresh_token_expires_in } = parsed.data
   return json(200, { access_token, expires_in, refresh_token, refresh_token_expires_in })
