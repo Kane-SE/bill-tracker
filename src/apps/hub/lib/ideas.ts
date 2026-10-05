@@ -123,12 +123,29 @@ function locate(text: string, id: string) {
   return { ...parts, block }
 }
 
+/** Indexes of the block's lines outside code fences (fence lines themselves excluded), as parseIdeas reads them. */
+function plainLineIndexes(lines: string[], block: Block): number[] {
+  const indexes: number[] = []
+  let inFence = false
+  for (let i = block.start + 1; i < block.end; i++) {
+    if (FENCE.test(lines[i])) {
+      inFence = !inFence
+      continue
+    }
+    if (!inFence) indexes.push(i)
+  }
+  return indexes
+}
+
 /** Insert a progress line after the block's last progress line, or start a list after its last content line. */
 function insertProgress(lines: string[], block: Block, entry: string): void {
   let lastProgress = -1
-  for (let i = block.start + 1; i < block.end; i++) if (PROGRESS_LINE.test(lines[i])) lastProgress = i
+  for (const i of plainLineIndexes(lines, block)) if (PROGRESS_LINE.test(lines[i])) lastProgress = i
   if (lastProgress >= 0) {
-    lines.splice(lastProgress + 1, 0, entry)
+    // Keep the entry's own indented sub-bullets and continuation lines above the new entry.
+    let at = lastProgress + 1
+    while (at < block.end && lines[at].trim() !== '' && /^\s/.test(lines[at]) && !FENCE.test(lines[at])) at++
+    lines.splice(at, 0, entry)
     return
   }
   let last = block.end - 1
@@ -144,13 +161,7 @@ export function addNoteText(text: string, id: string, note: string, today: strin
 
 export function moveStageText(text: string, id: string, stage: Stage, today: string, why?: string): string {
   const { lines, eol, trailingNewline, block } = locate(text, id)
-  let stageAt = -1
-  for (let i = block.start + 1; i < block.end; i++) {
-    if (STAGE_LINE.test(lines[i].trim())) {
-      stageAt = i
-      break
-    }
-  }
+  const stageAt = plainLineIndexes(lines, block).find((i) => STAGE_LINE.test(lines[i].trim())) ?? -1
   if (stageAt >= 0) {
     lines[stageAt] = `Stage: ${stage}`
   } else {
@@ -162,10 +173,17 @@ export function moveStageText(text: string, id: string, stage: Stage, today: str
   return joinLines(lines, eol, trailingNewline)
 }
 
+/** A note sits on a line of its own, so a leading block marker would become file structure; escape it. */
+const BLOCK_MARKER = /^(#|`|~|[-*+>]|<!--|\d+[.)]|(Stage|Added):)/i
+
+function escapeBlockMarker(note: string): string {
+  return BLOCK_MARKER.test(note) ? `\\${note}` : note
+}
+
 export function addIdeaText(text: string | null, input: { title: string; note?: string }, today: string): string {
   const title = oneLine(input.title)
   if (!title) throw new Error('Title is required')
-  const note = input.note ? oneLine(input.note) : ''
+  const note = input.note ? escapeBlockMarker(oneLine(input.note)) : ''
   const block = [`## ${title}`, 'Stage: idea', `Added: ${today}`, '']
   if (note) block.push(note, '')
   block.push(`- ${today} — Idea captured`)

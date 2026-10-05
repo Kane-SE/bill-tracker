@@ -158,3 +158,97 @@ describe('addIdeaText', () => {
     expect(() => addIdeaText(null, { title: '   ' }, TODAY)).toThrow('Title is required')
   })
 })
+
+describe('addIdeaText keeps a note that starts with block markdown from becoming file structure', () => {
+  it.each(['```js', '## Why', '# Context', '- 2026-01-01 — x', 'Stage: building', 'Added: nope'])(
+    'neutralises a leading marker in %j',
+    (note) => {
+      const first = addIdeaText(null, { title: 'First', note }, TODAY)
+      const both = addIdeaText(first, { title: 'Second' }, TODAY)
+      const ideas = parseIdeas(both)
+      expect(ideas.map((i) => i.id)).toEqual(['first', 'second'])
+      expect(ideas[0]).toMatchObject({ stage: 'idea', added: TODAY, note: '\\' + note })
+      expect(ideas[0].progress).toEqual([{ date: TODAY, text: 'Idea captured' }])
+      expect(ideas[1].progress).toEqual([{ date: TODAY, text: 'Idea captured' }])
+
+      const noted = parseIdeas(addNoteText(both, 'second', 'later', TODAY))
+      expect(noted[1].progress.map((p) => p.text)).toEqual(['Idea captured', 'later'])
+    },
+  )
+})
+
+describe('code fences inside an idea are never treated as progress or Stage lines', () => {
+  it('adds a note after the real last progress line, outside a fenced example', () => {
+    const text = [
+      '## Gamma',
+      'Stage: idea',
+      '',
+      '- 2026-09-01 — real',
+      '',
+      '```',
+      '- 2026-01-01 — example',
+      '```',
+      '',
+    ].join('\n')
+    const out = addNoteText(text, 'gamma', 'new', TODAY)
+    const expected = lines(text)
+    expected.splice(expected.indexOf('- 2026-09-01 — real') + 1, 0, '- 2026-10-05 — new')
+    expect(out).toBe(expected.join('\n'))
+    expect(parseIdeas(out)[0].progress.map((p) => p.text)).toEqual(['real', 'new'])
+  })
+
+  it('leaves a fenced "Stage:" line alone and inserts a real Stage line under the heading', () => {
+    const text = ['## Delta', 'Added: 2026-09-01', '', '```', 'Stage: building', '```', ''].join('\n')
+    const out = moveStageText(text, 'delta', 'exploring', TODAY)
+    const outLines = lines(out)
+    expect(outLines.filter((l) => l === 'Stage: building')).toHaveLength(1)
+    expect(outLines.indexOf('```') + 1).toBe(outLines.indexOf('Stage: building'))
+    expect(outLines[outLines.indexOf('## Delta') + 1]).toBe('Stage: exploring')
+    expect(parseIdeas(out)[0].stage).toBe('exploring')
+  })
+
+  it('does not insert a note inside an indented fence that follows the last progress line', () => {
+    const text = ['## Eps', 'Stage: idea', '', '- 2026-09-01 — with code', '  ```', '  - 2026-01-01 — inside', '', '  more', '  ```', ''].join('\n')
+    const out = addNoteText(text, 'eps', 'new', TODAY)
+    const expected = lines(text)
+    expected.splice(expected.indexOf('- 2026-09-01 — with code') + 1, 0, '- 2026-10-05 — new')
+    expect(out).toBe(expected.join('\n'))
+    expect(parseIdeas(out)[0].progress.map((p) => p.text)).toEqual(['with code', 'new'])
+  })
+})
+
+describe('a new entry stays below the last entry\'s own indented sub-bullets and continuation lines', () => {
+  const SUBBULLETS = [
+    '# Ideas',
+    '',
+    '## Alpha',
+    'Stage: idea',
+    'Added: 2026-09-01',
+    '',
+    'Alpha note.',
+    '',
+    '- 2026-09-01 — first',
+    '- 2026-09-02 — second',
+    '  - detail of second',
+    '  continuation of second',
+    '',
+    '## Beta',
+    'Stage: idea',
+    '',
+  ].join('\n')
+
+  it('addNoteText inserts after the indented lines', () => {
+    const out = addNoteText(SUBBULLETS, 'alpha', 'new', TODAY)
+    const expected = lines(SUBBULLETS)
+    expected.splice(expected.indexOf('  continuation of second') + 1, 0, '- 2026-10-05 — new')
+    expect(out).toBe(expected.join('\n'))
+  })
+
+  it('moveStageText inserts after the indented lines', () => {
+    const out = moveStageText(SUBBULLETS, 'alpha', 'building', TODAY)
+    const expected = lines(SUBBULLETS)
+    expected[expected.indexOf('Stage: idea')] = 'Stage: building'
+    expected.splice(expected.indexOf('  continuation of second') + 1, 0, '- 2026-10-05 — Moved to building')
+    expect(out).toBe(expected.join('\n'))
+  })
+})
