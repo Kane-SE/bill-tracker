@@ -28,7 +28,7 @@ export const PALETTES: { value: Palette; label: string }[] = [
 ]
 
 const THEME_KEY = 'bill-splitter-theme'
-/** Last status-bar hex, read by the inline script in index.html before any JS/CSS loads (iOS reads it at launch). */
+/** Last status-bar hex, read by public/status-bar.js before any JS/CSS loads (iOS reads it at launch). */
 export const STATUS_BAR_KEY = 'bill-splitter-status-bar'
 const DEFAULT: ThemeChoice = { palette: 'default', mode: 'dark' }
 

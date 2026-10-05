@@ -2,7 +2,7 @@
 
 A mobile-first Progressive Web App to track **who owes whom** after hanging out
 with friends, when one (or more) people front the bills. Runs fully offline and
-stores everything in your browser — no account, no server.
+stores everything in your browser — Split needs no account and no server.
 
 Split lives inside **Nook**, a small app launcher: the PWA's home screen (`/`)
 is a grid of mini-apps, and Split is the first one. See
