@@ -273,5 +273,63 @@ describe('session', () => {
       expect(refresh).not.toHaveBeenCalled()
       expect(useAuthStore.getState().session).toBeNull()
     })
+
+    // The concurrent case: both tabs spent the same single-use refresh token while it was still the stored one.
+    const persisted = () => JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY)!).state.session as Session | null
+    const newer: Session = { accessToken: 'newer', accessExpiresAt: 50_000_000, refreshToken: 'r1', refreshExpiresAt: 99_000_000 }
+
+    it('adopts the session the winning tab stored instead of signing out when this refresh is rejected', async () => {
+      useAuthStore.setState({ session: base, user: { login: 'k', avatarUrl: '' }, access: 'ok' })
+      const pending = deferred<Session>()
+      const refresh = vi.fn(() => pending.promise)
+      const outcome = settled(forceRefresh({ now: () => 0, refresh }))
+      await vi.waitFor(() => expect(refresh).toHaveBeenCalledTimes(1))
+      persistNewer(newer)
+      pending.reject(new AuthError('refresh_failed'))
+      expect(await outcome).toMatchObject({ code: 'refresh_failed' })
+      expect(useAuthStore.getState().session).toEqual(newer)
+      expect(persisted()).toEqual(newer)
+    })
+
+    it('respects a sign-out another tab made while this refresh was in flight', async () => {
+      useAuthStore.setState({ session: base, user: { login: 'k', avatarUrl: '' }, access: 'ok' })
+      const pending = deferred<Session>()
+      const refresh = vi.fn(() => pending.promise)
+      const outcome = settled(forceRefresh({ now: () => 0, refresh }))
+      await vi.waitFor(() => expect(refresh).toHaveBeenCalledTimes(1))
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ state: { session: null, user: null, access: 'unknown' }, version: 0 }))
+      pending.resolve({ accessToken: 'late', accessExpiresAt: 60_000_000, refreshToken: 'r-late', refreshExpiresAt: 99_000_000 })
+      expect(await outcome).toMatchObject({ code: 'expired' })
+      expect(persisted()).toBeNull()
+      expect(useAuthStore.getState().session).toBeNull()
+    })
+
+    it('does not overwrite a newer session another tab stored while this refresh was in flight', async () => {
+      useAuthStore.setState({ session: base })
+      const pending = deferred<Session>()
+      const refresh = vi.fn(() => pending.promise)
+      const result = forceRefresh({ now: () => 0, refresh })
+      await vi.waitFor(() => expect(refresh).toHaveBeenCalledTimes(1))
+      persistNewer(newer)
+      pending.resolve({ accessToken: 'late', accessExpiresAt: 60_000_000, refreshToken: 'r-late', refreshExpiresAt: 99_000_000 })
+      expect(await result).toBe('newer')
+      expect(persisted()).toEqual(newer)
+      expect(useAuthStore.getState().session).toEqual(newer)
+    })
+  })
+
+  it('still refreshes from memory when persistence is unavailable', async () => {
+    useAuthStore.setState({ session: base })
+    const next: Session = { accessToken: 'fresh', accessExpiresAt: 60_000_000, refreshToken: 'r-fresh', refreshExpiresAt: 99_000_000 }
+    const refresh = vi.fn(async () => next)
+    const original = useAuthStore.persist
+    Object.defineProperty(useAuthStore, 'persist', { value: undefined, configurable: true, writable: true })
+    try {
+      expect(await forceRefresh({ now: () => 9_900_000, refresh })).toBe('fresh')
+    } finally {
+      Object.defineProperty(useAuthStore, 'persist', { value: original, configurable: true, writable: true })
+    }
+    expect(refresh).toHaveBeenCalledWith('r')
+    expect(useAuthStore.getState().session).toEqual(next)
   })
 })

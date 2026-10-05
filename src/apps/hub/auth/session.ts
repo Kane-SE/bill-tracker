@@ -14,12 +14,13 @@ let refreshing: Promise<Session> | null = null
 
 /**
  * Refresh now. Concurrent callers share one request. GitHub rejecting the refresh signs out; being offline does not.
- * Refresh tokens are single-use and the store does not sync between tabs, so first adopt whatever another tab has
- * persisted, and when the refresh settles only touch the store if it still holds the session that was refreshed.
+ * Refresh tokens are single-use and the store does not sync between tabs, so adopt whatever another tab has persisted
+ * before refreshing and again when the refresh settles, and only touch the store if it still holds the session that
+ * was refreshed. `persist` is undefined when localStorage is unavailable; then everything runs from memory.
  */
 export async function forceRefresh(deps: SessionDeps = defaultDeps): Promise<string> {
   const heldBefore = useAuthStore.getState().session?.accessToken
-  await useAuthStore.persist.rehydrate()
+  await useAuthStore.persist?.rehydrate()
   const { session, signOut, setSession } = useAuthStore.getState()
   if (!session) throw new AuthError('expired')
   if (session.accessToken !== heldBefore && session.accessExpiresAt - deps.now() > REFRESH_MARGIN_MS) return session.accessToken
@@ -30,14 +31,16 @@ export async function forceRefresh(deps: SessionDeps = defaultDeps): Promise<str
   const refreshed = session.refreshToken
   refreshing ??= deps
     .refresh(refreshed)
-    .then((next) => {
+    .then(async (next) => {
+      await useAuthStore.persist?.rehydrate()
       const current = useAuthStore.getState().session
       if (!current) throw new AuthError('expired')
       if (current.refreshToken !== refreshed) return current
       setSession(next)
       return next
     })
-    .catch((error: unknown) => {
+    .catch(async (error: unknown) => {
+      await useAuthStore.persist?.rehydrate()
       if (error instanceof AuthError && useAuthStore.getState().session?.refreshToken === refreshed) signOut()
       throw error
     })
