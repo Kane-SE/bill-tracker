@@ -9,6 +9,7 @@ import { downloadJson, readFileAsText } from '@/shared/lib/file'
 import { applyBackup, buildBackup, parseBackup } from '@/settings/backup'
 import { applyTheme, DEFAULT_CUSTOM, getStoredTheme, PALETTES, type Palette, type ThemeChoice } from '@/shared/lib/theme'
 import { CustomPaletteDialog } from '@/settings/CustomPaletteDialog'
+import { GitHubCard } from '@/settings/GitHubCard'
 import type { CustomColors } from '@/shared/lib/palette'
 import { toast } from 'sonner'
 
@@ -108,6 +109,8 @@ export function Settings() {
         initial={theme.custom ?? DEFAULT_CUSTOM}
         onSave={(custom: CustomColors) => updateTheme({ ...theme, palette: 'custom', custom })}
       />
+
+      <GitHubCard />
 
       <Card className="mb-5">
         <CardHeader>
