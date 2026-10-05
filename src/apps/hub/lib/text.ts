@@ -50,7 +50,7 @@ export function slugify(title: string): string {
     .replace(/đ/g, 'd')
     .replace(/Đ/g, 'D')
     .normalize('NFKD')
-    .replace(/[̀-ͯ]/g, '')
+    .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')

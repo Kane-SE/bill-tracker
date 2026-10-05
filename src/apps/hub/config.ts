@@ -14,7 +14,8 @@ export const THRESHOLDS = {
   staleDays: 14,
 } as const
 
-export type Thresholds = typeof THRESHOLDS
+/** Widened from the `as const` literal types so a `t: Thresholds` parameter accepts custom numbers. */
+export type Thresholds = { readonly [K in keyof typeof THRESHOLDS]: number }
 
 export const NOW_DIR = 'now'
 export const PROJECTS_PATH = 'projects.md'
