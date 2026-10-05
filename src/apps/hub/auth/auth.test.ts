@@ -291,17 +291,62 @@ describe('session', () => {
       expect(persisted()).toEqual(newer)
     })
 
-    it('respects a sign-out another tab made while this refresh was in flight', async () => {
+    // A persisted `null` can be a race loser's rejected refresh, not a sign-out, and by now GitHub has rotated the old
+    // refresh token: the fresh session is the only live grant, so it must win over a persisted `null`.
+    it('keeps its fresh session when storage was nulled while the refresh was in flight', async () => {
       useAuthStore.setState({ session: base, user: { login: 'k', avatarUrl: '' }, access: 'ok' })
       const pending = deferred<Session>()
       const refresh = vi.fn(() => pending.promise)
-      const outcome = settled(forceRefresh({ now: () => 0, refresh }))
+      const result = forceRefresh({ now: () => 0, refresh })
       await vi.waitFor(() => expect(refresh).toHaveBeenCalledTimes(1))
       localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ state: { session: null, user: null, access: 'unknown' }, version: 0 }))
-      pending.resolve({ accessToken: 'late', accessExpiresAt: 60_000_000, refreshToken: 'r-late', refreshExpiresAt: 99_000_000 })
-      expect(await outcome).toMatchObject({ code: 'expired' })
+      const fresh: Session = { accessToken: 'fresh', accessExpiresAt: 60_000_000, refreshToken: 'r-fresh', refreshExpiresAt: 99_000_000 }
+      pending.resolve(fresh)
+      expect(await result).toBe('fresh')
+      expect(useAuthStore.getState().session).toEqual(fresh)
+      expect(persisted()).toEqual(fresh)
+    })
+
+    it('survives the two-tab race when the loser is rejected first and has already persisted null', async () => {
+      useAuthStore.setState({ session: base, user: { login: 'k', avatarUrl: '' }, access: 'ok' })
+      // A second tab: a separate module graph (own store, own `refreshing`) over the same storage.
+      vi.resetModules()
+      const tabB = {
+        auth: await import('./github-auth'),
+        store: (await import('./useAuthStore')).useAuthStore,
+        session: await import('./session'),
+      }
+      expect(tabB.store).not.toBe(useAuthStore)
+      expect(tabB.store.getState().session).toEqual(base)
+
+      const winner = deferred<Session>()
+      const loser = deferred<Session>()
+      const refreshA = vi.fn(() => winner.promise)
+      const refreshB = vi.fn(() => loser.promise)
+      const resultA = forceRefresh({ now: () => 0, refresh: refreshA })
+      const resultB = settled(tabB.session.forceRefresh({ now: () => 0, refresh: refreshB }))
+      await vi.waitFor(() => {
+        expect(refreshA).toHaveBeenCalledWith('r')
+        expect(refreshB).toHaveBeenCalledWith('r')
+      })
+
+      // GitHub rejects the loser first: it signs itself out and persists null...
+      loser.reject(new tabB.auth.AuthError('refresh_failed'))
+      expect(await resultB).toMatchObject({ code: 'refresh_failed' })
       expect(persisted()).toBeNull()
-      expect(useAuthStore.getState().session).toBeNull()
+
+      // ...then the winner's grant arrives, and it is the only live one.
+      const s1: Session = { accessToken: 's1', accessExpiresAt: 50_000_000, refreshToken: 'r1', refreshExpiresAt: 99_000_000 }
+      winner.resolve(s1)
+      expect(await resultA).toBe('s1')
+      expect(useAuthStore.getState().session).toEqual(s1)
+      expect(persisted()).toEqual(s1)
+
+      const s2: Session = { accessToken: 's2', accessExpiresAt: 60_000_000, refreshToken: 'r2', refreshExpiresAt: 99_000_000 }
+      const refreshAgain = vi.fn(async () => s2)
+      expect(await forceRefresh({ now: () => 0, refresh: refreshAgain })).toBe('s2')
+      expect(refreshAgain).toHaveBeenCalledWith('r1')
+      expect(persisted()).toEqual(s2)
     })
 
     it('does not overwrite a newer session another tab stored while this refresh was in flight', async () => {
@@ -331,5 +376,36 @@ describe('session', () => {
     }
     expect(refresh).toHaveBeenCalledWith('r')
     expect(useAuthStore.getState().session).toEqual(next)
+  })
+
+  it('keeps the new session in memory when persisting it fails', async () => {
+    useAuthStore.setState({ session: base })
+    const next: Session = { accessToken: 'fresh', accessExpiresAt: 60_000_000, refreshToken: 'r-fresh', refreshExpiresAt: 99_000_000 }
+    const refresh = vi.fn(async () => next)
+    const realSetItem = localStorage.setItem.bind(localStorage)
+    const setItem = vi.spyOn(localStorage, 'setItem').mockImplementation((key, value) => {
+      if (value.includes('r-fresh')) throw new Error('QuotaExceededError')
+      realSetItem(key, value)
+    })
+    try {
+      expect(await forceRefresh({ now: () => 9_900_000, refresh })).toBe('fresh')
+      expect(setItem).toHaveBeenCalled()
+    } finally {
+      setItem.mockRestore()
+    }
+    expect(useAuthStore.getState().session).toEqual(next)
+  })
+
+  it('still signs out on a rejected grant when persistence is unavailable', async () => {
+    useAuthStore.setState({ session: base })
+    const refresh = vi.fn(async () => { throw new AuthError('refresh_failed') })
+    const original = useAuthStore.persist
+    Object.defineProperty(useAuthStore, 'persist', { value: undefined, configurable: true, writable: true })
+    try {
+      await expect(forceRefresh({ now: () => 9_900_000, refresh })).rejects.toMatchObject({ code: 'refresh_failed' })
+    } finally {
+      Object.defineProperty(useAuthStore, 'persist', { value: original, configurable: true, writable: true })
+    }
+    expect(useAuthStore.getState().session).toBeNull()
   })
 })

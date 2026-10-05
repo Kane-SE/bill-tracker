@@ -15,8 +15,8 @@ let refreshing: Promise<Session> | null = null
 /**
  * Refresh now. Concurrent callers share one request. GitHub rejecting the refresh signs out; being offline does not.
  * Refresh tokens are single-use and the store does not sync between tabs, so adopt whatever another tab has persisted
- * before refreshing and again when the refresh settles, and only touch the store if it still holds the session that
- * was refreshed. `persist` is undefined when localStorage is unavailable; then everything runs from memory.
+ * before refreshing and again when the refresh settles, and never overwrite a newer session with the result of a
+ * stale refresh. `persist` is undefined when localStorage is unavailable; then everything runs from memory.
  */
 export async function forceRefresh(deps: SessionDeps = defaultDeps): Promise<string> {
   const heldBefore = useAuthStore.getState().session?.accessToken
@@ -32,11 +32,18 @@ export async function forceRefresh(deps: SessionDeps = defaultDeps): Promise<str
   refreshing ??= deps
     .refresh(refreshed)
     .then(async (next) => {
+      // This tab signed out while the refresh was in flight: respect it. Read memory BEFORE rehydrating, because a
+      // persisted `null` is ambiguous (another tab's sign-out, or a race loser's rejected refresh) and GitHub has
+      // already rotated the old refresh token, so `next` is the only live grant and must not be thrown away for it.
+      if (!useAuthStore.getState().session) throw new AuthError('expired')
       await useAuthStore.persist?.rehydrate()
       const current = useAuthStore.getState().session
-      if (!current) throw new AuthError('expired')
-      if (current.refreshToken !== refreshed) return current
-      setSession(next)
+      if (current && current.refreshToken !== refreshed) return current
+      try {
+        setSession(next)
+      } catch {
+        // zustand updates memory before persisting. If persisting throws (e.g. storage quota), the tab keeps the new session.
+      }
       return next
     })
     .catch(async (error: unknown) => {
