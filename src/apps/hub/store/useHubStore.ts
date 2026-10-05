@@ -7,6 +7,7 @@ import { AuthError } from '@/apps/hub/auth/github-auth'
 import { parseNowNote } from '@/apps/hub/lib/parse-now'
 import { parseProjects } from '@/apps/hub/lib/parse-projects'
 import { addIdeaText, addNoteText, IdeaNotFoundError, moveStageText, parseIdeas } from '@/apps/hub/lib/ideas'
+import { oneLine } from '@/apps/hub/lib/text'
 import type { Idea, Project, Stage, WipCard } from '@/apps/hub/lib/types'
 
 /**
@@ -107,12 +108,35 @@ const sectionOf = (path: string): keyof SectionErrors =>
   path === PROJECTS_PATH ? 'projects' : path === IDEAS_PATH ? 'ideas' : 'now'
 
 let syncing: Promise<void> | null = null
+/** Bumped by every refresh and by reset(); a refresh that is no longer the latest drops its result. */
+let generation = 0
 
 export const useHubStore = create<HubState>()(
   persist(
     (set, get) => {
       const storeIdeas = (file: CachedFile) => set((s) => ({ files: { ...s.files, [IDEAS_PATH]: file } }))
       const titleOf = (id: string) => parseIdeas(get().files[IDEAS_PATH]?.text ?? null).find((i) => i.id === id)?.title ?? id
+
+      const runSync = async (client: GitHubClient): Promise<void> => {
+        try {
+          for (const item of [...get().pending]) {
+            const file = await writeIdeasFile(
+              client,
+              (text) => {
+                // Already there (a previous save landed but its response was lost): nothing to write.
+                // Compare the whole would-be idea so a same-titled one with another note still gets written.
+                const want = parseIdeas(addIdeaText(null, { title: item.title, note: item.note }, item.createdOn))[0] as Idea | undefined
+                const present = want !== undefined && parseIdeas(text).some((idea) => idea.title === want.title && idea.added === want.added && idea.note === want.note)
+                return present ? null : addIdeaText(text, { title: item.title, note: item.note }, item.createdOn)
+              },
+              `hub: add idea "${oneLine(item.title)}"`,
+            )
+            set((s) => ({ files: { ...s.files, [IDEAS_PATH]: file }, pending: s.pending.filter((p) => p.localId !== item.localId) }))
+          }
+        } catch (error) {
+          if (!isNetworkError(error) && !(error instanceof AuthError)) throw error
+        }
+      }
 
       return {
         files: {},
@@ -124,6 +148,7 @@ export const useHubStore = create<HubState>()(
         pending: [],
 
         async refresh(client, now = Date.now()) {
+          const gen = ++generation
           const start = get()
           if (!start.fetchedAt) set({ status: 'loading' })
           const errors: SectionErrors = { ...NO_ERRORS }
@@ -143,7 +168,7 @@ export const useHubStore = create<HubState>()(
             }
           } catch (error) {
             if (error instanceof AuthError) {
-              set({ status: start.fetchedAt ? 'ready' : 'idle' })
+              if (gen === generation) set({ status: start.fetchedAt ? 'ready' : 'idle' })
               return
             }
             if (isNetworkError(error)) offline = true
@@ -167,15 +192,26 @@ export const useHubStore = create<HubState>()(
             })
           }
 
+          // A newer refresh or a reset happened meanwhile: this result is stale, drop it whole.
+          if (gen !== generation) return
           if (offline) {
             set({ status: 'offline' })
             return
           }
-          set({ files, nowFiles, nowListEtag, errors, status: 'ready', fetchedAt: now })
+          set((s) => {
+            // A write that landed while this refresh was in flight wins over what the refresh read before it.
+            const merged = { ...s.files }
+            for (const path of new Set([...Object.keys(start.files), ...Object.keys(files)])) {
+              if (s.files[path] !== start.files[path]) continue
+              if (files[path]) merged[path] = files[path]
+              else delete merged[path]
+            }
+            return { files: merged, nowFiles, nowListEtag, errors, status: 'ready', fetchedAt: now }
+          })
         },
 
         async addIdea(client, input, today) {
-          const title = input.title.trim()
+          const title = oneLine(input.title)
           if (!title) throw new Error('Title is required')
           const note = input.note?.trim() || undefined
           try {
@@ -197,30 +233,15 @@ export const useHubStore = create<HubState>()(
         },
 
         syncPending(client) {
-          syncing ??= (async () => {
-            try {
-              for (const item of [...get().pending]) {
-                const file = await writeIdeasFile(
-                  client,
-                  (text) =>
-                    // Already there (a previous save landed but its response was lost): nothing to write.
-                    parseIdeas(text).some((idea) => idea.title === item.title && idea.added === item.createdOn)
-                      ? null
-                      : addIdeaText(text, { title: item.title, note: item.note }, item.createdOn),
-                  `hub: add idea "${item.title}"`,
-                )
-                set((s) => ({ files: { ...s.files, [IDEAS_PATH]: file }, pending: s.pending.filter((p) => p.localId !== item.localId) }))
-              }
-            } catch (error) {
-              if (!isNetworkError(error) && !(error instanceof AuthError)) throw error
-            } finally {
-              syncing = null
-            }
-          })()
+          // `.finally` always runs after this assignment, even when the queue is empty and runSync settles at once.
+          syncing ??= runSync(client).finally(() => {
+            syncing = null
+          })
           return syncing
         },
 
         reset() {
+          generation++
           set({ files: {}, nowFiles: [], nowListEtag: null, fetchedAt: null, status: 'idle', errors: NO_ERRORS })
         },
       }
