@@ -104,6 +104,10 @@ export function createGitHubClient(deps: ClientDeps): GitHubClient {
       if (!res.ok) throw new GitHubError(res.status, `Could not load ${path}`)
       const body = await res.json()
       if (Array.isArray(body) || typeof body.content !== 'string') throw new GitHubError(422, `${path} is not a file`)
+      // Over 1 MB the API sends `content: ""` with `encoding: "none"`; reading that as an empty file would let a later write overwrite the real one.
+      if ((body.encoding !== undefined && body.encoding !== 'base64') || (typeof body.size === 'number' && body.size > 0 && body.content === '')) {
+        throw new GitHubError(413, `${path} is too large to read through the GitHub API`)
+      }
       return { status: 'ok', value: { text: decodeBase64Utf8(body.content), sha: String(body.sha) }, etag: res.headers.get('etag') }
     },
 

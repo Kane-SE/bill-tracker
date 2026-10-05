@@ -69,3 +69,85 @@ describe('GitHub client', () => {
     expect(await setup(() => res(403)).client.checkAccess()).toBe(false)
   })
 })
+
+describe('GitHub client: files too large for the contents API', () => {
+  it('rejects a file the API returned without content (encoding none) instead of reading it as empty', async () => {
+    const { client } = setup(() => res(200, { type: 'file', encoding: 'none', content: '', size: 2_000_000, sha: 's' }))
+    const err = await client.getFile('ideas.md').catch((e: unknown) => e)
+    expect(err).toBeInstanceOf(GitHubError)
+    expect(err).toMatchObject({ status: 413 })
+    expect((err as Error).message).toMatch(/too large/)
+  })
+
+  it('still decodes a normal base64 file that declares its encoding', async () => {
+    const { client } = setup(() => res(200, { type: 'file', encoding: 'base64', content: encodeBase64Utf8('Ý tưởng\n'), size: 12, sha: 's' }, { etag: 'W/"2"' }))
+    expect(await client.getFile('ideas.md')).toEqual({ status: 'ok', etag: 'W/"2"', value: { text: 'Ý tưởng\n', sha: 's' } })
+  })
+
+  it('rejects empty content for a non-empty file even when the encoding field is missing', async () => {
+    const { client } = setup(() => res(200, { type: 'file', content: '', size: 5, sha: 's' }))
+    await expect(client.getFile('ideas.md')).rejects.toMatchObject({ name: 'GitHubError', status: 413 })
+  })
+
+  it('still reads a genuinely empty file', async () => {
+    const { client } = setup(() => res(200, { type: 'file', encoding: 'base64', content: '', size: 0, sha: 'e' }))
+    expect(await client.getFile('ideas.md')).toEqual({ status: 'ok', etag: null, value: { text: '', sha: 'e' } })
+  })
+})
+
+describe('GitHub client: contract paths the store relies on', () => {
+  it('gives up after a second 401: one refresh, two fetches, GitHubError 401', async () => {
+    const { client, refreshToken, fetchImpl } = setup(() => res(401))
+    const err = await client.getFile('ideas.md').catch((e: unknown) => e)
+    expect(err).toBeInstanceOf(GitHubError)
+    expect(err).toMatchObject({ status: 401 })
+    expect(refreshToken).toHaveBeenCalledTimes(1)
+    expect(fetchImpl).toHaveBeenCalledTimes(2)
+  })
+
+  it('lets a network TypeError from fetch through as the same object, without refreshing', async () => {
+    const offline = new TypeError('Failed to fetch')
+    const { client, refreshToken } = setup(() => {
+      throw offline
+    })
+    await expect(client.getFile('ideas.md')).rejects.toBe(offline)
+    expect(refreshToken).not.toHaveBeenCalled()
+  })
+
+  it('propagates a rejecting refreshToken unchanged', async () => {
+    const failure = new Error('refresh failed')
+    const fetchImpl = vi.fn(async () => res(401))
+    const client = createGitHubClient({ repo: 'Kane-SE/personal-hub', fetch: fetchImpl as unknown as typeof fetch, getToken: async () => 'tok', refreshToken: async () => Promise.reject(failure) })
+    await expect(client.getUser()).rejects.toBe(failure)
+    expect(fetchImpl).toHaveBeenCalledTimes(1)
+  })
+
+  it('maps a 422 on PUT to ConflictError', async () => {
+    const { client } = setup(() => res(422, { message: 'sha does not match' }))
+    await expect(client.putFile('ideas.md', 'x', 'stale', 'm')).rejects.toBeInstanceOf(ConflictError)
+  })
+
+  it('reports a server error while checking access as GitHubError', async () => {
+    const { client } = setup(() => res(500))
+    await expect(client.checkAccess()).rejects.toBeInstanceOf(GitHubError)
+  })
+
+  it('reports not-modified for a conditional directory listing', async () => {
+    const { client, fetchImpl } = setup(() => res(304))
+    expect(await client.listDir('now', 'W/"3"')).toEqual({ status: 'not-modified' })
+    expect((fetchImpl.mock.calls[0][1].headers as Record<string, string>)['if-none-match']).toBe('W/"3"')
+  })
+
+  it('rejects getFile on a directory listing', async () => {
+    const { client } = setup(() => res(200, [{ name: 'a.md', path: 'now/a.md', type: 'file' }]))
+    await expect(client.getFile('now')).rejects.toBeInstanceOf(GitHubError)
+  })
+
+  it('sends no if-none-match header when no etag is given', async () => {
+    const { client, fetchImpl } = setup(() => res(404))
+    await client.getFile('ideas.md')
+    await client.getFile('ideas.md', null)
+    await client.listDir('now')
+    for (const call of fetchImpl.mock.calls) expect(call[1].headers as Record<string, string>).not.toHaveProperty('if-none-match')
+  })
+})
