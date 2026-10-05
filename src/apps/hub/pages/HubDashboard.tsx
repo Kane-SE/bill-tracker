@@ -9,6 +9,7 @@ import { useAuthStore } from '@/apps/hub/auth/useAuthStore'
 import { getHubClient } from '@/apps/hub/github/instance'
 import { relativeTime } from '@/apps/hub/lib/dates'
 import { needsYou } from '@/apps/hub/lib/needs-you'
+import { dashboardView } from '@/apps/hub/lib/view-state'
 import type { NeedsYouItem } from '@/apps/hub/lib/types'
 import { describeError, parseHubData, useHubStore } from '@/apps/hub/store/useHubStore'
 import { NeedsYouList } from '@/apps/hub/components/NeedsYouList'
@@ -82,8 +83,8 @@ export function HubDashboard() {
     else document.getElementById(`wip-${item.target.project}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
-  const firstLoad = status === 'loading' && !fetchedAt
-  const isEmpty = !firstLoad && fetchedAt !== null && data.wip.length === 0 && data.projects.length === 0 && data.ideas.length === 0 && pending.length === 0
+  const view = dashboardView({ status, fetchedAt, data, errors, pendingCount: pending.length })
+  const firstLoad = view === 'loading'
   const subtitle = firstLoad ? 'Loading…' : fetchedAt ? `Updated ${relativeTime(fetchedAt, Date.now())}` : 'Not synced yet'
 
   return (
@@ -105,8 +106,8 @@ export function HubDashboard() {
       {status === 'offline' && <SyncBanner fetchedAt={fetchedAt} onRetry={onRefresh} />}
       {firstLoad ? (
         <HubSkeleton />
-      ) : isEmpty ? (
-        <HubEmpty />
+      ) : view === 'empty' ? (
+        <HubEmpty onNew={() => setNewOpen(true)} />
       ) : (
         <div className="lg:grid lg:grid-cols-12 lg:items-start lg:gap-x-8">
           <div className="lg:col-span-7">

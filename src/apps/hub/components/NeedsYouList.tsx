@@ -15,7 +15,7 @@ export function NeedsYouList({ items, onOpen }: { items: NeedsYouItem[]; onOpen:
         title="Needs you"
         action={
           more > 0 && (
-            <button type="button" onClick={() => setExpanded((v) => !v)} className="h-8 rounded-md px-2 text-sm text-muted-foreground hover:bg-foreground/5 hover:text-foreground">
+            <button type="button" aria-expanded={expanded} onClick={() => setExpanded((v) => !v)} className="h-8 rounded-md px-2 text-sm text-muted-foreground hover:bg-foreground/5 hover:text-foreground">
               {expanded ? 'Show less' : `+${more} more`}
             </button>
           )

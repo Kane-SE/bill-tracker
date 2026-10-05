@@ -42,15 +42,14 @@ export function IdeasSection({ ideas, pending, today, error, onNew }: Props) {
       />
       {error && <p className="mb-2 rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-sm">Couldn't load ideas.md. {error}</p>}
       <div className="-mx-4 mb-2 overflow-x-auto px-4 [scrollbar-width:none] lg:mx-0 lg:overflow-visible lg:px-0 [&::-webkit-scrollbar]:hidden">
-        <div className="flex gap-2 lg:flex-wrap" role="radiogroup" aria-label="Filter ideas by stage">
+        <div className="flex gap-2 lg:flex-wrap" role="group" aria-label="Filter ideas by stage">
           {filters.map((f) => {
             const active = f === filter
             return (
               <button
                 key={f}
                 type="button"
-                role="radio"
-                aria-checked={active}
+                aria-pressed={active}
                 onClick={() => setFilter(f)}
                 className={cn(
                   'inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-sm font-medium transition-colors',
@@ -64,9 +63,11 @@ export function IdeasSection({ ideas, pending, today, error, onNew }: Props) {
         </div>
       </div>
       {shown.length === 0 && shownPending.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
-          {filter === 'active' ? 'No ideas yet. Catch the next one with New idea.' : `No ${STAGE_LABEL[filter].toLowerCase()} ideas.`}
-        </p>
+        !error && (
+          <p className="rounded-2xl border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
+            {filter === 'active' ? 'No ideas yet. Catch the next one with New idea.' : `No ${STAGE_LABEL[filter].toLowerCase()} ideas.`}
+          </p>
+        )
       ) : (
         <ul className="space-y-0.5 rounded-2xl border border-border bg-card p-1">
           {shownPending.map((p) => (

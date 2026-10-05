@@ -16,7 +16,7 @@ export function ProjectList({ projects, error }: { projects: Project[]; error: s
       <SectionHead title="Projects" meta={`${active.length} active`} />
       {error && <p className="mb-2 rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-sm">Couldn't load projects.md. {error}</p>}
       {projects.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">Add projects.md to personal-hub to list your projects here.</p>
+        !error && <p className="rounded-2xl border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">Add projects.md to personal-hub to list your projects here.</p>
       ) : (
         <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
           {shown.map((p) => (

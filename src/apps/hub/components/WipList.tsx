@@ -21,7 +21,7 @@ export function WipList({ cards, today, repoLinks, error }: Props) {
       <SectionHead title="Now" meta={`${cards.length} ${cards.length === 1 ? 'project' : 'projects'}`} />
       {error && <p className="mb-2 rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-sm">Couldn't load NOW notes. {error}</p>}
       {cards.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">No NOW notes in personal-hub yet.</p>
+        !error && <p className="rounded-2xl border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">No NOW notes in personal-hub yet.</p>
       ) : (
         <ul className="divide-y divide-border rounded-2xl border border-border bg-card">
           {cards.map((card) => (
