@@ -17,7 +17,7 @@ describe('hexToHslToken', () => {
 })
 
 describe('deriveTokens', () => {
-  it('produces a value for every one of the 19 tokens', () => {
+  it('produces a value for every one of the 20 tokens', () => {
     const tokens = deriveTokens(sample)
     for (const name of TOKEN_NAMES) expect(tokens[name]).toMatch(/^\d+ \d+% \d+%$/)
     expect(Object.keys(tokens).sort()).toEqual([...TOKEN_NAMES].sort())
@@ -27,6 +27,12 @@ describe('deriveTokens', () => {
     expect(tokens.background).toBe(hexToHslToken(sample.background))
     expect(tokens.primary).toBe(hexToHslToken(sample.primary))
     expect(tokens.destructive).toBe(hexToHslToken(sample.destructive))
+  })
+  it('derives a warning token that stays readable on light and dark backgrounds', () => {
+    const dark = deriveTokens({ ...sample, background: '#0f1117', foreground: '#f2f3f7' })
+    const light = deriveTokens({ ...sample, background: '#fafafa', foreground: '#111111' })
+    expect(dark.warning).toBe('38 92% 60%')
+    expect(light.warning).toBe('30 90% 31%')
   })
 })
 
