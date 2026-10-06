@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Plus, RefreshCw } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
@@ -10,12 +9,10 @@ import { useAuthStore } from '@/apps/hub/auth/useAuthStore'
 import { verifyAccess } from '@/apps/hub/auth/verify-access'
 import { getHubClient } from '@/apps/hub/github/instance'
 import { relativeTime } from '@/apps/hub/lib/dates'
-import { needsYou } from '@/apps/hub/lib/needs-you'
+import { nowOrder } from '@/apps/hub/lib/needs-you'
 import { dashboardView } from '@/apps/hub/lib/view-state'
-import type { NeedsYouItem } from '@/apps/hub/lib/types'
 import { describeError, parseHubData, useHubStore } from '@/apps/hub/store/useHubStore'
-import { NeedsYouList } from '@/apps/hub/components/NeedsYouList'
-import { WipList } from '@/apps/hub/components/WipList'
+import { NowList } from '@/apps/hub/components/NowList'
 import { IdeasSection } from '@/apps/hub/components/IdeasSection'
 import { ProjectList } from '@/apps/hub/components/ProjectList'
 import { SyncBanner } from '@/apps/hub/components/SyncBanner'
@@ -27,7 +24,6 @@ import { NewIdeaDialog } from '@/apps/hub/components/NewIdeaDialog'
 const FOREGROUND_REFRESH_MS = 5 * 60 * 1000
 
 export function HubDashboard() {
-  const navigate = useNavigate()
   const files = useHubStore((s) => s.files)
   const nowFiles = useHubStore((s) => s.nowFiles)
   const fetchedAt = useHubStore((s) => s.fetchedAt)
@@ -40,8 +36,7 @@ export function HubDashboard() {
 
   const today = useMemo(() => new Date(), [fetchedAt])
   const data = useMemo(() => parseHubData(files, nowFiles), [files, nowFiles])
-  const repoLinks = useMemo(() => new Map(data.projects.filter((p) => p.link).map((p) => [p.name, p.link!])), [data.projects])
-  const items = useMemo(() => needsYou(data.wip, data.ideas, today), [data, today])
+  const cards = useMemo(() => nowOrder(data.wip, today), [data.wip, today])
 
   const sync = useCallback(async () => {
     const client = getHubClient()
@@ -78,11 +73,6 @@ export function HubDashboard() {
     } finally {
       setRefreshing(false)
     }
-  }
-
-  function openItem(item: NeedsYouItem) {
-    if (item.target.type === 'idea') navigate(`/hub/ideas/${item.target.id}`)
-    else document.getElementById(`wip-${item.target.project}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
   const view = dashboardView({ status, fetchedAt, data, errors, pendingCount: pending.length })
@@ -126,8 +116,7 @@ export function HubDashboard() {
       ) : (
         <div className="lg:grid lg:grid-cols-12 lg:items-start lg:gap-x-8">
           <div className="lg:col-span-7">
-            <NeedsYouList items={items} onOpen={openItem} />
-            <WipList cards={data.wip} today={today} repoLinks={repoLinks} error={errors.now} />
+            <NowList cards={cards} today={today} error={errors.now} />
           </div>
           <div className="lg:col-span-5">
             <IdeasSection ideas={data.ideas} pending={pending} today={today} error={errors.ideas} onNew={() => setNewOpen(true)} />
