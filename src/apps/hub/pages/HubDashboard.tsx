@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Plus, RefreshCw } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
+import { BottomBar } from '@/shared/components/BottomBar'
 import { Button } from '@/shared/ui/button'
 import { cn } from '@/shared/lib/utils'
 import { useAuthStore } from '@/apps/hub/auth/useAuthStore'
@@ -135,14 +136,12 @@ export function HubDashboard() {
         </div>
       )}
       {!firstLoad && (
-        <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/80 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden">
-          <div className="mx-auto max-w-lg px-4 py-3">
-            <Button className="w-full" onClick={() => setNewOpen(true)}>
-              <Plus />
-              New idea
-            </Button>
-          </div>
-        </div>
+        <BottomBar className="lg:hidden">
+          <Button className="w-full" onClick={() => setNewOpen(true)}>
+            <Plus />
+            New idea
+          </Button>
+        </BottomBar>
       )}
       <NewIdeaDialog open={newOpen} onOpenChange={setNewOpen} />
     </div>

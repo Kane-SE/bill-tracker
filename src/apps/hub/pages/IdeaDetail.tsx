@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { ExternalLink, Plus, SearchX } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { EmptyState } from '@/shared/components/EmptyState'
+import { BottomBar } from '@/shared/components/BottomBar'
 import { Button } from '@/shared/ui/button'
 import { useAuthStore } from '@/apps/hub/auth/useAuthStore'
 import { githubIdeaUrl, IDEAS_PATH } from '@/apps/hub/config'
@@ -68,8 +69,8 @@ export function IdeaDetail() {
         Edit on GitHub <ExternalLink className="h-3.5 w-3.5" />
       </a>
 
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/80 pb-[env(safe-area-inset-bottom)] backdrop-blur">
-        <div className="mx-auto flex max-w-lg gap-2 px-4 py-3">
+      <BottomBar>
+        <div className="flex gap-2">
           <Button className="flex-1" disabled={!online} aria-describedby={online ? undefined : 'idea-offline-note'} onClick={() => setNoteOpen(true)}>
             <Plus />
             Add note
@@ -79,11 +80,11 @@ export function IdeaDetail() {
           </Button>
         </div>
         {!online && (
-          <p id="idea-offline-note" className="pb-2 text-center text-xs text-muted-foreground">
+          <p id="idea-offline-note" className="mt-2 text-center text-xs text-muted-foreground">
             Needs connection
           </p>
         )}
-      </div>
+      </BottomBar>
 
       <AddNoteDialog ideaId={idea.id} open={noteOpen} onOpenChange={setNoteOpen} />
       <MoveStageDialog idea={idea} open={stageOpen} onOpenChange={setStageOpen} />
