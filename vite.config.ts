@@ -41,6 +41,8 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
         cleanupOutdatedCaches: true,
+        // /api/* is the token function, never the app shell. GitHub calls are cross-origin and never cached.
+        navigateFallbackDenylist: [/^\/api\//],
       },
       devOptions: {
         enabled: true,

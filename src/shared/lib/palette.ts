@@ -1,5 +1,5 @@
 /**
- * Custom palette engine: derive the full 19-token CSS variable set from 6
+ * Custom palette engine: derive the full 20-token CSS variable set from 6
  * user-picked base colors. See `src/index.css` for the token list this must
  * match, and `src/shared/lib/theme.ts` for how the tokens get applied.
  */
@@ -16,7 +16,7 @@ export interface CustomColors {
 export const TOKEN_NAMES = [
   'background', 'foreground', 'card', 'card-foreground', 'primary', 'primary-foreground',
   'secondary', 'secondary-foreground', 'muted', 'muted-foreground', 'accent', 'accent-foreground',
-  'destructive', 'destructive-foreground', 'success', 'success-foreground', 'border', 'input', 'ring',
+  'destructive', 'destructive-foreground', 'success', 'success-foreground', 'warning', 'border', 'input', 'ring',
 ]
 
 interface Hsl { h: number; s: number; l: number }
@@ -110,6 +110,8 @@ export function deriveTokens(c: CustomColors): Record<string, string> {
     'destructive-foreground': readableOn(destructive),
     success: token(success),
     'success-foreground': readableOn(success),
+    // Amber for "waiting"/"quiet" signals. Fixed hue so it reads as a warning in any custom palette.
+    warning: isLight ? '30 90% 31%' : '38 92% 60%',
     border: token(border),
     input: token(border),
     ring: token(primary),

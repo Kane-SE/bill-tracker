@@ -1,4 +1,4 @@
-import { Receipt, type LucideIcon } from 'lucide-react'
+import { LayoutDashboard, Receipt, type LucideIcon } from 'lucide-react'
 
 export interface AppEntry {
   id: string
@@ -16,5 +16,12 @@ export const apps: AppEntry[] = [
     description: 'Who owes whom after a hangout',
     icon: Receipt,
     to: '/split',
+  },
+  {
+    id: 'hub',
+    name: 'Hub',
+    description: "What I'm working on",
+    icon: LayoutDashboard,
+    to: '/hub',
   },
 ]

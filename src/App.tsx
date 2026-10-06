@@ -3,6 +3,7 @@ import { HashRouter, Navigate, Route, Routes, useLocation } from 'react-router-d
 import { Launcher } from '@/launcher/Launcher'
 import { Settings } from '@/settings/Settings'
 import { splitRoutes } from '@/apps/split/routes'
+import { hubRoutes } from '@/apps/hub/routes'
 import { Toaster } from '@/shared/ui/sonner'
 
 type Direction = 'forward' | 'back' | null
@@ -30,6 +31,7 @@ function AnimatedRoutes() {
         <Route path="/" element={<Launcher />} />
         <Route path="/settings" element={<Settings />} />
         {splitRoutes}
+        {hubRoutes}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>

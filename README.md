@@ -2,12 +2,19 @@
 
 A mobile-first Progressive Web App to track **who owes whom** after hanging out
 with friends, when one (or more) people front the bills. Runs fully offline and
-stores everything in your browser — no account, no server.
+stores everything in your browser — Split needs no account and no server.
 
 Split lives inside **Nook**, a small app launcher: the PWA's home screen (`/`)
 is a grid of mini-apps, and Split is the first one. See
 [Launcher + registry](#launcher--registry-adding-a-new-app) below for how more
 apps get added.
+
+## Hub
+
+A second mini-app: your NOW notes, ideas and projects from the private `personal-hub` repo, with
+"New idea", "Add note" and "Move stage" saved back as commits. Sign-in uses a GitHub App and one
+Vercel function (`api/github/token.ts`). Setup: [docs/hub-setup.md](docs/hub-setup.md).
+Design: [docs/features/2026-10-hub-dashboard/spec.md](docs/features/2026-10-hub-dashboard/spec.md).
 
 ## Features
 
@@ -109,7 +116,7 @@ touching CSS. Pick **Custom** in the palette picker, then **Customize colors**
 opens a guided modal (`src/settings/CustomPaletteDialog.tsx`) asking for just
 **6 plain-language colors** — Background, Text, Buttons & highlights, Accents,
 Owed/Delete, Settled/Paid. `src/shared/lib/palette.ts` (`deriveTokens`) expands
-those 6 into the full **19-token** set the rest of the app already uses (card,
+those 6 into the full **20-token** set the rest of the app already uses (card,
 secondary, muted, borders, all the `*-foreground` pairs, …), picking readable
 black/white text per color and deriving surface/border shades by lightness.
 Custom is a single fixed set — there's no separate light/dark toggle for it,
