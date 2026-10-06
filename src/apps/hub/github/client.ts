@@ -1,8 +1,15 @@
 import { decodeBase64Utf8, encodeBase64Utf8 } from '@/apps/hub/lib/text'
+import { asNetworkError, REQUEST_TIMEOUT_MS, timeoutSignal } from '@/apps/hub/lib/net'
 
 /** Minimal GitHub REST client for the hub repo. The only module that talks to api.github.com. */
 
 const API = 'https://api.github.com'
+
+/** The timeout signal also covers the body: one that stops arriving counts as offline too. Bad JSON still fails as itself. */
+const readJson = (res: Response) =>
+  res.json().catch((error: unknown) => {
+    throw asNetworkError(error)
+  })
 
 export interface RemoteFile {
   text: string
@@ -51,18 +58,25 @@ export interface GitHubClient {
 
 export function createGitHubClient(deps: ClientDeps): GitHubClient {
   async function request(path: string, init: { method?: string; body?: string; headers?: Record<string, string> } = {}): Promise<Response> {
-    const send = (token: string) =>
-      deps.fetch(`${API}${path}`, {
-        method: init.method ?? 'GET',
-        body: init.body,
-        cache: 'no-store',
-        headers: {
-          accept: 'application/vnd.github+json',
-          'x-github-api-version': '2022-11-28',
-          authorization: `Bearer ${token}`,
-          ...init.headers,
-        },
-      })
+    const send = async (token: string) => {
+      try {
+        return await deps.fetch(`${API}${path}`, {
+          method: init.method ?? 'GET',
+          body: init.body,
+          cache: 'no-store',
+          headers: {
+            accept: 'application/vnd.github+json',
+            'x-github-api-version': '2022-11-28',
+            authorization: `Bearer ${token}`,
+            ...init.headers,
+          },
+          // A phone can report "online" over a dead connection, where fetch would hang for minutes.
+          signal: timeoutSignal(REQUEST_TIMEOUT_MS),
+        })
+      } catch (error) {
+        throw asNetworkError(error)
+      }
+    }
     const first = await send(await deps.getToken())
     if (first.status !== 401) return first
     return send(await deps.refreshToken())
@@ -75,7 +89,7 @@ export function createGitHubClient(deps: ClientDeps): GitHubClient {
     async getUser() {
       const res = await request('/user')
       if (!res.ok) throw new GitHubError(res.status, 'Could not load your GitHub profile')
-      const body = await res.json()
+      const body = await readJson(res)
       return { login: String(body.login), avatarUrl: String(body.avatar_url ?? '') }
     },
 
@@ -91,7 +105,7 @@ export function createGitHubClient(deps: ClientDeps): GitHubClient {
       if (res.status === 304) return { status: 'not-modified' }
       if (res.status === 404) return { status: 'missing' }
       if (!res.ok) throw new GitHubError(res.status, `Could not list ${path}`)
-      const body = await res.json()
+      const body = await readJson(res)
       if (!Array.isArray(body)) return { status: 'missing' }
       const value = body.map((e: { name: string; path: string; type: string }) => ({ name: String(e.name), path: String(e.path), type: String(e.type) }))
       return { status: 'ok', value, etag: res.headers.get('etag') }
@@ -102,7 +116,7 @@ export function createGitHubClient(deps: ClientDeps): GitHubClient {
       if (res.status === 304) return { status: 'not-modified' }
       if (res.status === 404) return { status: 'missing' }
       if (!res.ok) throw new GitHubError(res.status, `Could not load ${path}`)
-      const body = await res.json()
+      const body = await readJson(res)
       if (Array.isArray(body) || typeof body.content !== 'string') throw new GitHubError(422, `${path} is not a file`)
       // Over 1 MB the API sends `content: ""` with `encoding: "none"`; reading that as an empty file would let a later write overwrite the real one.
       if ((body.encoding !== undefined && body.encoding !== 'base64') || (typeof body.size === 'number' && body.size > 0 && body.content === '')) {
@@ -119,7 +133,7 @@ export function createGitHubClient(deps: ClientDeps): GitHubClient {
       })
       if (res.status === 409 || res.status === 422) throw new ConflictError()
       if (!res.ok) throw new GitHubError(res.status, `Could not save ${path}`)
-      const body = await res.json()
+      const body = await readJson(res)
       return { sha: String(body.content.sha) }
     },
   }

@@ -133,6 +133,21 @@ describe('sign-in', () => {
     expect(hasAuthCallback('?code=a')).toBe(false)
     expect(hasAuthCallback('?state=b')).toBe(false)
   })
+
+  it('gives the code exchange a timeout and fails it as a network TypeError instead of hanging', async () => {
+    const fetchImpl = vi.fn(async (_url: string, init: RequestInit) => {
+      expect(init.signal).toBeInstanceOf(AbortSignal)
+      throw new DOMException('The operation timed out.', 'TimeoutError')
+    })
+    const deps: AuthDeps = { storage: memoryStorage(), fetch: fetchImpl as unknown as typeof fetch, now: () => 0 }
+    let target = ''
+    await startSignIn('https://nook.example', deps, (url) => { target = url }, 'Iv1.test')
+    const state = new URL(target).searchParams.get('state')!
+    const error = await completeSignIn(`?code=abc&state=${state}`, deps).catch((e: unknown) => e)
+    expect(error).toBeInstanceOf(TypeError)
+    expect(error).not.toBeInstanceOf(AuthError)
+    expect(fetchImpl).toHaveBeenCalledTimes(1)
+  })
 })
 
 describe('session', () => {
@@ -184,6 +199,30 @@ describe('session', () => {
     expect(error).not.toBeInstanceOf(AuthError)
     expect(useAuthStore.getState().session).toEqual(base)
     expect(useAuthStore.getState().access).toBe('ok')
+  })
+
+  it.each(['TimeoutError', 'AbortError'])('treats a refresh that ended in %s as offline: TypeError, nobody signed out', async (name) => {
+    useAuthStore.setState({ session: base, user: { login: 'k', avatarUrl: '' }, access: 'ok' })
+    const fetchImpl = vi.fn(async (_url: string, init: RequestInit) => {
+      expect(init.signal).toBeInstanceOf(AbortSignal)
+      throw new DOMException('The operation timed out.', name)
+    })
+    const authDeps: AuthDeps = { storage: memoryStorage(), fetch: fetchImpl as unknown as typeof fetch, now: () => 0 }
+    const direct = await refreshSession('r', authDeps).catch((e: unknown) => e)
+    expect(direct).toBeInstanceOf(TypeError)
+    expect(direct).not.toBeInstanceOf(AuthError)
+    const viaSession = await forceRefresh({ now: () => 0, refresh: (token) => refreshSession(token, authDeps) }).catch((e: unknown) => e)
+    expect(viaSession).toBeInstanceOf(TypeError)
+    expect(useAuthStore.getState().session).toEqual(base)
+    expect(useAuthStore.getState().access).toBe('ok')
+  })
+
+  it('lets a plain network TypeError from the token request through as the same object', async () => {
+    const offline = new TypeError('Failed to fetch')
+    const fetchImpl = vi.fn(async () => {
+      throw offline
+    })
+    await expect(refreshSession('r', { storage: memoryStorage(), fetch: fetchImpl, now: () => 0 })).rejects.toBe(offline)
   })
 
   function deferred<T>() {

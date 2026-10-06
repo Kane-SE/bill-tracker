@@ -151,3 +151,45 @@ describe('GitHub client: contract paths the store relies on', () => {
     for (const call of fetchImpl.mock.calls) expect(call[1].headers as Record<string, string>).not.toHaveProperty('if-none-match')
   })
 })
+
+describe('GitHub client: a connection that hangs', () => {
+  it('gives every request its own timeout signal, including the retry after a refresh', async () => {
+    const { client, fetchImpl } = setup((_url, init) =>
+      (init.headers as Record<string, string>).authorization === 'Bearer fresh' ? res(200, { login: 'kane', avatar_url: '' }) : res(401),
+    )
+    await client.getUser()
+    const [first, retry] = fetchImpl.mock.calls.map((call) => call[1].signal)
+    expect(first).toBeInstanceOf(AbortSignal)
+    expect(retry).toBeInstanceOf(AbortSignal)
+    expect(retry).not.toBe(first)
+  })
+
+  it.each(['TimeoutError', 'AbortError'])('reports a request that ended in %s as a network TypeError, without refreshing', async (name) => {
+    const { client, refreshToken } = setup(() => {
+      throw new DOMException('The operation timed out.', name)
+    })
+    const err = await client.getFile('ideas.md').catch((e: unknown) => e)
+    expect(err).toBeInstanceOf(TypeError)
+    expect(refreshToken).not.toHaveBeenCalled()
+  })
+
+  it('reports a body that times out while it is still arriving as a network TypeError', async () => {
+    const { client } = setup(
+      () =>
+        new Response(
+          new ReadableStream({
+            start(controller) {
+              controller.error(new DOMException('The operation timed out.', 'TimeoutError'))
+            },
+          }),
+          { status: 200 },
+        ),
+    )
+    await expect(client.getFile('ideas.md')).rejects.toBeInstanceOf(TypeError)
+  })
+
+  it('still lets a malformed JSON body fail as itself', async () => {
+    const { client } = setup(() => new Response('<html>', { status: 200 }))
+    await expect(client.getFile('ideas.md')).rejects.toBeInstanceOf(SyntaxError)
+  })
+})

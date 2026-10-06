@@ -104,6 +104,18 @@ export async function writeIdeasFile(
   }
 }
 
+/**
+ * Whether `text` already holds exactly this idea (title, Added date and note), e.g. because an earlier save landed but
+ * its answer was lost or was an error. A same-titled idea with another note or day is a different idea.
+ */
+export function isIdeaPresent(text: string | null, item: Pick<PendingIdea, 'title' | 'note' | 'createdOn'>): boolean {
+  const want = parseIdeas(addIdeaText(null, { title: item.title, note: item.note }, item.createdOn))[0] as Idea | undefined
+  return want !== undefined && parseIdeas(text).some((idea) => idea.title === want.title && idea.added === want.added && idea.note === want.note)
+}
+
+/** Session gone: no token at all, or GitHub still says 401 after a refresh (the client has signed out by then). */
+const isSessionEnded = (error: unknown): boolean => error instanceof AuthError || (error instanceof GitHubError && error.status === 401)
+
 const sectionOf = (path: string): keyof SectionErrors =>
   path === PROJECTS_PATH ? 'projects' : path === IDEAS_PATH ? 'ideas' : 'now'
 
@@ -122,19 +134,14 @@ export const useHubStore = create<HubState>()(
           for (const item of [...get().pending]) {
             const file = await writeIdeasFile(
               client,
-              (text) => {
-                // Already there (a previous save landed but its response was lost): nothing to write.
-                // Compare the whole would-be idea so a same-titled one with another note still gets written.
-                const want = parseIdeas(addIdeaText(null, { title: item.title, note: item.note }, item.createdOn))[0] as Idea | undefined
-                const present = want !== undefined && parseIdeas(text).some((idea) => idea.title === want.title && idea.added === want.added && idea.note === want.note)
-                return present ? null : addIdeaText(text, { title: item.title, note: item.note }, item.createdOn)
-              },
+              // Already there (a previous save landed but its response was lost): nothing to write.
+              (text) => (isIdeaPresent(text, item) ? null : addIdeaText(text, { title: item.title, note: item.note }, item.createdOn)),
               `hub: add idea "${oneLine(item.title)}"`,
             )
             set((s) => ({ files: { ...s.files, [IDEAS_PATH]: file }, pending: s.pending.filter((p) => p.localId !== item.localId) }))
           }
         } catch (error) {
-          if (!isNetworkError(error) && !(error instanceof AuthError)) throw error
+          if (!isNetworkError(error) && !isSessionEnded(error)) throw error
         }
       }
 
@@ -214,13 +221,21 @@ export const useHubStore = create<HubState>()(
           const title = oneLine(input.title)
           if (!title) throw new Error('Title is required')
           const note = input.note?.trim() || undefined
+          const item: PendingIdea = { localId: uid(), title, note, createdOn: today }
+          // Queue first: persist writes it to storage now, so a hung request or a swiped-away app cannot lose the idea.
+          // A sync running meanwhile may send it too; isIdeaPresent keeps that to one copy, and removal is by localId.
+          set((s) => ({ pending: [...s.pending, item] }))
+          const unqueue = (s: HubState) => s.pending.filter((p) => p.localId !== item.localId)
           try {
-            storeIdeas(await writeIdeasFile(client, (text) => addIdeaText(text, { title, note }, today), `hub: add idea "${title}"`))
+            const file = await writeIdeasFile(client, (text) => (isIdeaPresent(text, item) ? null : addIdeaText(text, { title, note }, today)), `hub: add idea "${title}"`)
+            set((s) => ({ files: { ...s.files, [IDEAS_PATH]: file }, pending: unqueue(s) }))
             return 'saved'
           } catch (error) {
-            if (!isNetworkError(error)) throw error
-            set((s) => ({ pending: [...s.pending, { localId: uid(), title, note, createdOn: today }] }))
-            return 'queued'
+            // Offline, timed out or signed out: it stays queued and syncPending sends it later.
+            if (isNetworkError(error) || isSessionEnded(error)) return 'queued'
+            // A failure a retry won't fix by itself: the dialog keeps the text and shows the error.
+            set((s) => ({ pending: unqueue(s) }))
+            throw error
           }
         },
 

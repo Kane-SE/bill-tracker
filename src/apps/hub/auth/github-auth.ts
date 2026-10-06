@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { AUTH_BASE_URL, GITHUB_CLIENT_ID } from '@/apps/hub/config'
 import { codeChallenge, randomString } from '@/apps/hub/auth/pkce'
+import { asNetworkError, REQUEST_TIMEOUT_MS, timeoutSignal } from '@/apps/hub/lib/net'
 
 /** GitHub App sign-in (web flow + PKCE). The code→token swap goes through our /api function. */
 
@@ -70,11 +71,18 @@ export async function startSignIn(
 }
 
 async function postToken(body: Record<string, string>, deps: AuthDeps, failCode: AuthErrorCode): Promise<Session> {
-  const res = await deps.fetch(`${AUTH_BASE_URL}/github/token`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(body),
-  })
+  let res: Response
+  try {
+    res = await deps.fetch(`${AUTH_BASE_URL}/github/token`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: timeoutSignal(REQUEST_TIMEOUT_MS),
+    })
+  } catch (error) {
+    // A stalled request is offline, not a rejected grant: session.ts keeps the user signed in for a TypeError.
+    throw asNetworkError(error)
+  }
   // 5xx = GitHub or our function is down or misconfigured, not a rejected grant: don't let session.ts sign the user out.
   if (res.status >= 500) throw new Error('GitHub is unavailable')
   const parsed = tokenResponseSchema.safeParse(await res.json().catch(() => null))

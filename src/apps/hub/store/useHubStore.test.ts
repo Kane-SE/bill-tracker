@@ -5,7 +5,7 @@ import { IdeaNotFoundError } from '@/apps/hub/lib/ideas'
 import bill from '@/apps/hub/lib/__fixtures__/now-bill-splitter.md?raw'
 import ideasMd from '@/apps/hub/lib/__fixtures__/ideas.md?raw'
 import projectsMd from '@/apps/hub/lib/__fixtures__/projects.md?raw'
-import { describeError, parseHubData, useHubStore, writeIdeasFile } from './useHubStore'
+import { describeError, HUB_STORAGE_KEY, isIdeaPresent, parseHubData, useHubStore, writeIdeasFile } from './useHubStore'
 
 /** In-memory fake repo. `offline` makes every call throw like fetch does without a network. */
 function fakeRepo(initial: Record<string, string>) {
@@ -449,5 +449,167 @@ describe('a file too large to read', () => {
     expect(useHubStore.getState().pending).toEqual([])
     expect(gets).toBe(1)
     expect(repo.state.puts).toBe(0)
+  })
+})
+
+/** What persist wrote to storage for the queue. */
+const storedPending = () => JSON.parse(localStorage.getItem(HUB_STORAGE_KEY)!).state.pending as { title: string }[]
+
+describe('a new idea is on this device before any network call', () => {
+  it('queues and stores the idea while the save is still in flight, then drops it from the queue once the save lands', async () => {
+    const repo = fakeRepo({ 'ideas.md': ideasMd })
+    let release!: () => void
+    const gate = new Promise<void>((resolve) => { release = resolve })
+    let reads = 0
+    // A "connected but dead" connection: the read hangs until the test lets it through.
+    const hung: GitHubClient = { ...repo.client, async getFile(path, etag) { reads++; await gate; return repo.client.getFile(path, etag) } }
+
+    const saving = useHubStore.getState().addIdea(hung, { title: 'Hung save', note: 'still here' }, TODAY)
+    expect(reads).toBe(1)
+    expect(useHubStore.getState().pending).toMatchObject([{ title: 'Hung save', note: 'still here', createdOn: TODAY }])
+    expect(storedPending()).toMatchObject([{ title: 'Hung save', note: 'still here', createdOn: TODAY }])
+
+    release()
+    expect(await saving).toBe('saved')
+    expect(useHubStore.getState().pending).toEqual([])
+    expect(storedPending()).toEqual([])
+    expect(repo.files.get('ideas.md')!.match(/## Hung save/g)).toHaveLength(1)
+    expect(useHubStore.getState().files['ideas.md'].text).toBe(repo.files.get('ideas.md'))
+  })
+
+  it('sends the idea once when a sync picks it up while the save hangs (sync writes first)', async () => {
+    const repo = fakeRepo({ 'ideas.md': ideasMd })
+    let release!: () => void
+    const gate = new Promise<void>((resolve) => { release = resolve })
+    const hung: GitHubClient = { ...repo.client, async getFile(path, etag) { await gate; return repo.client.getFile(path, etag) } }
+
+    const saving = useHubStore.getState().addIdea(hung, { title: 'Raced' }, TODAY)
+    await useHubStore.getState().syncPending(repo.client)
+    expect(useHubStore.getState().pending).toEqual([])
+    release()
+
+    expect(await saving).toBe('saved')
+    expect(repo.files.get('ideas.md')!.match(/## Raced/g)).toHaveLength(1)
+    expect(repo.state.puts).toBe(1)
+    expect(useHubStore.getState().pending).toEqual([])
+  })
+
+  it('sends the idea once when the save read the file before a sync wrote it (conflict, then already there)', async () => {
+    const repo = fakeRepo({ 'ideas.md': ideasMd })
+    const slow = gated(repo.client, 'ideas.md')
+    const saving = useHubStore.getState().addIdea(slow.client, { title: 'Raced after read' }, TODAY)
+    await slow.started
+    await useHubStore.getState().syncPending(repo.client)
+    slow.release()
+
+    expect(await saving).toBe('saved')
+    expect(repo.files.get('ideas.md')!.match(/## Raced after read/g)).toHaveLength(1)
+    expect(useHubStore.getState().pending).toEqual([])
+  })
+
+  it('keeps the idea queued when the session ended during the save, and syncs it after signing in again', async () => {
+    const repo = fakeRepo({ 'ideas.md': ideasMd })
+    const expired: GitHubClient = { ...repo.client, async getFile() { throw new AuthError('expired') } }
+    expect(await useHubStore.getState().addIdea(expired, { title: 'After the session ended' }, TODAY)).toBe('queued')
+    expect(useHubStore.getState().pending).toMatchObject([{ title: 'After the session ended' }])
+    expect(storedPending()).toMatchObject([{ title: 'After the session ended' }])
+
+    await useHubStore.getState().syncPending(repo.client)
+    expect(useHubStore.getState().pending).toEqual([])
+    expect(repo.files.get('ideas.md')!.match(/## After the session ended/g)).toHaveLength(1)
+  })
+
+  it('keeps the idea queued when GitHub still answers 401 after a refresh (the client signs out)', async () => {
+    const repo = fakeRepo({ 'ideas.md': ideasMd })
+    const rejected: GitHubClient = { ...repo.client, async getFile() { throw new GitHubError(401, 'Could not load ideas.md') } }
+    expect(await useHubStore.getState().addIdea(rejected, { title: 'Still rejected' }, TODAY)).toBe('queued')
+    expect(useHubStore.getState().pending).toMatchObject([{ title: 'Still rejected' }])
+  })
+
+  it('a sync that GitHub still rejects with 401 keeps the queue and raises no error', async () => {
+    const repo = fakeRepo({ 'ideas.md': ideasMd })
+    useHubStore.setState({ pending: [{ localId: 'a', title: 'Waiting', createdOn: TODAY }] })
+    const rejected: GitHubClient = { ...repo.client, async getFile() { throw new GitHubError(401, 'Could not load ideas.md') } }
+    await expect(useHubStore.getState().syncPending(rejected)).resolves.toBeUndefined()
+    expect(useHubStore.getState().pending.map((p) => p.localId)).toEqual(['a'])
+  })
+
+  it('keeps the idea queued after a timeout (a TypeError from the client)', async () => {
+    const repo = fakeRepo({ 'ideas.md': ideasMd })
+    const timedOut: GitHubClient = { ...repo.client, async getFile() { throw new TypeError('Request timed out') } }
+    expect(await useHubStore.getState().addIdea(timedOut, { title: 'Timed out' }, TODAY)).toBe('queued')
+    expect(storedPending()).toMatchObject([{ title: 'Timed out' }])
+  })
+
+  it('drops the queued copy and rethrows when the file keeps changing (conflict after the retries)', async () => {
+    const repo = fakeRepo({ 'ideas.md': ideasMd })
+    repo.state.conflictsLeft = 3
+    await expect(useHubStore.getState().addIdea(repo.client, { title: 'Contested' }, TODAY)).rejects.toBeInstanceOf(ConflictError)
+    expect(useHubStore.getState().pending).toEqual([])
+    expect(storedPending()).toEqual([])
+  })
+
+  it('drops the queued copy and rethrows on a server error', async () => {
+    const repo = fakeRepo({ 'ideas.md': ideasMd })
+    const failing: GitHubClient = { ...repo.client, async putFile() { throw new GitHubError(500, 'Could not save ideas.md') } }
+    await expect(useHubStore.getState().addIdea(failing, { title: 'Server down' }, TODAY)).rejects.toBeInstanceOf(GitHubError)
+    expect(useHubStore.getState().pending).toEqual([])
+    expect(storedPending()).toEqual([])
+  })
+
+  it('removes only its own item from the queue', async () => {
+    const repo = fakeRepo({ 'ideas.md': ideasMd })
+    useHubStore.setState({ pending: [{ localId: 'older', title: 'Queued earlier', createdOn: TODAY }] })
+    const failing: GitHubClient = { ...repo.client, async putFile() { throw new GitHubError(500, 'Could not save ideas.md') } }
+    await expect(useHubStore.getState().addIdea(failing, { title: 'Server down' }, TODAY)).rejects.toBeInstanceOf(GitHubError)
+    expect(useHubStore.getState().pending.map((p) => p.localId)).toEqual(['older'])
+    expect(await useHubStore.getState().addIdea(repo.client, { title: 'Saved fine' }, TODAY)).toBe('saved')
+    expect(useHubStore.getState().pending.map((p) => p.localId)).toEqual(['older'])
+  })
+})
+
+describe('an online save that landed but then failed', () => {
+  it('does not write a second copy when the same idea is saved again from the dialog', async () => {
+    const repo = fakeRepo({ 'ideas.md': ideasMd })
+    let failNextAnswer = true
+    // The commit lands, then the answer is a server error (not a network error): the dialog keeps the text.
+    const flaky: GitHubClient = {
+      ...repo.client,
+      async putFile(path, text, sha, message) {
+        const saved = await repo.client.putFile(path, text, sha, message)
+        if (failNextAnswer) {
+          failNextAnswer = false
+          throw new GitHubError(502, 'Could not save ideas.md')
+        }
+        return saved
+      },
+    }
+    const input = { title: 'Landed anyway', note: 'with a note' }
+    await expect(useHubStore.getState().addIdea(flaky, input, TODAY)).rejects.toBeInstanceOf(GitHubError)
+    expect(useHubStore.getState().pending).toEqual([])
+
+    expect(await useHubStore.getState().addIdea(flaky, input, TODAY)).toBe('saved')
+    expect(repo.files.get('ideas.md')!.match(/## Landed anyway/g)).toHaveLength(1)
+    expect(repo.state.puts).toBe(1)
+    expect(useHubStore.getState().files['ideas.md'].text).toBe(repo.files.get('ideas.md'))
+    expect(useHubStore.getState().pending).toEqual([])
+  })
+
+  it('still writes a same-titled idea with a different note', async () => {
+    const repo = fakeRepo({ 'ideas.md': `${ideasMd}\n## Garden\nStage: idea\nAdded: ${TODAY}\n\n- ${TODAY} — Idea captured\n` })
+    expect(await useHubStore.getState().addIdea(repo.client, { title: 'Garden', note: 'A different take' }, TODAY)).toBe('saved')
+    expect(repo.files.get('ideas.md')!.match(/## Garden/g)).toHaveLength(2)
+  })
+})
+
+describe('isIdeaPresent', () => {
+  const item = { title: 'Same again', note: '- starts like a list item', createdOn: TODAY }
+  it('finds an idea written from the same title, note and day, and nothing else', () => {
+    const written = `${ideasMd}\n## Same again\nStage: idea\nAdded: ${TODAY}\n\n\\- starts like a list item\n\n- ${TODAY} — Idea captured\n`
+    expect(isIdeaPresent(written, item)).toBe(true)
+    expect(isIdeaPresent(written, { ...item, note: undefined })).toBe(false)
+    expect(isIdeaPresent(written, { ...item, createdOn: '2026-10-06' })).toBe(false)
+    expect(isIdeaPresent(ideasMd, item)).toBe(false)
+    expect(isIdeaPresent(null, item)).toBe(false)
   })
 })
