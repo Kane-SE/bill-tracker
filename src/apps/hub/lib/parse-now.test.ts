@@ -16,7 +16,12 @@ describe('parseNowNote', () => {
       waitingSince: '2026-08-17',
       waitingOnOthers: null,
       inFlight: ['main = PR #2 merged 2026-09-30', 'main auto-deploys on Vercel, so changes go through a branch + PR'],
+      plans: 'bill-splitter/DEPLOY.md · bill-splitter/docs/superpowers/specs/',
     })
+  })
+
+  it('leaves plans empty when the note has no Plans & decisions line', () => {
+    expect(parseNowNote('now/calendar.md', 'Next action: Fix the week view\n').plans).toBeNull()
   })
 
   it('falls back to the last-worked date when the waiting text has no date', () => {

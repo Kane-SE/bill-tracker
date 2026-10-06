@@ -51,5 +51,6 @@ export function parseNowNote(file: string, text: string): WipCard {
     waitingSince,
     waitingOnOthers: value('waiting on others'),
     inFlight: inFlightRaw ? inFlightRaw.split(' · ').map((s) => s.trim()).filter(Boolean) : [],
+    plans: value('plans & decisions'),
   }
 }

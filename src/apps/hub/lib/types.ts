@@ -16,6 +16,7 @@ export interface WipCard {
   waitingSince: string | null
   waitingOnOthers: string | null
   inFlight: string[]
+  plans: string | null
 }
 
 export type ProjectStatus = 'active' | 'paused' | 'archived'
@@ -42,14 +43,4 @@ export interface Idea {
   note: string | null
   /** Oldest first, as written in the file. */
   progress: ProgressNote[]
-}
-
-export type NeedsYouTarget = { type: 'project'; project: string } | { type: 'idea'; id: string }
-
-export interface NeedsYouItem {
-  kind: 'waiting' | 'quiet'
-  title: string
-  context: string
-  days: number
-  target: NeedsYouTarget
 }

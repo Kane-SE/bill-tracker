@@ -4,19 +4,40 @@ import idle from './__fixtures__/now-idle-farming.md?raw'
 import ideasMd from './__fixtures__/ideas.md?raw'
 import { parseNowNote } from './parse-now'
 import { parseIdeas } from './ideas'
-import { ageLabel, needsYou, quietDays, staleDays, waitingDays } from './needs-you'
+import { ageLabel, nowOrder, quietDays, staleDays, waitingDays } from './needs-you'
 
 const today = new Date(2026, 9, 5)
 const wip = [parseNowNote('now/bill-splitter.md', bill), parseNowNote('now/idle-farming.md', idle)]
 const ideas = parseIdeas(ideasMd)
+const card = (project: string, lastWorked: string | null, waitingOnMe: string | null = null, waitingSince: string | null = null) => ({
+  ...wip[0],
+  file: `now/${project}.md`,
+  project,
+  lastWorked,
+  waitingOnMe,
+  waitingSince,
+})
 
 describe('needs-you', () => {
-  it('lists waiting items oldest first, then quiet active ideas oldest first', () => {
-    expect(needsYou(wip, ideas, today)).toEqual([
-      { kind: 'waiting', title: 'photo-tagging design grill, Round 5 (Q13–Q15) unanswered since 2026-08-17', context: 'bill-splitter', days: 49, target: { type: 'project', project: 'bill-splitter' } },
-      { kind: 'waiting', title: 'Choose a working title', context: 'idle-farming', days: 23, target: { type: 'project', project: 'idle-farming' } },
-      { kind: 'quiet', title: 'Photo-tagging for Nomnoms', context: 'Idea', days: 33, target: { type: 'idea', id: 'photo-tagging-for-nomnoms' } },
+  it('orders projects waiting on you first (longest wait first), then by most recent work', () => {
+    const quiet = card('quiet', '2026-08-30')
+    const recent = card('recent', '2026-10-04')
+    const undated = card('undated', null)
+    const waitingLong = card('waiting-long', '2026-09-30', 'a', '2026-08-17')
+    const waitingShort = card('waiting-short', '2026-09-12', 'b', '2026-09-12')
+    expect(nowOrder([quiet, undated, waitingShort, recent, waitingLong], today).map((c) => c.project)).toEqual([
+      'waiting-long',
+      'waiting-short',
+      'recent',
+      'quiet',
+      'undated',
     ])
+  })
+
+  it('does not reorder the input and breaks ties by project name', () => {
+    const input = [card('b', '2026-10-01'), card('a', '2026-10-01')]
+    expect(nowOrder(input, today).map((c) => c.project)).toEqual(['a', 'b'])
+    expect(input.map((c) => c.project)).toEqual(['b', 'a'])
   })
 
   it('never calls shipped or dropped ideas quiet', () => {
