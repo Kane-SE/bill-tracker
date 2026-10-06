@@ -6,6 +6,7 @@ import { PageHeader } from '@/shared/components/PageHeader'
 import { Button } from '@/shared/ui/button'
 import { cn } from '@/shared/lib/utils'
 import { useAuthStore } from '@/apps/hub/auth/useAuthStore'
+import { verifyAccess } from '@/apps/hub/auth/verify-access'
 import { getHubClient } from '@/apps/hub/github/instance'
 import { relativeTime } from '@/apps/hub/lib/dates'
 import { needsYou } from '@/apps/hub/lib/needs-you'
@@ -84,6 +85,19 @@ export function HubDashboard() {
   }
 
   const view = dashboardView({ status, fetchedAt, data, errors, pendingCount: pending.length })
+
+  // An empty repo can also mean the App was uninstalled from personal-hub: the token still works, but every file
+  // answers 404. Re-check access once each time the view turns empty; HubHome shows NoAccess when it is gone.
+  // Keyed on the `view` string, so storing the answer (a new `user` object) does not run it again.
+  useEffect(() => {
+    if (view !== 'empty') return
+    let active = true
+    verifyAccess(undefined, () => active).catch(() => {})
+    return () => {
+      active = false
+    }
+  }, [view])
+
   const firstLoad = view === 'loading'
   const subtitle = firstLoad ? 'Loading…' : fetchedAt ? `Updated ${relativeTime(fetchedAt, Date.now())}` : 'Not synced yet'
 

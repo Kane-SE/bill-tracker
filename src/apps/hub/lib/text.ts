@@ -57,11 +57,11 @@ export function slugify(title: string): string {
   return slug || 'idea'
 }
 
-/** The anchor GitHub generates for a markdown heading (first occurrence). */
+/** The anchor GitHub generates for a markdown heading (first occurrence). Like GitHub, keeps `_` and combining marks. */
 export function githubAnchor(title: string): string {
   return title
     .trim()
     .toLowerCase()
-    .replace(/[^\p{L}\p{N}\s-]/gu, '')
+    .replace(/[^\p{L}\p{M}\p{N}\s_-]/gu, '')
     .replace(/\s/g, '-')
 }

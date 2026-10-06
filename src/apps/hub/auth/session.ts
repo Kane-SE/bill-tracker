@@ -32,6 +32,7 @@ export async function forceRefresh(deps: SessionDeps = defaultDeps): Promise<str
     throw new AuthError('expired')
   }
   const refreshed = session.refreshToken
+  // Single flight: a caller that passed the join check above before the first one set `refreshing` joins it here, via `??=`.
   refreshing ??= deps
     .refresh(refreshed)
     .then(async (next) => {

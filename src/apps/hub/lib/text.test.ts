@@ -58,4 +58,14 @@ describe('githubAnchor', () => {
     expect(githubAnchor('Photo-tagging for Nomnoms!')).toBe('photo-tagging-for-nomnoms')
     expect(githubAnchor('Đặt món nhóm')).toBe('đặt-món-nhóm')
   })
+
+  it('keeps underscores, as GitHub does', () => {
+    expect(githubAnchor('my_idea')).toBe('my_idea')
+  })
+
+  it('keeps the tone marks of decomposed (NFD) Vietnamese text, as GitHub does', () => {
+    const decomposed = 'Đặt món'.normalize('NFD')
+    expect(decomposed).not.toBe('Đặt món')
+    expect(githubAnchor(decomposed)).toBe('đặt-món'.normalize('NFD'))
+  })
 })

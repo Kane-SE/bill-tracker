@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Github, LayoutDashboard } from 'lucide-react'
 import { toast } from 'sonner'
 import { PageHeader } from '@/shared/components/PageHeader'
@@ -10,6 +10,16 @@ export function SignIn() {
   const [busy, setBusy] = useState(false)
   // Signed out but the cache is still here: the session ended (a Settings sign-out clears the cache, so fetchedAt is null).
   const hasCache = useHubStore((s) => s.fetchedAt !== null)
+
+  // Back from GitHub without signing in, the browser may restore this page from its back/forward cache with the
+  // button still busy; an installed app has no reload button to get out of that.
+  useEffect(() => {
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) setBusy(false)
+    }
+    window.addEventListener('pageshow', onPageShow)
+    return () => window.removeEventListener('pageshow', onPageShow)
+  }, [])
 
   async function signIn() {
     setBusy(true)

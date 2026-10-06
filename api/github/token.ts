@@ -66,6 +66,8 @@ export async function handleTokenRequest(request: Request, env: TokenEnv, fetchI
       headers: { accept: 'application/json', 'content-type': 'application/json' },
       body: JSON.stringify({ client_id: clientId, client_secret: clientSecret, ...grant }),
       signal: AbortSignal.timeout(10_000),
+      // A 3xx must never re-send the secret to another host: a redirect throws, and the catch answers 502.
+      redirect: 'error',
     })
   } catch {
     return json(502, { error: 'github_unreachable' })

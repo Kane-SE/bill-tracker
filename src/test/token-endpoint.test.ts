@@ -117,4 +117,11 @@ describe('POST /api/github/token: upstream failures', () => {
     const init = (fetchImpl.mock.calls[0] as unknown as [string, RequestInit])[1]
     expect(init.signal).toBeInstanceOf(AbortSignal)
   })
+
+  it('never follows a redirect, so the client secret cannot be re-posted to another host', async () => {
+    const fetchImpl = github(tokens)
+    await handleTokenRequest(post({ code: 'c0de', code_verifier: 'v'.repeat(43) }), env, fetchImpl)
+    const init = (fetchImpl.mock.calls[0] as unknown as [string, RequestInit])[1]
+    expect(init.redirect).toBe('error')
+  })
 })
