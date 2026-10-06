@@ -1,7 +1,7 @@
 # Hub Dashboard — Design
 
 **Date:** 2026-10-05 · **Status:** approved in brainstorming, awaiting spec review
-**Visual reference:** [`2026-10-05-hub-dashboard-wireframe.html`](2026-10-05-hub-dashboard-wireframe.html), option **A**
+**Visual reference:** [`wireframe.html`](wireframe.html), option **A**
 (open it through a local static server; `?v=a&mau=mau` shows the build target in color)
 
 ## Problem

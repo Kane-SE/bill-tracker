@@ -8,7 +8,7 @@
 
 **Tech Stack:** Vite 6, React 18, TypeScript (strict), Tailwind v3 + shadcn/Radix (`src/shared/ui`), Zustand 5 (`persist`), zod 3, lucide-react, vite-plugin-pwa, Vitest 2 (node env), Vercel Functions (Web `Request`/`Response` handler).
 
-**Spec:** `docs/superpowers/specs/2026-10-05-hub-dashboard-design.md` (visual reference: `docs/superpowers/specs/2026-10-05-hub-dashboard-wireframe.html`, option A — serve the folder with any static server and open `?v=a&mau=mau`).
+**Spec:** `docs/features/2026-10-hub-dashboard/spec.md` (visual reference: `docs/features/2026-10-hub-dashboard/wireframe.html`, option A — serve the folder with any static server and open `?v=a&mau=mau`).
 
 ## Global Constraints
 
@@ -3953,8 +3953,8 @@ Start the `dev` preview, open `http://localhost:5173/?hub-demo#/hub` and check, 
 - DevTools → Network → Offline, add an idea → toast "Saved on this phone…", dashed "Not synced yet" row; back Online → the row becomes a normal idea.
 - `PR #2` in bill-splitter's In flight links to `https://github.com/Kane-SE/bill-splitter/pull/2`.
 
-Then run the evon probe against wireframe A (if the evon plugin is installed): serve `docs/superpowers/specs/` with a static server on any port, and run
-`node "C:/Users/Admins/.claude/plugins/cache/evondevkit/evon/0.3.13/skills/ui-ux/scripts/probe.mjs" "http://localhost:5173/?hub-demo#/hub" --widths 375,1440 --pw "D:/study/automation-app" --wireframe "http://localhost:<port>/2026-10-05-hub-dashboard-wireframe.html?v=a&mau=mau"` (replace `<port>` with the static server's port)
+Then run the evon probe against wireframe A (if the evon plugin is installed): serve `docs/features/2026-10-hub-dashboard/` with a static server on any port, and run
+`node "C:/Users/Admins/.claude/plugins/cache/evondevkit/evon/0.3.13/skills/ui-ux/scripts/probe.mjs" "http://localhost:5173/?hub-demo#/hub" --widths 375,1440 --pw "D:/study/automation-app" --wireframe "http://localhost:<port>/wireframe.html?v=a&mau=mau"` (replace `<port>` with the static server's port)
 Fix every item it lists under "Việc phải đối chiếu" (things to reconcile) except differences caused by real data being different from the wireframe's sample data; note those in the commit message body.
 
 - [ ] **Step 6: Commit**
@@ -4392,7 +4392,7 @@ GitHub → Settings → Applications → Authorized GitHub Apps → Nook Hub →
 A second mini-app: your NOW notes, ideas and projects from the private `personal-hub` repo, with
 "New idea", "Add note" and "Move stage" saved back as commits. Sign-in uses a GitHub App and one
 Vercel function (`api/github/token.ts`). Setup: [docs/hub-setup.md](docs/hub-setup.md).
-Design: [docs/superpowers/specs/2026-10-05-hub-dashboard-design.md](docs/superpowers/specs/2026-10-05-hub-dashboard-design.md).
+Design: [docs/features/2026-10-hub-dashboard/spec.md](docs/features/2026-10-hub-dashboard/spec.md).
 ```
 
 - [ ] **Step 5: Verify**
@@ -4568,7 +4568,7 @@ with New idea / Add note / Move stage saved back as commits.
 - Line-surgical edits to ideas.md, conflict retry, offline idea queue
 - Layout A from the wireframe; new `--warning` token; CSP via vercel.json
 
-Spec: docs/superpowers/specs/2026-10-05-hub-dashboard-design.md
+Spec: docs/features/2026-10-hub-dashboard/spec.md
 Setup: docs/hub-setup.md
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)

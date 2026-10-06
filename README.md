@@ -14,13 +14,13 @@ apps get added.
 A second mini-app: your NOW notes, ideas and projects from the private `personal-hub` repo, with
 "New idea", "Add note" and "Move stage" saved back as commits. Sign-in uses a GitHub App and one
 Vercel function (`api/github/token.ts`). Setup: [docs/hub-setup.md](docs/hub-setup.md).
-Design: [docs/superpowers/specs/2026-10-05-hub-dashboard-design.md](docs/superpowers/specs/2026-10-05-hub-dashboard-design.md).
+Design: [docs/features/2026-10-hub-dashboard/spec.md](docs/features/2026-10-hub-dashboard/spec.md).
 
 ## Features
 
 - **Nomnoms** — each hangout is a "Nomnom" in the UI (the code/type is still
   `Night`, unchanged from before the rename — see
-  [Design record](docs/superpowers/specs/2026-08-11-nomnom-launcher-design.md)).
+  [Design record](docs/features/2026-08-nomnom-launcher/spec.md)).
   Creating one is **deferred**: `/split/new` shows a name field + people editor
   and only enables **Create** once you've typed a name or added a person;
   leaving the page without pressing Create discards the draft. An empty name
@@ -40,7 +40,7 @@ Design: [docs/superpowers/specs/2026-10-05-hub-dashboard-design.md](docs/superpo
   Paid check. A tick records the amount paid (`night.payments`), so if an item
   is edited later the line reopens showing only what's left. Home balances only
   count unpaid money. Ticking the last line offers to archive the Nomnom (see
-  [spec](docs/superpowers/specs/2026-09-29-nomnom-per-line-payments-design.md)).
+  [spec](docs/features/2026-09-per-line-payments/spec.md)).
 - **Mark a Nomnom done** — settled Nomnoms move to an Archive (still viewable /
   restorable).
 - **Backup** — export/import all app data *and* your appearance settings as one

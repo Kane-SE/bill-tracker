@@ -12,7 +12,7 @@ interface ConfirmDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   title: string
-  description?: string
+  description?: React.ReactNode
   confirmLabel?: string
   variant?: 'default' | 'destructive' | 'success'
   onConfirm: () => void
@@ -33,7 +33,15 @@ export function ConfirmDialog({
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
-          {description && <DialogDescription>{description}</DialogDescription>}
+          {description != null &&
+            (typeof description === 'string' ? (
+              <DialogDescription>{description}</DialogDescription>
+            ) : (
+              // Rich content can't sit inside the default <p>.
+              <DialogDescription asChild>
+                <div className="space-y-3 text-sm text-muted-foreground">{description}</div>
+              </DialogDescription>
+            ))}
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>

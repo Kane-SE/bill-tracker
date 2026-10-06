@@ -4,7 +4,7 @@ This records the decisions from the 2026-08-11 grilling session that shaped the
 launcher/registry refactor and the six Split enhancements (session rename to
 "Nomnom", deferred creation, the styled combobox, name-frequency remembering,
 the guided custom-color palette, and app-aware backup v2). It's the decision
-history behind `docs/superpowers/plans/2026-08-11-nomnom-launcher-refactor.md`;
+history behind `docs/features/2026-08-nomnom-launcher/plan.md`;
 see that plan for the full task-by-task implementation.
 
 ## Design summary (from grilling session, 2026-08-11)

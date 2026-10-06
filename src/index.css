@@ -139,6 +139,25 @@
 @layer base {
   * {
     @apply border-border;
+    /* Thin scrollbar in the palette's own colors (Firefox, Chrome 121+). */
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.35) transparent;
+  }
+  /* Older WebKit/Blink. iOS overlay scrollbars can't be styled. */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 9999px;
+    background: hsl(var(--border)) padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--muted-foreground));
   }
   html,
   body,
@@ -158,5 +177,29 @@
   select,
   textarea {
     font-size: 16px;
+  }
+}
+
+/* ---- Screen transitions (see AnimatedRoutes in App.tsx) ------------------ */
+/* The off-screen half of a slide is clipped by the non-animated wrapper in App.tsx
+   (overflow-x-clip): clipping on the animated element itself would not shrink its own box. */
+.route-forward {
+  animation: route-in-right 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.route-back {
+  animation: route-in-left 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes route-in-right {
+  from { transform: translateX(100%); }
+  to { transform: none; }
+}
+@keyframes route-in-left {
+  from { transform: translateX(-30%); opacity: 0.6; }
+  to { transform: none; opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .route-forward,
+  .route-back {
+    animation: none;
   }
 }
