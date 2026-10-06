@@ -127,7 +127,8 @@ export const useHubStore = create<HubState>()(
   persist(
     (set, get) => {
       const storeIdeas = (file: CachedFile) => set((s) => ({ files: { ...s.files, [IDEAS_PATH]: file } }))
-      const titleOf = (id: string) => parseIdeas(get().files[IDEAS_PATH]?.text ?? null).find((i) => i.id === id)?.title ?? id
+      /** The title the cached ideas.md shows under `id` (what the user saw), or undefined when the cache does not know it. */
+      const cachedTitle = (id: string): string | undefined => parseIdeas(get().files[IDEAS_PATH]?.text ?? null).find((i) => i.id === id)?.title
 
       const runSync = async (client: GitHubClient): Promise<void> => {
         try {
@@ -239,12 +240,15 @@ export const useHubStore = create<HubState>()(
           }
         },
 
+        // Both pass the cached title, so an edit elsewhere that moved the slug to another idea stops the write instead.
         async addNote(client, id, note, today) {
-          storeIdeas(await writeIdeasFile(client, (text) => addNoteText(text ?? '', id, note, today), `hub: note on "${titleOf(id)}"`))
+          const title = cachedTitle(id)
+          storeIdeas(await writeIdeasFile(client, (text) => addNoteText(text ?? '', id, note, today, title), `hub: note on "${title ?? id}"`))
         },
 
         async moveStage(client, id, stage, today, why) {
-          storeIdeas(await writeIdeasFile(client, (text) => moveStageText(text ?? '', id, stage, today, why), `hub: move "${titleOf(id)}" to ${stage}`))
+          const title = cachedTitle(id)
+          storeIdeas(await writeIdeasFile(client, (text) => moveStageText(text ?? '', id, stage, today, why, title), `hub: move "${title ?? id}" to ${stage}`))
         },
 
         syncPending(client) {

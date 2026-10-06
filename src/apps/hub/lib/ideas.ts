@@ -116,10 +116,14 @@ export class IdeaNotFoundError extends Error {
   }
 }
 
-function locate(text: string, id: string) {
+/**
+ * Find the block for `id`. A slug alone can name another idea after an edit elsewhere ("C#" added above "C++": both
+ * slug to `c`), so when the caller knows the title it saw, a block with another title counts as not found.
+ */
+function locate(text: string, id: string, expectedTitle?: string) {
   const parts = splitLines(text)
   const block = findBlocks(parts.lines).find((b) => b.id === id)
-  if (!block) throw new IdeaNotFoundError(id)
+  if (!block || (expectedTitle !== undefined && block.title !== expectedTitle)) throw new IdeaNotFoundError(id)
   return { ...parts, block }
 }
 
@@ -153,14 +157,14 @@ function insertProgress(lines: string[], block: Block, entry: string): void {
   lines.splice(last + 1, 0, '', entry)
 }
 
-export function addNoteText(text: string, id: string, note: string, today: string): string {
-  const { lines, eol, trailingNewline, block } = locate(text, id)
+export function addNoteText(text: string, id: string, note: string, today: string, expectedTitle?: string): string {
+  const { lines, eol, trailingNewline, block } = locate(text, id, expectedTitle)
   insertProgress(lines, block, `- ${today} — ${oneLine(note)}`)
   return joinLines(lines, eol, trailingNewline)
 }
 
-export function moveStageText(text: string, id: string, stage: Stage, today: string, why?: string): string {
-  const { lines, eol, trailingNewline, block } = locate(text, id)
+export function moveStageText(text: string, id: string, stage: Stage, today: string, why?: string, expectedTitle?: string): string {
+  const { lines, eol, trailingNewline, block } = locate(text, id, expectedTitle)
   const stageAt = plainLineIndexes(lines, block).find((i) => STAGE_LINE.test(lines[i].trim())) ?? -1
   if (stageAt >= 0) {
     lines[stageAt] = `Stage: ${stage}`

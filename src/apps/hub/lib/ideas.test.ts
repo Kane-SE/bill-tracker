@@ -135,6 +135,26 @@ describe('moveStageText', () => {
   })
 })
 
+describe('an edit aimed at an idea by slug also checks its title', () => {
+  // "C#" added above "C++" elsewhere: both slug to `c`, so `c` now names C# and C++ became `c-2`.
+  const RENAMED = ['# Ideas', '', '## C#', 'Stage: idea', '', '## C++', 'Stage: exploring', '', '- 2026-09-01 — Idea captured', ''].join('\n')
+
+  it('addNoteText refuses a block whose title is not the expected one', () => {
+    expect(() => addNoteText(RENAMED, 'c', 'x', TODAY, 'C++')).toThrow(IdeaNotFoundError)
+  })
+
+  it('moveStageText refuses a block whose title is not the expected one', () => {
+    expect(() => moveStageText(RENAMED, 'c', 'dropped', TODAY, 'no longer needed', 'C++')).toThrow(IdeaNotFoundError)
+    expect(() => moveStageText(RENAMED, 'c', 'dropped', TODAY, undefined, 'C++')).toThrow(IdeaNotFoundError)
+  })
+
+  it('writes exactly as before when the title matches', () => {
+    expect(addNoteText(MESSY, 'photo-tagging-for-nomnoms', 'Round 5', TODAY, 'Photo-tagging for Nomnoms')).toBe(addNoteText(MESSY, 'photo-tagging-for-nomnoms', 'Round 5', TODAY))
+    expect(moveStageText(MESSY, 'dat-mon-nhom', 'building', TODAY, 'go', 'Đặt món nhóm 🍜')).toBe(moveStageText(MESSY, 'dat-mon-nhom', 'building', TODAY, 'go'))
+    expect(addNoteText(RENAMED, 'c-2', 'x', TODAY, 'C++')).toContain('- 2026-10-05 — x')
+  })
+})
+
 describe('addIdeaText', () => {
   it('appends a block at the end of the file, after one blank line', () => {
     const out = addIdeaText('# Ideas\n\n## Old\nStage: idea\n\n\n', { title: 'New one', note: 'Why\nit matters' }, TODAY)

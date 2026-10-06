@@ -602,6 +602,33 @@ describe('an online save that landed but then failed', () => {
   })
 })
 
+describe('a note or stage move whose slug now names another idea', () => {
+  const CACHED = ['# Ideas', '', '## C++', 'Stage: idea', 'Added: 2026-09-01', '', '- 2026-09-01 — Idea captured', ''].join('\n')
+  // Meanwhile the PC added "C#" above it: both slug to `c`, so on GitHub `c` is now C# and C++ is `c-2`.
+  const ON_GITHUB = ['# Ideas', '', '## C#', 'Stage: idea', 'Added: 2026-10-04', '', '## C++', 'Stage: idea', 'Added: 2026-09-01', '', '- 2026-09-01 — Idea captured', ''].join('\n')
+
+  it('stops with IdeaNotFoundError and writes nothing', async () => {
+    const repo = fakeRepo({ 'ideas.md': ON_GITHUB })
+    useHubStore.setState({ files: { 'ideas.md': { text: CACHED, sha: 'v-old', etag: null } } })
+    await expect(useHubStore.getState().addNote(repo.client, 'c', 'Round 2', TODAY)).rejects.toBeInstanceOf(IdeaNotFoundError)
+    await expect(useHubStore.getState().moveStage(repo.client, 'c', 'dropped', TODAY, 'not needed')).rejects.toBeInstanceOf(IdeaNotFoundError)
+    expect(repo.state.puts).toBe(0)
+    expect(repo.files.get('ideas.md')).toBe(ON_GITHUB)
+    expect(describeError(new IdeaNotFoundError('c'))).toBe('This idea changed elsewhere — reload.')
+  })
+
+  it('writes to the idea the cache shows under that id when its title still matches', async () => {
+    const repo = fakeRepo({ 'ideas.md': ON_GITHUB })
+    useHubStore.setState({ files: { 'ideas.md': { text: ON_GITHUB, sha: 'v0', etag: null } } })
+    const spy = recordingMessages(repo.client)
+    await useHubStore.getState().addNote(spy.client, 'c-2', 'Round 2', TODAY)
+    const ideas = parseHubData(useHubStore.getState().files, []).ideas
+    expect(ideas.find((i) => i.title === 'C++')!.progress.map((p) => p.text)).toEqual(['Idea captured', 'Round 2'])
+    expect(ideas.find((i) => i.title === 'C#')!.progress).toEqual([])
+    expect(spy.messages).toEqual(['hub: note on "C++"'])
+  })
+})
+
 describe('isIdeaPresent', () => {
   const item = { title: 'Same again', note: '- starts like a list item', createdOn: TODAY }
   it('finds an idea written from the same title, note and day, and nothing else', () => {

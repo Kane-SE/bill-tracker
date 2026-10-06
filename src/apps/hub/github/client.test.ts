@@ -152,6 +152,41 @@ describe('GitHub client: contract paths the store relies on', () => {
   })
 })
 
+describe('GitHub client: a session GitHub keeps rejecting', () => {
+  function withHook(handler: Handler) {
+    const fetchImpl = vi.fn(async (url: string, init: RequestInit) => handler(url, init))
+    const refreshToken = vi.fn(async () => 'fresh')
+    const onSessionInvalid = vi.fn()
+    const client = createGitHubClient({ repo: 'Kane-SE/personal-hub', fetch: fetchImpl as unknown as typeof fetch, getToken: async () => 'tok', refreshToken, onSessionInvalid })
+    return { client, fetchImpl, refreshToken, onSessionInvalid }
+  }
+
+  it('reports the session as invalid once when the retry after a refresh is still 401, and still rejects with GitHubError 401', async () => {
+    const { client, refreshToken, onSessionInvalid } = withHook(() => res(401))
+    const err = await client.getFile('ideas.md').catch((e: unknown) => e)
+    expect(err).toBeInstanceOf(GitHubError)
+    expect(err).toMatchObject({ status: 401 })
+    expect(refreshToken).toHaveBeenCalledTimes(1)
+    expect(onSessionInvalid).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not report it when the retry after a refresh succeeds', async () => {
+    const { client, onSessionInvalid } = withHook((_url, init) =>
+      (init.headers as Record<string, string>).authorization === 'Bearer fresh' ? res(200, { login: 'kane', avatar_url: '' }) : res(401),
+    )
+    expect(await client.getUser()).toEqual({ login: 'kane', avatarUrl: '' })
+    expect(onSessionInvalid).not.toHaveBeenCalled()
+  })
+
+  it('does not report it for other failures', async () => {
+    for (const status of [403, 404, 500]) {
+      const { client, onSessionInvalid } = withHook(() => res(status))
+      await client.getFile('ideas.md').catch(() => {})
+      expect(onSessionInvalid).not.toHaveBeenCalled()
+    }
+  })
+})
+
 describe('GitHub client: a connection that hangs', () => {
   it('gives every request its own timeout signal, including the retry after a refresh', async () => {
     const { client, fetchImpl } = setup((_url, init) =>

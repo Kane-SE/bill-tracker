@@ -4,9 +4,12 @@ import { toast } from 'sonner'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { Button } from '@/shared/ui/button'
 import { AuthError, startSignIn } from '@/apps/hub/auth/github-auth'
+import { useHubStore } from '@/apps/hub/store/useHubStore'
 
 export function SignIn() {
   const [busy, setBusy] = useState(false)
+  // Signed out but the cache is still here: the session ended (a Settings sign-out clears the cache, so fetchedAt is null).
+  const hasCache = useHubStore((s) => s.fetchedAt !== null)
 
   async function signIn() {
     setBusy(true)
@@ -33,6 +36,11 @@ export function SignIn() {
         <p className="mt-1 max-w-[240px] text-sm text-muted-foreground">
           Your work in progress, ideas and projects, from your personal-hub repo
         </p>
+        {hasCache && (
+          <p className="mt-4 max-w-[260px] text-sm text-muted-foreground">
+            Your session ended — sign in again. Your copy stays on this device.
+          </p>
+        )}
         <Button className="mt-5 w-full max-w-xs" onClick={signIn} disabled={busy}>
           <Github />
           Sign in with GitHub

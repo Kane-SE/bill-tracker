@@ -46,6 +46,8 @@ export interface ClientDeps {
   fetch: typeof fetch
   getToken: () => Promise<string>
   refreshToken: () => Promise<string>
+  /** Called when a request is still 401 after a token refresh: GitHub no longer accepts this sign-in. */
+  onSessionInvalid?: () => void
 }
 
 export interface GitHubClient {
@@ -79,7 +81,10 @@ export function createGitHubClient(deps: ClientDeps): GitHubClient {
     }
     const first = await send(await deps.getToken())
     if (first.status !== 401) return first
-    return send(await deps.refreshToken())
+    const retried = await send(await deps.refreshToken())
+    // A second 401 with a fresh token: the sign-in itself is gone. Callers still get their GitHubError(401).
+    if (retried.status === 401) deps.onSessionInvalid?.()
+    return retried
   }
 
   const contents = (path: string) => `/repos/${deps.repo}/contents/${path.split('/').map(encodeURIComponent).join('/')}`
