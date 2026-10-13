@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { paramsAfterClose, parseFilters, serializeFilters, SHEET_KEYS } from '@/apps/pump/lib/url-state'
+import { paramsAfterClose, parseFilters, serializeFilters, SHEET_KEYS, withoutSheets } from '@/apps/pump/lib/url-state'
 import { usePumpStore } from '@/apps/pump/store/usePumpStore'
 
 export type SheetKey = (typeof SHEET_KEYS)[number]
@@ -46,8 +46,11 @@ export function useSheetParam(key: SheetKey) {
     if (historyUserState()?.pumpSheet === key) {
       window.history.back()
     } else {
-      // Opened from a link: there is no pushed entry to go back to.
-      setParams((prev) => paramsAfterClose(prev, usePumpStore.getState().lastFilters), { replace: true })
+      // Opened from a link: there is no pushed entry to go back to. Only the
+      // Filters sheet can change filters (and it synced lastFilters on open).
+      setParams((prev) => (key === 'f' ? paramsAfterClose(prev, usePumpStore.getState().lastFilters) : withoutSheets(prev)), {
+        replace: true,
+      })
     }
   }, [key, setParams])
 

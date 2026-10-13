@@ -93,7 +93,12 @@ export function mergeLiveFilters(current: URLSearchParams, live: string): URLSea
  * before; re-apply the live ones and drop every sheet param.
  */
 export function paramsAfterClose(current: URLSearchParams, live: string): URLSearchParams {
-  const next = mergeLiveFilters(current, live)
+  return withoutSheets(mergeLiveFilters(current, live))
+}
+
+/** `current` without any sheet param. Closing a chart or About sheet changes nothing else. */
+export function withoutSheets(current: URLSearchParams): URLSearchParams {
+  const next = new URLSearchParams(current)
   for (const k of SHEET_KEYS) next.delete(k)
   return next
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { defaultFilters, type Filters } from './filters'
-import { hasFilterParams, mergeLiveFilters, paramsAfterClose, parseFilters, parseLevel, serializeFilters, withFilters } from './url-state'
+import { hasFilterParams, mergeLiveFilters, paramsAfterClose, parseFilters, parseLevel, serializeFilters, withFilters, withoutSheets } from './url-state'
 
 const p = (s: string) => new URLSearchParams(s)
 const full: Filters = {
@@ -60,5 +60,8 @@ describe('params helpers', () => {
   it('after a sheet closes: live filters back, sheet params gone', () => {
     const next = paramsAfterClose(p('m=S&f=1&c=12&a=1'), 'sk=twist')
     expect(Object.fromEntries(next)).toEqual({ sk: 'twist' })
+  })
+  it('closing a linked chart or About sheet drops only the sheet params', () => {
+    expect(Object.fromEntries(withoutSheets(p('m=D&lv=21&q=love&c=206&a=1&f=1')))).toEqual({ m: 'D', lv: '21', q: 'love' })
   })
 })

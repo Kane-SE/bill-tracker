@@ -1,4 +1,4 @@
-import { LayoutDashboard, Receipt, type LucideIcon } from 'lucide-react'
+import { Footprints, LayoutDashboard, Receipt, type LucideIcon } from 'lucide-react'
 
 export interface AppEntry {
   id: string
@@ -23,5 +23,12 @@ export const apps: AppEntry[] = [
     description: "What I'm working on",
     icon: LayoutDashboard,
     to: '/hub',
+  },
+  {
+    id: 'pump',
+    name: 'Pump',
+    description: 'Find charts to play',
+    icon: Footprints,
+    to: '/pump',
   },
 ]
