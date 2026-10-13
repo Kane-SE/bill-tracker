@@ -21,3 +21,6 @@ npm-debug.log*
 # TS build info
 *.tsbuildinfo
 node_modules/.tmp/
+
+# PIU data build downloads (scripts/piu-data)
+.cache/
