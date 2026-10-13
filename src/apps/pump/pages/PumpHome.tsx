@@ -1,4 +1,4 @@
-import { useCallback, useDeferredValue, useMemo } from 'react'
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef } from 'react'
 import { getCatalog } from '@/apps/pump/data/catalog'
 import { applyFilters, defaultFilters, facetCounts, removalSuggestions } from '@/apps/pump/lib/filters'
 import { sortCharts, toRows } from '@/apps/pump/lib/order'
@@ -34,6 +34,16 @@ export default function PumpHome() {
   // The list follows a deferred copy, so typing and chip taps stay responsive.
   const deferred = useDeferredValue(filters)
   const results = useMemo(() => applyFilters(sorted, deferred), [sorted, deferred])
+
+  // New filters show a new list: start it from the top. Opening or closing a
+  // sheet leaves the filters (and so the scroll position) alone.
+  const listKey = serializeFilters(deferred)
+  const shownKey = useRef(listKey)
+  useEffect(() => {
+    if (shownKey.current === listKey) return
+    shownKey.current = listKey
+    window.scrollTo({ top: 0 })
+  }, [listKey])
   const rows = useMemo(() => toRows(results), [results])
   const songCount = useMemo(() => new Set(results.map((c) => c.song)).size, [results])
   const suggestions = useMemo(() => (results.length === 0 ? removalSuggestions(sorted, deferred) : []), [results, sorted, deferred])
