@@ -72,10 +72,12 @@ SELECT scv.songId AS songId, c.internalTitle AS category
 FROM scv JOIN songCategory sc ON sc.songCategoryId = scv.songCategoryId JOIN category c ON c.categoryId = sc.categoryId
 WHERE scv.rn = 1`
 
+// First appearance of any kind (INSERT, EXISTS, REVIVE, CROSS …): 49 songs, such as
+// INFINITY's Kitty Cat, only ever arrived by CROSS.
 const DEBUT_SQL = `
 SELECT sv.songId AS songId, m.internalTitle AS mix
 FROM songVersion sv JOIN version v ON v.versionId = sv.versionId JOIN mix m ON m.mixId = v.mixId
-WHERE sv.operationId IN (1, 4)
+WHERE sv.operationId <> ${DELETE}
 ORDER BY sv.songId, m.sortOrder, v.sortOrder`
 
 const SONGS_SQL = 'SELECT s.songId AS songId, s.internalTitle AS title, c.internalTitle AS cut FROM song s JOIN cut c ON c.cutId = s.cutId'

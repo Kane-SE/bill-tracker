@@ -38,16 +38,16 @@ INSERT INTO mix VALUES (34,'XX',550),(35,'Phoenix',560),(36,'Phoenix 2',570);
 INSERT INTO version VALUES (1,34,10),(2,35,20),(3,36,30);
 INSERT INTO _derived_versionAncestor VALUES (1,1,10),(2,1,10),(2,2,20),(3,1,10),(3,2,20),(3,3,30);
 INSERT INTO cut VALUES (1,'Short Cut'),(2,'Arcade');
-INSERT INTO song VALUES (10,2,'Bee'),(11,2,'Gone Song'),(12,2,'Seoul Song');
+INSERT INTO song VALUES (10,2,'Bee'),(11,2,'Gone Song'),(12,2,'Seoul Song'),(13,2,'Crossed Song');
 INSERT INTO language VALUES (22,'en'),(24,'kr');
 INSERT INTO songTitle VALUES (1,10,22,'Bee'),(2,12,22,'Seoul Song'),(3,12,24,'서울 노래');
-INSERT INTO songVersion VALUES (10,1,1),(11,1,1),(11,3,2),(12,3,1);
-INSERT INTO chart VALUES (100,10),(101,10),(102,10),(103,10),(104,11),(105,10),(106,12),(107,10);
-INSERT INTO chartVersion VALUES (100,1,1),(101,1,1),(102,1,1),(103,1,1),(104,1,1),(105,2,1),(106,3,1),(107,1,1),(107,3,2);
+INSERT INTO songVersion VALUES (10,1,1),(11,1,1),(11,3,2),(12,3,1),(13,2,6);
+INSERT INTO chart VALUES (100,10),(101,10),(102,10),(103,10),(104,11),(105,10),(106,12),(107,10),(108,13);
+INSERT INTO chartVersion VALUES (100,1,1),(101,1,1),(102,1,1),(103,1,1),(104,1,1),(105,2,1),(106,3,1),(107,1,1),(107,3,2),(108,2,6);
 INSERT INTO mode VALUES (1,'S'),(2,'D'),(5,'C'),(7,'HDB');
 INSERT INTO difficulty VALUES (12,12),(18,18),(19,19),(20,20),(50,NULL);
-INSERT INTO chartRating VALUES (1,100,1,18),(2,100,1,19),(3,101,2,20),(4,102,5,12),(5,103,1,12),(6,104,1,12),(7,105,2,50),(8,106,7,20),(9,107,1,12);
-INSERT INTO chartRatingVersion VALUES (1,100,1),(2,100,3),(3,101,1),(4,102,1),(5,103,1),(6,104,1),(7,105,2),(8,106,3),(9,107,1);
+INSERT INTO chartRating VALUES (1,100,1,18),(2,100,1,19),(3,101,2,20),(4,102,5,12),(5,103,1,12),(6,104,1,12),(7,105,2,50),(8,106,7,20),(9,107,1,12),(10,108,1,12);
+INSERT INTO chartRatingVersion VALUES (1,100,1),(2,100,3),(3,101,1),(4,102,1),(5,103,1),(6,104,1),(7,105,2),(8,106,3),(9,107,1),(10,108,2);
 INSERT INTO label VALUES (1,'UCS'),(40,'PREMIUM MODE EXCLUSIVE'),(41,'STEAM LINK EXCLUSIVE');
 INSERT INTO chartLabel VALUES (1,100,40),(2,101,40),(3,103,1),(4,106,41);
 INSERT INTO chartLabelVersion VALUES (1,1,1),(1,2,2),(2,3,1),(3,1,1),(4,3,1);
@@ -72,7 +72,7 @@ beforeAll(async () => {
 
 describe('readPumpout', () => {
   it('keeps live S, D and HDB charts only (no Co-Op, UCS, deleted charts or charts of deleted songs)', () => {
-    expect(read.charts.map((c) => c.id).sort()).toEqual([100, 101, 105, 106])
+    expect(read.charts.map((c) => c.id).sort()).toEqual([100, 101, 105, 106, 108])
   })
   it('uses the latest rating and reports the previous version level only when it changed', () => {
     const c100 = read.charts.find((c) => c.id === 100)
@@ -99,5 +99,8 @@ describe('readPumpout', () => {
     })
     expect(read.songs.get(12).names).toEqual(['Seoul Song', 'Seoul Song', '서울 노래'])
     expect(read.songs.has(11)).toBe(false)
+  })
+  it('dates a song that only ever arrived by CROSS from its first appearance', () => {
+    expect(read.songs.get(13).series).toBe('PHOENIX')
   })
 })
