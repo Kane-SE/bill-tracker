@@ -378,6 +378,6 @@ If the CSV fetch fails, the build stops and the committed `charts.json` stays as
 - Other game versions.
 - UCS and Co-op.
 - A computed gimmick tag.
-- Title tracks from PHOENIX or XX (they're only used for the gimmick list).
+- Showing title tracks from PHOENIX or XX. They're used only behind the scenes: tuning the skill thresholds and building the gimmick list.
 - Desktop layout.
 - Sharing links (the URL is shareable, but there's no Share button).
