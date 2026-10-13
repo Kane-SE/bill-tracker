@@ -1,3 +1,4 @@
+import { forwardRef } from 'react'
 import { Link } from 'react-router-dom'
 import { ChevronLeft } from 'lucide-react'
 import { Button } from '@/shared/ui/button'
@@ -5,16 +6,21 @@ import { cn } from '@/shared/lib/utils'
 
 interface PageHeaderProps {
   title: string
-  subtitle?: string
+  subtitle?: React.ReactNode
   backTo?: string
   actions?: React.ReactNode
   className?: string
+  /** rendered under the title row, inside the sticky header (e.g. tabs) */
+  children?: React.ReactNode
 }
 
 /** Sticky top bar used across pages. */
-export function PageHeader({ title, subtitle, backTo, actions, className }: PageHeaderProps) {
+export const PageHeader = forwardRef<HTMLElement, PageHeaderProps>(function PageHeader(
+  { title, subtitle, backTo, actions, className, children },
+  ref,
+) {
   return (
-    <header className={cn('sticky top-0 z-20 -mx-4 mb-4 border-b border-border bg-background/80 px-4 py-3 backdrop-blur', className)}>
+    <header ref={ref} className={cn('sticky top-0 z-20 -mx-4 mb-4 border-b border-border bg-background/80 px-4 py-3 backdrop-blur', className)}>
       <div className="flex items-center gap-2">
         {backTo && (
           <Button asChild variant="ghost" size="icon" className="-ml-2 shrink-0">
@@ -29,6 +35,7 @@ export function PageHeader({ title, subtitle, backTo, actions, className }: Page
         </div>
         {actions && <div className="flex shrink-0 items-center gap-1">{actions}</div>}
       </div>
+      {children}
     </header>
   )
-}
+})
