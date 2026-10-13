@@ -24,7 +24,44 @@ The log is authoritative. Rows in §2 stay for context; a settled row is marked 
 | ✅ D6 | **Ship derived facts only, credit the sources, ask both maintainers before the PR merges.** Fallback: an import-on-phone data file | Claude drafts the two messages; the user sends them |
 | ✅ D21 | **"Pump"**, lucide `Footprints`, "Find charts to play". Route `#/pump`, folder `src/apps/pump/` | |
 | ✅ D24 | **Fix the shared Dialog in this branch** (44 px close, reduced motion, sticky footer slot) | |
-| ✅ D25 | **Branch `feature/piu-charts` from `origin/main`**; commit the docs and push the branch now; PR after the build | |
+| ✅ D25 | **Branch `feature/piu-charts` from `origin/main`**; commit the docs and push the branch now; PR after the build | Done: `d59c88c` |
+
+**Round 2 — 2026-10-13**
+
+| # | Decision | Note |
+|---|---|---|
+| ✅ D3 | **Every song available in PHOENIX 2**, old ones included, plus a "Version" filter | 462 S/D charts debuted before FIESTA, and 19 of the 67 matched P2 title charts are among them |
+| ✅ D4 | **Include everything, with the Steam Link content hidden behind a filter**: Half-Double mode (790 charts) and the 10 RISE songs (87 charts). Premium-mode charts (172) are in, with an icon. Co-op and UCS are out | None of the Steam Link charts have skill data, so skill filters never match them. The detail sheet says "no skill data" |
+| ✅ D9 | **Gimmick = every chart ever required by an official GIMMICK title (any version with records) + PHOENIX 2's SLOW track.** No user-curated list. No tag computed from timing | Result ([`research-gimmick-titles.md`](research-gimmick-titles.md)): titles exist only in **XX, PHOENIX and PHOENIX 2**; PRIME 2 and earlier had none. Ladders: XX Gimmick (community sources only), P1 [GIMMICK], P2 [GIMMICK] + [SLOW] → **22 charts in P2** (19 S, 3 D). Older ladders add Bad Apple!! S15 (XX) and 8 6 S16 (P1); LOVE SCENARIO is gone from P2. Match on pumpout chart IDs, not levels: e.g. Take Out D23 [SLOW] was D22 before P2. Wicked Legend D21 ("All Gimmick Ver." in community files) is **not** a title chart, so it's excluded under this rule |
+| ✅ D1-b | **Titles screen**: PHOENIX 2's 9 tracks, each Lv.1→10. Tap a title to open its chart. **Tick the titles you've earned**; ticks are saved on the phone and included in the Settings backup | The only personal data in v1. P1 ladders are not shown, since they didn't carry over |
+| ✅ D8 | **6 skills: half, run, twist, bracket, gimmick, drill.** Tagged when coverage passes a tuned threshold; official title charts are always tagged. Finer tags appear only in the detail sheet | |
+| ✗ D7/D10/D23 | Unclear as asked ("don't get it") → re-asked in plain words in round 3 | |
+
+**Round 3 — 2026-10-13** (answered on mockups)
+
+| # | Decision | Note |
+|---|---|---|
+| ✅ D10 | **Data refresh on request**: Claude runs `npm run piu:data`, shows what changed, commits | D7 (two sources, pumpout pinned) and D23 (data bundled into the lazy Pump chunk) are engineering defaults with no visible trade-off; kept as proposed |
+| ✅ D11/D17 | **One row per chart, sorted by level, sticky level headers** | |
+| ✅ D12 | **Search in the bottom bar** (with the keyboard fix; move to the top only if it fails on the phone) | |
+| ✅ D13 | **7×4 level grid, tap start then end; ranges only** | "Separate levels" was left unanswered → default (ranges only). Presets cover separate levels |
+| ✅ D14 | **Skills: any by default, with an any/all switch** | |
+| ✅ D16 | **Bottom bar: S/D (+HD when Steam Link is on), level range, selected skills, Clear; search + Filters (n)** | |
+| ✅ D20 | **Presets in v1**, as chips at the top of the Filters sheet | |
+| ✅ Nav | **Charts \| Titles tabs in the header** | |
+| ✅ D15 | **Back closes the open sheet, otherwise leaves Pump** | |
+| ✗ D19 | Chart sheet mockup was read as a search result → re-asked as a tap-a-row flow in round 4 | |
+
+**Round 4 — 2026-10-13** (answered on mockups)
+
+| # | Decision | Note |
+|---|---|---|
+| ✅ D19 | **Tapping a row opens a sheet over the list** with that chart's details: title, artist, type, debut version, BPM, step artist, old level if changed, skill bars, and its title with an "earned" tick. Back or swipe down returns to the same place | |
+| ✅ Empty | **No results → suggest which filter to remove**, with the count each removal would give, plus Clear all | |
+| ✅ D22 | **Add `@tanstack/react-virtual`** (8 KB) for the list | The one new runtime dependency |
+| ✅ D9 detail | **Wicked Legend D21 stays out** (not a title chart). No objection raised | |
+
+**Frontier empty: every §2 decision is settled.** Next: the user confirms the shared understanding → `spec.md` → user review → task-by-task plan.
 
 ---
 
@@ -104,28 +141,40 @@ Legend: ★ = recommended default. "Affects" names the parts of §4–§5 that c
 
 ---
 
-## 3. What the user sees (★ defaults applied)
+## 3. What the user sees (as decided)
 
 ```
-Main screen (390 px)                         Filter sheet
+Charts tab (390 px)                          Filter sheet
 +------------------------------------------+ +------------------------------------------+
-| <  Pump                      [Presets]   | | Filters                     Reset  [ X ] |
-|    212 charts · 141 songs                | | [S18-20 twist] [D22 bracket] [+ Save]     |
+| <  Pump          [ Charts | Titles ]     | | Filters                     Reset  [ X ] |
+|    212 charts · 141 songs                | | [D20-22 twist] [S18-20 run] [+ Save]      |
 +------------------------------------------+ |------------------------------------------|
 | LV 18 · 64                               | | Mode · any of                            |
-| [S18] Song title A               twist   | | [✓ Single 2,752][✓ Double 1,783][HD 790] |
+| [S18] Song title A               twist   | | [✓ Single 2,752][✓ Double 1,783]         |
 |       Artist · Full Song · FIESTA  run   | | Level · 18–20                            |
-| [D18] Song title B             bracket   | | [ 1][ 2][ 3][ 4][ 5][ 6][ 7]             |
+| [D18] Song title B          bracket 🏆   | | [ 1][ 2][ 3][ 4][ 5][ 6][ 7]             |
 |       Artist · PRIME 2                   | | [ 8][ 9][10][11][12][13][14]             |
 |   … virtualised …                        | | [15][16][17][18][19][20][21]  ← in range |
 | LV 19 · 51                               | | [22][23][24][25][26][27][28]             |
 +------------------------------------------+ | Skills   ( any of | all of )             |
-| [✓S][✓D][HD][Lv 18–20][twist ✕][Clear]   | | [✓ twist][run][bracket][half][gimmick]   |
-| [ 🔍 Search title, artist ][⚂][Filters 3]| | Song type · Version · Flags …            |
-+------------------------------------------+ |------------------------------------------|
-                                             | [          Show 212 charts            ]  |
-                                             +------------------------------------------+
+| [✓S][✓D][Lv 18–20][twist ✕][Clear]       | | [✓twist][run][bracket][half][drill][gim] |
+| [ 🔍 Search title, artist ] [Filters 3]  | | Song type · Version · Title charts only   |
++------------------------------------------+ | Steam Link (HD mode, RISE) · Premium     |
+                                             |------------------------------------------|
+Titles tab                                   | [          Show 212 charts            ]  |
++------------------------------------------+ +------------------------------------------+
+| <  Pump          [ Charts | Titles ]     |
+|    12 / 90 earned                        |  Chart sheet (tap a row)
+| TWIST D · 3 / 10                         |  +------------------------------------------+
+|  ☑ Lv.3 Dignity D17                      |  | [D21] Love is a Danger Zone              |
+|  ☐ Lv.4 Final Audition 2 D18          >  |  | Artist · type · debut · BPM · step artist|
+| HALF · 1 / 10                            |  | was D20 in PHOENIX (when changed)        |
+|  ☐ Lv.2 Butterfly D17                 >  |  | twist ███████░░░  run ████░░░░░░  …      |
+|   … 9 tracks …                           |  | 🏆 TWIST D Lv.7 · needs SSS  [☐ earned]  |
++------------------------------------------+  +------------------------------------------+
 ```
+
+The HD mode chip appears in the bottom bar only while the Steam Link filter is on.
 
 Behaviour:
 - **Search** filters as you type: accents stripped, case ignored, half-typed Korean matches. Every typed word must appear somewhere. Title-prefix matches rank first.
@@ -133,7 +182,9 @@ Behaviour:
 - **Combining**: OR within one facet, AND across facets. Skills have the any/all switch.
 - **Counts** appear on each option, computed with the other facets applied.
 - **Zero results** shows one button per active filter, each with the count that removing it would give ("Remove bracket → 18 charts"), plus Clear all.
-- **State**: the URL holds the live filters (`#/pump?m=S,D&lv=18-20&sk=twist`). The last-used filters and presets survive restarts. Opening the app with no filters restores the last ones.
+- **State**: the URL holds the live filters (`#/pump?m=S,D&lv=18-20&sk=twist`). Chip taps replace the URL entry, so Back never steps through filters. The last-used filters, presets and earned titles survive restarts. Opening the app with no filters restores the last ones.
+- **Back**: closes the open sheet; otherwise leaves Pump.
+- **Earned titles** can be ticked on the Titles tab or in a chart's sheet. They're included in Settings → backup.
 
 ---
 
@@ -147,10 +198,10 @@ scripts/piu-data/
   sources.mjs               pinned raw.githubusercontent URLs at commit SHAs (pumpout .db, title lists, .ssc) + the CSV URL
   pumpout.mjs               read SQLite → songs, charts, levels, labels for the chosen version(s)
   piuscores.mjs (+ .test)   fetch + parse the CSV (quoted titles with commas) → metadata + skill coverage; save a dated copy
-  simfiles.mjs (+ .test)    only if D9 = b: parse .ssc timing tags → gimmick "likely" score
   join.mjs (+ .test.mjs)    pumpout ↔ CSV on title + cut + mode + level, with the alias table (research.md §6)
-  skills.mjs (+ .test.mjs)  coverage → run / twist / bracket / half; timing → gimmick (official | likely)
-  titles.mjs                P1 + P2 skill-title ladders → official tags
+  skills.mjs (+ .test.mjs)  coverage → run / twist / bracket / half / drill; title charts always tagged
+  titles.mjs (+ .test.mjs)  P2 ladders (9 tracks × 10) for the Titles tab; gimmick = XX + P1 [GIMMICK] + P2 [GIMMICK] + [SLOW],
+                            matched by pumpout chart ID (research-gimmick-titles.md)
   report.mjs                counts, unmatched charts, re-rates vs the previous build, title-chart check
   README.md                 how to refresh after a patch
 
@@ -162,17 +213,18 @@ src/apps/pump/
   lib/search.ts (+test)     token-AND substring match + ranking
   lib/filters.ts (+test)    Filters type, applyFilters, facetCounts, removalCounts (zero-results helper)
   lib/url-state.ts (+test)  Filters ↔ URLSearchParams (parse is forgiving, serialise is canonical)
-  lib/random.ts (+test)     pick one chart from results
   lib/summary.ts (+test)    "S or D · Lv 18–20 · twist or bracket"
-  store/usePumpStore.ts (+test)  persist { lastFilters, presets }, zod-validated, versioned
+  lib/titles.ts (+test)     group title charts by track, progress counts ("TWIST D · 3 / 10")
+  store/usePumpStore.ts (+test)  persist { lastFilters, presets, earnedTitles }, zod-validated, versioned
   hooks/useKeyboardInset.ts visualViewport → bottom offset for the dock
   components/               ChartList (virtualised + sticky level headers), ChartRow, LevelBadge,
                             SkillTag, FilterDock, ChipRow, FilterSheet, FacetGroup, LevelGrid,
-                            AnyAllSwitch, ChartSheet, EmptyResults, PresetBar
-  pages/PumpHome.tsx
+                            AnyAllSwitch, ChartSheet, EmptyResults, PresetBar, PumpTabs, TitleTrack
+  pages/PumpHome.tsx        Charts | Titles tabs (tab in the URL: #/pump/titles)
 
 Modified: src/App.tsx (lazy route + Suspense), src/launcher/registry.ts, src/shared/ui/dialog.tsx (D24),
-          package.json (+ @tanstack/react-virtual, + "piu:data" script), README.md
+          src/settings/backup.ts (+ earned titles), package.json (+ @tanstack/react-virtual, + "piu:data" script),
+          README.md
 ```
 
 Tests follow the repo's rule: pure logic in Vitest's node environment, no DOM tests. The data script's mapping functions are tested the same way.
@@ -199,19 +251,25 @@ Tests follow the repo's rule: pure logic in Vitest's node environment, no DOM te
     song: number,                    // index into songs
     mode: 'S' | 'D' | 'HDB',
     level: number,                   // in `meta.game`
-    skills: SkillId[],               // the five: 'half' | 'run' | 'twist' | 'bracket' | 'gimmick'
-    gimmick?: 'official' | 'likely',
+    skills: SkillId[],               // 'half' | 'run' | 'twist' | 'bracket' | 'drill' | 'gimmick'; [] = no skill data
+    gimmickFrom?: string[],          // e.g. ['XX Gimmick Lv.3', 'P2 SLOW Lv.2'], shown in the chart sheet
     badges: string[],                // piucenter top-3, for the detail sheet
-    coverage?: Record<string, number>, // 0–1 per piucenter skill, for bars in the detail sheet
-    title?: string,                  // e.g. 'TWIST D Lv.4' when it's an official title chart
+    coverage?: Record<string, number>, // 0–1 for the 6 skills, for bars in the detail sheet
     flags?: ('PREMIUM' | 'STEAM_LINK')[],
     stepArtist?: string,
     prevLevel?: number,              // level in PHOENIX, when it changed
   }[],
+  titles: {                          // PHOENIX 2 skill-title ladders, 9 tracks × 10
+    id: string,                      // e.g. 'TWIST_D_7' — the key stored in earnedTitles
+    track: 'TWIST S' | 'TWIST D' | 'RUN S' | 'RUN D' | 'DRILL' | 'GIMMICK' | 'SLOW' | 'HALF' | 'BRACKET',
+    lv: number,                      // 1–10
+    chart: number,                   // index into charts
+    needs: 'SSS',
+  }[],
 }
 ```
 
-If D2 = version switch, `level` becomes `levels: [VersionId, number][]` plus `in: VersionId[]`. The data budget gets checked in Phase 1.
+The data budget gets checked in Phase 1.
 
 ### 4.3 Skill mapping (to tune in Phase 1)
 
@@ -222,8 +280,9 @@ If D2 = version switch, `level` becomes `levels: [VersionId, number][]` plus `in
 | run | coverage(`run` ∪ `anchor_run` ∪ `run_without_twists`) ≥ *t₁*, or one of them in top-3 | P2 RUN S + RUN D (20 charts), P1 RUN (10) |
 | twist | coverage(`twist_90` ∪ `twist_over90` ∪ `twist_close` ∪ `twist_far`) ≥ *t₂*, or `twists` in top-3 | P2 TWIST S + D (20), P1 TWIST (10) |
 | bracket | coverage(any `bracket*` or `staggered_bracket`) ≥ *t₃*, or one in top-3 | P2 BRACKET (10), P1 BRACKET (10) |
-| half | mode D **and** (`pump-halfdouble`, or coverage(`mid6_doubles`) ≥ *t₄*) | P2 HALF (10), P1 HALF (10) |
-| gimmick | official: listed in a GIMMICK/SLOW title or a patch-note gimmick edit. likely: share of time off the dominant BPM×scroll×speed ≥ *t₅*, or an explicit stop/warp/fake | P2 GIMMICK + SLOW (20), P1 GIMMICK (10); must not flag most RUN/TWIST/DRILL/BRACKET title charts |
+| half | mode D **and** coverage(`mid6_doubles`) ≥ *t₄* | P2 HALF (10), P1 HALF (10) |
+| drill | coverage(`drill` ∪ `bracket_drill`) ≥ *t₅*, or `drill` in top-3 | P2 DRILL (10), P1 DRILL (10) |
+| gimmick | **Fixed list, no threshold**: the 22 P2 charts from the XX, P1 and P2 GIMMICK ladders plus the P2 SLOW ladder | — |
 
 Each threshold is picked so that ≥ 90% of that skill's title charts are tagged, then checked against how many charts the skill tags overall. The report prints both numbers, so you can sanity-check them by eye.
 
@@ -234,21 +293,20 @@ Each threshold is picked so that ≥ 90% of that skill's title charts are tagged
 Each phase ends with green tests, `npx tsc --noEmit` clean, and a commit on `feature/piu-charts`.
 
 ### Phase 0 — Decide (no code)
-- [ ] Grill §2 and record each answer here.
+- [x] Grill §2 and record each answer here (rounds 1–4, 2026-10-13).
 - [ ] Write `spec.md` from the answers. You review it.
 - [ ] Send permission requests to the data maintainers (D6). Drafts go in this folder; you send them.
 - [ ] Rewrite this file as the task-by-task plan (writing-plans format).
 
 ### Phase 1 — Data pipeline
 - [ ] `sources.mjs` pins every GitHub input to a raw.githubusercontent URL at a commit SHA. Downloads are cached outside the repo (git-ignored `.cache/`).
-- [ ] Read pumpout for the chosen version(s). Drop Co-op and UCS.
+- [ ] Read pumpout for PHOENIX 2 v1.01. Drop Co-op and UCS. Keep Steam-Link (HDB mode, RISE) and Premium charts with flags.
 - [ ] Fetch the PIU Scores CSV with the extra columns. Join it to pumpout (`join.mjs`, tested on fixtures, including the alias table).
-- [ ] Only if D9 = b: parse `.ssc` timing for the gimmick score.
-- [ ] Load the title ladders, then tune the skill thresholds (`skills.mjs`, tested).
+- [ ] Load the title ladders (P2 tracks for the Titles tab; the gimmick list), then tune the skill thresholds (`skills.mjs`, tested).
 - [ ] Write `charts.json` and print the report. **Exit:**
   - 100% of P2 S/D charts have a level;
   - ≥ 97% have skills (the RISE songs have none);
-  - all 90 P2 title charts are found;
+  - all 90 P2 title charts and all 22 gimmick charts are found;
   - the file is ≤ 600 KB;
   - every unmatched chart is listed by name.
 
@@ -258,16 +316,17 @@ Each phase ends with green tests, `npx tsc --noEmit` clean, and a commit on `fea
 - [ ] `normalize` and `search`, with Korean and accent cases from research-ui §3.3.
 - [ ] `filters`: apply, facet counts, removal counts, any/all.
 - [ ] `url-state`: round-trip tests; garbage input → defaults.
-- [ ] `summary` and `random`.
-- [ ] `usePumpStore`: persist `lastFilters` and `presets`, zod-validated, version 1.
+- [ ] `summary` and `titles` (track grouping and progress).
+- [ ] `usePumpStore`: persist `lastFilters`, `presets` and `earnedTitles`, zod-validated, version 1. Add earned titles to the Settings backup.
 
 ### Phase 3 — Screens
 - [ ] Register the app (D21) and add the lazy route `/pump` with a skeleton fallback.
 - [ ] `ChartList`: window virtualiser, fixed 64 px rows, 32 px sticky level headers.
 - [ ] `ChartRow`: level badge (letter + colour), title, line 2, up to 2 skill tags, Premium/title-chart icons.
-- [ ] `FilterDock` in `BottomBar`: chip row, search, random, Filters (n). Wire `useKeyboardInset`.
-- [ ] `FilterSheet`: presets, mode, level grid, skills with any/all, type, version, flags, live "Show N charts".
-- [ ] `ChartSheet` and `EmptyResults`.
+- [ ] `FilterDock` in `BottomBar`: chip row, search, Filters (n). Wire `useKeyboardInset`.
+- [ ] `FilterSheet`: presets, mode, level grid, skills with any/all, type, version, title charts only, Steam Link, Premium, live "Show N charts".
+- [ ] `ChartSheet` (with the earned tick) and `EmptyResults`.
+- [ ] `PumpTabs` and the Titles tab: 9 tracks, progress, ticks, tap → chart sheet.
 - [ ] Back closes sheets (push one history entry on open; `popstate` closes).
 - [ ] Shared `Dialog` fixes (D24).
 
@@ -291,7 +350,7 @@ Each phase ends with green tests, `npx tsc --noEmit` clean, and a commit on `fea
 | A maintainer says no, or doesn't answer | Fallback D6(b): data stays out of the repo and you import the file on your phone |
 | Joining sources misses charts (titles differ) | Alias table plus the report's unmatched list; the Phase 1 exit criteria block on it |
 | The PIU Scores CSV changes shape or goes away (it's a live endpoint, not a pinned file) | The build keeps a dated copy and validates the header row with zod. A failed fetch keeps the last committed `charts.json`. The CSV has no CORS headers, so it's only fetched at build time |
-| A gimmick rule that is wrong more often than it is right | Two levels (official / likely). Drop "likely" if tuning fails (D9) |
+| The gimmick list is small (22 charts) and the XX ladder rests on community copies only | It's a fixed, cited list (research-gimmick-titles.md). The report names any title chart that fails to match |
 | The keyboard hides the bottom dock | `visualViewport` hook; fallback to search at the top (D12) |
 | The data goes stale after a patch | `npm run piu:data` plus the diff report. The app shows "Data: P2 1.01.0, built <date>" in the Presets/about area |
 | The window virtualiser fights the route slide animation or sticky headers | Prototype in Phase 3 first. The App wrapper uses `overflow-x: clip` (not `hidden`), so sticky positioning still works |
