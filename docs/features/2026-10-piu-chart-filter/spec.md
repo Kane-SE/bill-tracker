@@ -1,7 +1,7 @@
 # Pump — Design
 
 **Date:** 2026-10-14 · **Status:** grilled (rounds 1–4, 2026-10-13), awaiting spec review
-**Decisions log:** [`plan.md` §0](plan.md) · **Research:** [`research.md`](research.md) (data sources), [`research-ui.md`](research-ui.md) (mobile list and filters), [`research-gimmick-titles.md`](research-gimmick-titles.md) (gimmick list)
+**Decisions log:** [`decisions.md`](decisions.md) · **Research:** [`research.md`](research.md) (data sources), [`research-ui.md`](research-ui.md) (mobile list and filters), [`research-gimmick-titles.md`](research-gimmick-titles.md) (gimmick list)
 
 ## Problem
 
