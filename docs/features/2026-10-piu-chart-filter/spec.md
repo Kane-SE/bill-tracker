@@ -245,14 +245,14 @@ All sizes are CSS px at a 390 px width. Every tap target is ≥ 44 px, or extend
   - Order: level ascending, then title (`Intl.Collator`), then S before D before HDB.
 - **Row** (the whole row is one button that opens the chart sheet):
   - **Left: `LevelBadge`** (40×40) shows `S19`, `D19` or `HD19`. Single is outlined, Double is filled with `primary`, HD is a dashed outline. The mode is never shown by colour alone.
-  - **Line 1:** the title, truncated, then `titleKo` as a muted suffix when present.
+  - **Line 1:** the title, truncated. _(Self-test 2026-10-21: the Korean title is no longer shown in rows. Most are transliterations that crowded the line; it stays in the chart sheet and in search.)_
   - **Line 2** (muted): artist · song type (only when not Arcade) · series.
   - **Right:** up to 2 `SkillTag`s. Selected skills come first, then by coverage; gimmick comes first when it applies. A trophy icon marks a P2 title chart (filled when earned), and a small P marks Premium.
 - **FilterDock** (in `BottomBar`, lifted by `useKeyboardInset`):
   - Row 1 is a sideways-scrolling `ChipRow`:
     - mode chips S and D, plus HD while `sl=1`. None selected = all modes;
     - the level chip ("Lv 18–20", or "Any level"), which opens the sheet at Level;
-    - one chip per selected skill, with an ✕;
+    - one chip per selected skill, with an ✕. Between skill chips, an **or / and** connector shows how they combine; tapping it switches any ↔ all;
     - **Clear**, shown when anything is active.
   - Row 2 is the search field, plus **Filters (n)**, where n is the number of active facets.
 - **Empty**: "No charts match." The top 3 removal suggestions, each a button like "Remove bracket → 18 charts", then **Clear all**.
@@ -281,11 +281,12 @@ All sizes are CSS px at a 390 px width. Every tap target is ≥ 44 px, or extend
 
 It opens with `c=<id>` pushed. Back or swiping down closes it, and the list hasn't moved underneath. Content:
 - The `LevelBadge`, title, `titleKo`, and artist.
-- Song type · channel · series · BPM (or a range) · step artist.
+- Song type · channel · series · BPM (or a range); the step artist on its own line ("Step artist: BPM" would otherwise read as a tempo).
 - "Was D20 in PHOENIX" when `prev` is set.
 - **Skill bars** for half, run, twist, bracket and drill (0–100). Tagged skills are emphasised.
 - **Gimmick** as a line naming its ladders ("PHOENIX 2 SLOW Lv.2 · PHOENIX GIMMICK Lv.8").
 - The top-3 piucenter badges, in small muted text.
+- **Other charts of this song** as level badges; tapping one shows it in the same sheet (URL `c` replaced, so Back still closes the sheet in one step).
 - **Titles** this chart unlocks ("TWIST D Lv.7 · needs SSS"), each with an **earned** toggle.
 - No skill data → "No skill data for this chart (Steam Link)." or "No skill data for this chart."
 - Flags: Premium mode, Steam Link.
@@ -297,7 +298,7 @@ It opens with `c=<id>` pushed. Back or swiping down closes it, and the list hasn
 - Each row has a **tick** button (44×44, `aria-pressed`, labelled "Earned TWIST D Lv.3"), then "Lv.3", the `LevelBadge` and the title. Tapping the rest of the row opens the chart sheet.
 - The first unearned title in each track is marked **next**.
 - No virtualiser: 90 rows is fine.
-- Switching tabs replaces `tab` in the URL. The Charts filters stay put.
+- Switching tabs replaces `tab` in the URL and starts the new tab at its top. The Charts filters stay put. Changing a filter also starts the list at its top; opening or closing a sheet doesn't move it.
 
 ### About dialog
 
