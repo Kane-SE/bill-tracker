@@ -1,10 +1,11 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef } from 'react'
 import { getCatalog } from '@/apps/pump/data/catalog'
 import { applyFilters, defaultFilters, facetCounts, removalSuggestions } from '@/apps/pump/lib/filters'
-import { sortCharts, toRows } from '@/apps/pump/lib/order'
+import { songCharts, sortCharts, toRows } from '@/apps/pump/lib/order'
 import { activeFacetCount, summarize } from '@/apps/pump/lib/summary'
 import { earnedCount, trackViews } from '@/apps/pump/lib/titles'
 import { parseFilters, serializeFilters } from '@/apps/pump/lib/url-state'
+import { countLabel } from '@/apps/pump/lib/labels'
 import { MAX_PRESETS, usePumpStore } from '@/apps/pump/store/usePumpStore'
 import { usePumpFilters } from '@/apps/pump/hooks/usePumpFilters'
 import { useSheetParam } from '@/apps/pump/hooks/useSheetParam'
@@ -44,6 +45,7 @@ export default function PumpHome() {
     shownKey.current = listKey
     window.scrollTo({ top: 0 })
   }, [listKey])
+
   const rows = useMemo(() => toRows(results), [results])
   const songCount = useMemo(() => new Set(results.map((c) => c.song)).size, [results])
   const suggestions = useMemo(() => (results.length === 0 ? removalSuggestions(sorted, deferred) : []), [results, sorted, deferred])
@@ -54,14 +56,22 @@ export default function PumpHome() {
   const liveQuery = serializeFilters({ ...filters, q: '' })
 
   const views = useMemo(() => trackViews(catalog.titles, earned), [catalog, earned])
+  // Each tab starts at its top. Scroll before switching: the chart list's virtualizer
+  // takes the window's scroll position as its starting offset when it mounts.
+  const switchTab = (t: typeof tab) => {
+    if (t === tab) return
+    window.scrollTo({ top: 0 })
+    setTab(t)
+  }
   const openChart = chartSheet.open
   const onOpen = useCallback((id: number) => openChart(String(id)), [openChart])
   const chart = chartSheet.value ? (catalog.byId.get(Number(chartSheet.value)) ?? null) : null
+  const siblings = useMemo(() => (chart ? songCharts(sorted, chart, filters.steamLink || chart.steamLink) : []), [sorted, chart, filters.steamLink])
 
   const subtitle =
     tab === 'charts' ? (
       <span role="status">
-        {results.length.toLocaleString()} charts · {songCount.toLocaleString()} songs
+        {countLabel(results.length, 'chart')} · {countLabel(songCount, 'song')}
       </span>
     ) : (
       `${earnedCount(catalog.titles, earned)} / ${catalog.titles.length} earned`
@@ -69,7 +79,7 @@ export default function PumpHome() {
 
   return (
     <div className="mx-auto max-w-lg px-4 pb-44">
-      <PumpHeader tab={tab} onTab={setTab} subtitle={subtitle} onInfo={() => about.open()} />
+      <PumpHeader tab={tab} onTab={switchTab} subtitle={subtitle} onInfo={() => about.open()} />
 
       {tab === 'charts' ? (
         <>
@@ -106,7 +116,15 @@ export default function PumpHome() {
         onSavePreset={(name) => savePreset(name, liveQuery)}
         onDeletePreset={deletePreset}
       />
-      <ChartSheet chart={chart} titles={catalog.titles} earned={earned} onToggleTitle={toggleTitle} onClose={chartSheet.close} />
+      <ChartSheet
+        chart={chart}
+        siblings={siblings}
+        titles={catalog.titles}
+        earned={earned}
+        onToggleTitle={toggleTitle}
+        onPick={(id) => chartSheet.swap(String(id))}
+        onClose={chartSheet.close}
+      />
       <AboutDialog open={about.value !== null} meta={catalog.meta} onClose={about.close} />
     </div>
   )

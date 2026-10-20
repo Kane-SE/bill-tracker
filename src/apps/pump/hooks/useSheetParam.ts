@@ -42,6 +42,21 @@ export function useSheetParam(key: SheetKey) {
     [key, setParams],
   )
 
+  /** Show a different value in the already-open sheet (e.g. another chart) without a new history entry. */
+  const swap = useCallback(
+    (v: string) => {
+      setParams(
+        (prev) => {
+          const next = new URLSearchParams(prev)
+          next.set(key, v)
+          return next
+        },
+        { replace: true, state: historyUserState() },
+      )
+    },
+    [key, setParams],
+  )
+
   const close = useCallback(() => {
     if (historyUserState()?.pumpSheet === key) {
       window.history.back()
@@ -68,5 +83,5 @@ export function useSheetParam(key: SheetKey) {
     }
   }, [key, value, params, setParams])
 
-  return { value, open, close }
+  return { value, open, swap, close }
 }

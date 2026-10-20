@@ -26,10 +26,7 @@ export function ChartRow({ chart, selectedSkills, earned, onOpen }: ChartRowProp
     >
       <LevelBadge mode={chart.mode} level={chart.level} />
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-semibold">
-          {chart.song.title}
-          {chart.song.titleKo && <span className="ml-1.5 font-normal text-muted-foreground">{chart.song.titleKo}</span>}
-        </span>
+        <span className="block truncate text-sm font-semibold">{chart.song.title}</span>
         <span className="block truncate text-xs text-muted-foreground">{chartLine2(chart)}</span>
       </span>
       <span className="flex shrink-0 items-center gap-1">

@@ -40,3 +40,10 @@ export function rowSkills(chart: Chart, selected: readonly SkillId[], max = 2): 
     .sort((a, b) => Number(selected.includes(b)) - Number(selected.includes(a)) || strength(b) - strength(a))
     .slice(0, max)
 }
+
+/** Every chart of `chart`'s song: Singles, then Doubles, then Half-Doubles, each by level. */
+export function songCharts(charts: readonly Chart[], chart: Chart, steamLink: boolean): Chart[] {
+  return charts
+    .filter((c) => c.song === chart.song && (steamLink || !c.steamLink))
+    .sort((a, b) => MODE_ORDER[a.mode] - MODE_ORDER[b.mode] || a.level - b.level || a.id - b.id)
+}

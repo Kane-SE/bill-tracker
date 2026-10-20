@@ -14,7 +14,7 @@ import { encodeCatalog, stringifyCatalog } from './encode.mjs'
 import { checkCatalog, diffCatalogs, renderReport } from './report.mjs'
 
 const OUT = 'src/apps/pump/data/charts.json'
-const today = new Date().toISOString().slice(0, 10)
+const today = new Date().toLocaleDateString('sv-SE') // YYYY-MM-DD in local time
 
 const SQL = await initSqlJs()
 const db = new SQL.Database(await fetchCached(PUMPOUT.url, `pumpout-${PUMPOUT.commit.slice(0, 7)}.db`))

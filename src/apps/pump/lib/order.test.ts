@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { makeChart, makeSong } from './__fixtures__/charts'
-import { rowSkills, sortCharts, toRows } from './order'
+import { rowSkills, songCharts, sortCharts, toRows } from './order'
 
 const a = makeSong({ title: 'apple' })
 const b = makeSong({ title: 'Banana' })
@@ -31,5 +31,23 @@ describe('rowSkills', () => {
   })
   it('puts selected skills first', () => {
     expect(rowSkills(c, ['bracket'])).toEqual(['bracket', 'gimmick'])
+  })
+})
+
+describe('songCharts', () => {
+  const song = makeSong({ title: 'Bee' })
+  const other = makeSong({ title: 'Conflict' })
+  const charts = [
+    makeChart({ id: 1, song, mode: 'D', level: 20 }),
+    makeChart({ id: 2, song, mode: 'S', level: 19 }),
+    makeChart({ id: 3, song: other, mode: 'S', level: 19 }),
+    makeChart({ id: 4, song, mode: 'S', level: 17 }),
+    makeChart({ id: 5, song, mode: 'HDB', level: 20, steamLink: true }),
+  ]
+  it("lists every chart of the song, Singles then Doubles, by level", () => {
+    expect(songCharts(charts, charts[0], false).map((c) => c.id)).toEqual([4, 2, 1])
+  })
+  it('includes Steam Link charts only when they are shown', () => {
+    expect(songCharts(charts, charts[0], true).map((c) => c.id)).toEqual([4, 2, 1, 5])
   })
 })

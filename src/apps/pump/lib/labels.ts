@@ -24,7 +24,7 @@ export function chartLine2(c: Chart): string {
     .join(' · ')
 }
 
-/** Chart sheet facts: song type · channel · series · BPM · step artist. */
+/** Chart sheet facts: song type · channel · series · BPM. (The step artist gets its own line.) */
 export function chartFacts(c: Chart): string {
   const bpm = c.song.bpm
   const bpmText = bpm
@@ -32,11 +32,14 @@ export function chartFacts(c: Chart): string {
       ? `${Math.round(bpm[0])} BPM`
       : `${Math.round(bpm[0])}–${Math.round(bpm[1])} BPM`
     : null
-  return [SONG_TYPE_LABEL[c.song.type], c.song.channel, c.song.series, bpmText, c.stepArtist ? `steps by ${c.stepArtist}` : null]
-    .filter(Boolean)
-    .join(' · ')
+  return [SONG_TYPE_LABEL[c.song.type], c.song.channel, c.song.series, bpmText].filter(Boolean).join(' · ')
 }
 
 export function titleName(t: { track: string; lv: number }): string {
   return `${t.track} Lv.${t.lv}`
+}
+
+/** "1 chart", "4,448 charts". */
+export function countLabel(n: number, noun: string): string {
+  return `${n.toLocaleString('en')} ${noun}${n === 1 ? '' : 's'}`
 }
