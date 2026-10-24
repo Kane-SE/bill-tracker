@@ -1,11 +1,12 @@
 import { z } from 'zod'
 import { nightSchema } from '@/apps/split/types'
 import { useSplitStore } from '@/apps/split/store/useSplitStore'
+import { usePumpStore } from '@/apps/pump/store/usePumpStore'
 import { getStoredTheme, applyTheme } from '@/shared/lib/theme'
 
 /**
  * App-aware backup (shell concern): serializes/deserializes the whole app's
- * data — currently just the `split` app plus the shared appearance/theme
+ * data — the `split` app, Pump's earned titles and the shared appearance/theme
  * choice — as a single JSON file. Still imports v1 files (pre-launcher, no
  * `apps`/`appearance` wrapper) by migrating them into the v2 shape.
  */
@@ -25,6 +26,10 @@ const splitDataSchema = z.object({
   promotedNames: z.array(z.string()).default([]),
 })
 
+const pumpDataSchema = z.object({
+  earnedTitles: z.array(z.string()),
+})
+
 const appearanceSchema = z.object({
   palette: z.enum(['default', 'coffee', 'custom']),
   mode: z.enum(['light', 'dark']),
@@ -33,7 +38,7 @@ const appearanceSchema = z.object({
 
 const backupV2Schema = z.object({
   version: z.literal(2),
-  apps: z.object({ split: splitDataSchema }),
+  apps: z.object({ split: splitDataSchema, pump: pumpDataSchema.optional() }),
   appearance: appearanceSchema.optional(),
 })
 export type BackupV2 = z.infer<typeof backupV2Schema>
@@ -46,10 +51,11 @@ const backupV1Schema = z.object({
 
 export function buildBackup(): BackupV2 {
   const { knownNames, nights, promotedNames } = useSplitStore.getState()
+  const { earnedTitles } = usePumpStore.getState()
   const { palette, mode, custom } = getStoredTheme()
   return {
     version: 2,
-    apps: { split: { knownNames, nights, promotedNames } },
+    apps: { split: { knownNames, nights, promotedNames }, pump: { earnedTitles } },
     appearance: { palette, mode, custom },
   }
 }
@@ -60,6 +66,7 @@ export function applyBackup(b: BackupV2): void {
     nights: b.apps.split.nights,
     promotedNames: b.apps.split.promotedNames,
   })
+  if (b.apps.pump) usePumpStore.getState().setEarnedTitles(b.apps.pump.earnedTitles)
   if (b.appearance) applyTheme(b.appearance)
 }
 

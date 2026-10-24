@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { parseBackup } from './backup'
+import { applyBackup, buildBackup, parseBackup } from './backup'
+import { usePumpStore } from '@/apps/pump/store/usePumpStore'
 
 const v2 = {
   version: 2,
@@ -38,5 +39,26 @@ describe('parseBackup', () => {
     const r = parseBackup(JSON.stringify(file))
     expect(r.ok).toBe(true)
     if (r.ok) expect(r.data.apps.split.nights[0].payments).toEqual(night.payments)
+  })
+})
+
+describe('backup and Pump earned titles', () => {
+  it('still imports a v2 file made before Pump existed', () => {
+    const r = parseBackup(JSON.stringify(v2))
+    expect(r.ok).toBe(true)
+    if (r.ok) expect(r.data.apps.pump).toBeUndefined()
+  })
+  it('round-trips earned titles', () => {
+    usePumpStore.setState({ earnedTitles: ['HALF_1', 'TWIST_D_7'] })
+    const r = parseBackup(JSON.stringify(buildBackup()))
+    expect(r.ok).toBe(true)
+    usePumpStore.setState({ earnedTitles: [] })
+    // No appearance: applyTheme() needs a DOM, and these tests run in node.
+    if (r.ok) applyBackup({ ...r.data, appearance: undefined })
+    expect(usePumpStore.getState().earnedTitles).toEqual(['HALF_1', 'TWIST_D_7'])
+  })
+  it('rejects a malformed pump section', () => {
+    const bad = { ...v2, apps: { ...v2.apps, pump: { earnedTitles: 'HALF_1' } } }
+    expect(parseBackup(JSON.stringify(bad)).ok).toBe(false)
   })
 })

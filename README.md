@@ -16,6 +16,15 @@ A second mini-app: your NOW notes, ideas and projects from the private `personal
 Vercel function (`api/github/token.ts`). Setup: [docs/hub-setup.md](docs/hub-setup.md).
 Design: [docs/features/2026-10-hub-dashboard/spec.md](docs/features/2026-10-hub-dashboard/spec.md).
 
+## Pump
+
+A third mini-app: every PHOENIX 2 Pump It Up chart, filtered one-handed at the arcade by mode,
+level range, skills (half, run, twist, bracket, drill, gimmick), song type, version and search, plus
+the nine skill-title tracks with earned ticks. Works offline; the chart data is bundled.
+Data: `npm run piu:data` rebuilds `src/apps/pump/data/charts.json` from pumpout-db-updates and the
+PIU Scores export ([scripts/piu-data/README.md](scripts/piu-data/README.md)).
+Design: [docs/features/2026-10-piu-chart-filter/spec.md](docs/features/2026-10-piu-chart-filter/spec.md).
+
 ## Features
 
 - **Nomnoms** — each hangout is a "Nomnom" in the UI (the code/type is still
