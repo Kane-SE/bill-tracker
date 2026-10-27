@@ -13,6 +13,7 @@ export function decodeCatalog(file: ChartsFile): Catalog {
     channel: s.ch,
     series: s.se,
     bpm: s.bpm,
+    image: s.i ? file.meta.imgHosts[s.i[0]] + s.i[1] : undefined,
     search: fold([s.t, s.k ?? '', s.a].join(' ')),
   }))
   const titleIds = new Map<number, string[]>()

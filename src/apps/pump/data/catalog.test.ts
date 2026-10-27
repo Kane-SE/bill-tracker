@@ -9,8 +9,8 @@ const PATH = 'src/apps/pump/data/charts.json'
 
 describe('decodeCatalog', () => {
   const file = chartsFileSchema.parse({
-    meta: { game: 'PHOENIX 2', patch: '1.01.0', builtAt: '2026-10-14', sources: [], badgeNames: ['Runs', 'Twists'], stepArtists: ['BanYa'] },
-    songs: [{ t: 'Bee', k: '벌', a: 'BanYa', y: 'ARCADE', ch: 'ORIGINAL', se: 'NX~NXA', bpm: [147, 147] }],
+    meta: { game: 'PHOENIX 2', patch: '1.01.0', builtAt: '2026-10-14', sources: [], badgeNames: ['Runs', 'Twists'], stepArtists: ['BanYa'], imgHosts: ['https://a/', 'https://b/'] },
+    songs: [{ t: 'Bee', k: '벌', a: 'BanYa', y: 'ARCADE', ch: 'ORIGINAL', se: 'NX~NXA', bpm: [147, 147], i: [1, 'x.png'] }, { t: 'NoArt', a: 'Z', y: 'ARCADE', se: 'NX~NXA' }],
     charts: [
       { id: 10, s: 0, m: 'S', lv: 19, p: 18, sk: 0b100110, cov: [0, 50, 25, 0, 0], b: [0, 1], g: ['PHOENIX 2 SLOW Lv.1'], f: 1, by: 0 },
       { id: 11, s: 0, m: 'HDB', lv: 20, sk: 0, f: 2 },
@@ -27,6 +27,11 @@ describe('decodeCatalog', () => {
     })
     expect(c.coverage).toEqual({ half: 0, run: 50, twist: 25, bracket: 0, drill: 0 })
     expect(c.song).toMatchObject({ title: 'Bee', titleKo: '벌', type: 'ARCADE', series: 'NX~NXA', bpm: [147, 147] })
+  })
+  it('decodes the song art path to a full URL', () => {
+    expect(cat.byId.get(10)!.song.image).toBe('https://b/x.png')
+    expect(cat.charts.length).toBe(2)
+    expect(decodeCatalog({ ...file, charts: [{ id: 99, s: 1, m: 'S', lv: 5, sk: 0 }] }).byId.get(99)!.song.image).toBeUndefined()
   })
   it('flags Steam Link charts and leaves them without skill data', () => {
     expect(cat.byId.get(11)).toMatchObject({ steamLink: true, premium: false, skills: [], badges: [], coverage: undefined })
@@ -60,6 +65,10 @@ describe('committed charts.json', () => {
   it('has only S, D and HDB charts, and every HDB chart is Steam Link', () => {
     expect(new Set(cat.charts.map((c) => c.mode))).toEqual(new Set(['S', 'D', 'HDB']))
     expect(cat.charts.filter((c) => c.mode === 'HDB').every((c) => c.steamLink)).toBe(true)
+  })
+  it('gives every song art from a known host', () => {
+    expect(file.songs.filter((s) => !s.i).map((s) => s.t)).toEqual(['Kitty Cat'])
+    expect(file.songs.every((s) => !s.i || s.i[0] < file.meta.imgHosts.length)).toBe(true)
   })
   it('loads the same data through getCatalog', () => {
     expect(getCatalog().charts).toHaveLength(file.charts.length)

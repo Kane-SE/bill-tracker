@@ -36,9 +36,11 @@ const { file, warnings } = encodeCatalog({
     game: 'PHOENIX 2',
     patch: PUMPOUT.patch,
     builtAt: today,
+    imgHosts: PUMPOUT.imgHosts,
     sources: [
       { name: PUMPOUT.name, url: PUMPOUT.repo, ref: PUMPOUT.commit },
       { name: PIUSCORES.name, url: PIUSCORES.site, ref: `chart export ${today}` },
+      { name: 'Song art (Andamiro), via Pump Out', url: 'https://pumpout.anyhowstep.com', ref: 'songCard paths' },
       { name: 'piucenter.com', url: 'https://www.piucenter.com', ref: 'skill analysis, via PIU Scores' },
     ],
   },

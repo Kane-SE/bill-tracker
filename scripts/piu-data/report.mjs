@@ -33,7 +33,7 @@ export function renderReport({ file, diff, stats, unmatched, warnings, errors })
   const lines = [
     `# Pump data — ${file.meta.game} ${file.meta.patch} (${file.meta.builtAt})`,
     '',
-    `Songs ${file.songs.length} · charts ${file.charts.length} (${Object.entries(modes).map(([m, n]) => `${m} ${n}`).join(', ')}) · titles ${file.titles.length}`,
+    `Songs ${file.songs.length} · Song art ${file.songs.filter((s) => s.i).length}/${file.songs.length} · charts ${file.charts.length} (${Object.entries(modes).map(([m, n]) => `${m} ${n}`).join(', ')}) · titles ${file.titles.length}`,
     '',
     '## Changes since the committed charts.json',
     `New (${diff.added.length}): ${diff.added.slice(0, 40).join(', ')}${diff.added.length > 40 ? ' …' : ''}`,
