@@ -43,3 +43,14 @@ export function titleName(t: { track: string; lv: number }): string {
 export function countLabel(n: number, noun: string): string {
   return `${n.toLocaleString('en')} ${noun}${n === 1 ? '' : 's'}`
 }
+
+/** Placeholder text for a song without art: the first letter of its first two words. */
+export function songInitials(title: string): string {
+  const words = title.match(/[\p{L}\p{N}]+/gu) ?? []
+  if (words.length === 0) return title.charAt(0).toUpperCase()
+  return words
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase()
+}
