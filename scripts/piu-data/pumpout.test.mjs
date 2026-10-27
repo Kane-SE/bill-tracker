@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 import initSqlJs from 'sql.js'
-import { readPumpout } from './pumpout.mjs'
+import { cardImage, readPumpout } from './pumpout.mjs'
 
 // The subset of pumpout's schema that readPumpout reads.
 const DDL = `
@@ -30,6 +30,8 @@ CREATE TABLE songBpm (songBpmId INT, songId INT, bpmMin REAL, bpmMax REAL);
 CREATE TABLE category (categoryId INT, internalTitle TEXT);
 CREATE TABLE songCategory (songCategoryId INT, songId INT, categoryId INT);
 CREATE TABLE songCategoryVersion (songCategoryId INT, songId INT, versionId INT);
+CREATE TABLE songCard (songCardId INT, songId INT, path TEXT, sortOrder INT);
+CREATE TABLE songCardVersion (songCardId INT, versionId INT, operationId INT);
 `
 
 // Versions: 1 = XX, 2 = PHOENIX, 3 = PHOENIX 2. Operations: 1 INSERT, 2 DELETE.
@@ -59,6 +61,8 @@ INSERT INTO songBpm VALUES (1,10,140,140),(2,10,147,147),(3,12,90,180);
 INSERT INTO category VALUES (2,'WORLD MUSIC'),(3,'ORIGINAL'),(4,'J-MUSIC');
 INSERT INTO songCategory VALUES (1,10,3),(2,12,4);
 INSERT INTO songCategoryVersion VALUES (1,10,1),(2,12,3);
+INSERT INTO songCard VALUES (1,10,'/img/card/B28.png',1),(2,10,'/img/card/20.png',0),(3,12,'/img/card/Phoenix2_CALL_ME_BACK.png',0),(4,12,'/img/card/Phoenix_STAGER.png',1),(5,13,'/img/card/Gone.png',0);
+INSERT INTO songCardVersion VALUES (1,1,1),(2,1,1),(3,2,1),(3,3,2),(4,2,1),(5,2,1),(5,3,2);
 `
 
 let read
@@ -102,5 +106,25 @@ describe('readPumpout', () => {
   })
   it('dates a song that only ever arrived by CROSS from its first appearance', () => {
     expect(read.songs.get(13).series).toBe('PHOENIX')
+  })
+})
+
+describe('song cards', () => {
+  it('picks the lowest-sortOrder live card per song', () => {
+    expect(read.songs.get(10).card).toEqual({ host: 0, file: '20.png' })
+    expect(read.songs.get(12).card).toEqual({ host: 1, file: 'Phoenix_STAGER.png' })
+  })
+  it('leaves a song without a live card at null', () => expect(read.songs.get(13).card).toBeNull())
+})
+
+describe('cardImage', () => {
+  it.each([
+    ['/img/card/20.png', 0, '20.png'],
+    ['/img/card/Phoenix_STAGER.png', 1, 'Phoenix_STAGER.png'],
+    ['/img/card/Phoenix2_CALL_ME_BACK.png', 1, 'Phoenix2_CALL_ME_BACK.png'],
+  ])('%s', (path, host, file) => expect(cardImage(path)).toEqual({ host, file }))
+  it('throws on any other shape', () => {
+    expect(() => cardImage('/img/big/20.png')).toThrow(/card path/)
+    expect(() => cardImage('20.png')).toThrow(/card path/)
   })
 })

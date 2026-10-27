@@ -72,6 +72,16 @@ SELECT scv.songId AS songId, c.internalTitle AS category
 FROM scv JOIN songCategory sc ON sc.songCategoryId = scv.songCategoryId JOIN category c ON c.categoryId = sc.categoryId
 WHERE scv.rn = 1`
 
+const CARDS_SQL = `
+WITH ${ANC},
+cv AS (SELECT cv.songCardId, cv.operationId,
+         ROW_NUMBER() OVER (PARTITION BY cv.songCardId ORDER BY a.ancestorSortOrder DESC, cv.operationId DESC) rn
+       FROM songCardVersion cv JOIN anc a ON a.ancestorId = cv.versionId)
+SELECT c.songId AS songId, c.path AS path
+FROM cv JOIN songCard c ON c.songCardId = cv.songCardId
+WHERE cv.rn = 1 AND cv.operationId <> ${DELETE}
+ORDER BY c.songId, c.sortOrder, c.songCardId`
+
 // First appearance of any kind (INSERT, EXISTS, REVIVE, CROSS …): 49 songs, such as
 // INFINITY's Kitty Cat, only ever arrived by CROSS.
 const DEBUT_SQL = `
@@ -88,6 +98,13 @@ const ARTISTS_SQL =
 const STEPS_SQL =
   'SELECT cs.chartId AS chartId, s.internalTitle AS name FROM chartStepmaker cs JOIN stepmaker s ON s.stepmakerId = cs.stepmakerId ORDER BY cs.chartId, cs.sortOrder'
 const BPM_SQL = 'SELECT songId, bpmMin, bpmMax FROM songBpm ORDER BY songBpmId'
+
+/** Card path → image host (0 = pumpout's site, 1 = the pinned GitHub commit; Phoenix cards are only there) and file name. */
+export function cardImage(path) {
+  const m = /^\/img\/card\/([^/]+\.png)$/.exec(path)
+  if (!m) throw new Error(`Unknown card path "${path}"`)
+  return { host: /^Phoenix2?_/.test(m[1]) ? 1 : 0, file: m[1] }
+}
 
 function all(db, sql, params = {}) {
   const st = db.prepare(sql)
@@ -137,6 +154,8 @@ function readSongs(db, version, ids) {
   const category = new Map(all(db, CATEGORY_SQL, { ':v': version }).map((r) => [r.songId, r.category]))
   const debut = new Map()
   for (const r of all(db, DEBUT_SQL)) if (!debut.has(r.songId)) debut.set(r.songId, r.mix)
+  const card = new Map()
+  for (const r of all(db, CARDS_SQL, { ':v': version })) if (!card.has(r.songId)) card.set(r.songId, cardImage(r.path))
   const bpm = new Map()
   for (const r of all(db, BPM_SQL)) bpm.set(r.songId, [r.bpmMin, r.bpmMax]) // last row wins
 
@@ -162,6 +181,7 @@ function readSongs(db, version, ids) {
       channel: cat === undefined ? null : CHANNEL_BY_CATEGORY[cat],
       series,
       bpm: bpm.get(s.songId) ?? null,
+      card: card.get(s.songId) ?? null,
     })
   }
   return songs
