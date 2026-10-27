@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { makeChart, makeSong } from './__fixtures__/charts'
-import { rowSkills, songCharts, sortCharts, toRows } from './order'
+import { rowIndexOf, rowSkills, songCharts, sortCharts, toGridRows, toRows } from './order'
 
 const a = makeSong({ title: 'apple' })
 const b = makeSong({ title: 'Banana' })
@@ -21,6 +21,29 @@ describe('toRows', () => {
   it('puts a header with a count before each level', () => {
     const cs = sortCharts([makeChart({ id: 1, level: 19 }), makeChart({ id: 2, level: 20 }), makeChart({ id: 3, level: 20 })])
     expect(toRows(cs).map((r) => (r.kind === 'header' ? `Lv${r.level}:${r.count}` : r.chart.id))).toEqual(['Lv19:1', 1, 'Lv20:2', 2, 3])
+  })
+})
+
+describe('toGridRows / rowIndexOf', () => {
+  const sorted = sortCharts([
+    makeChart({ id: 1, level: 19 }),
+    makeChart({ id: 2, level: 19 }),
+    makeChart({ id: 3, level: 19 }),
+    makeChart({ id: 4, level: 20 }),
+  ])
+  const rows = toRows(sorted)
+  const thirdLv19 = sorted[2]
+
+  it('pairs charts inside each level and starts a new row at each header', () => {
+    const g = toGridRows(rows)
+    expect(g.map((r) => (r.kind === 'header' ? `H${r.level}` : r.charts.length))).toEqual(['H19', 2, 1, 'H20', 1])
+  })
+  it('finds the row holding a chart in both shapes', () => {
+    const g = toGridRows(rows)
+    expect(rowIndexOf(rows, thirdLv19.id)).toBe(3)
+    expect(rowIndexOf(g, thirdLv19.id)).toBe(2)
+    expect(rowIndexOf(g, 999_999)).toBe(-1)
+    expect(rowIndexOf([], 1)).toBe(-1)
   })
 })
 
