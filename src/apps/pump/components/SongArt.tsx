@@ -18,7 +18,8 @@ interface SongArtProps {
 /** The song's jacket art, or a placeholder (initials on a tinted box) when missing or broken. */
 export function SongArt({ song, className, eager, fallback = 'initials' }: SongArtProps) {
   const url = song.image
-  const [broken, setBroken] = useState(() => !url || failed.has(url))
+  const [badUrl, setBadUrl] = useState<string>()
+  const broken = !url || failed.has(url) || badUrl === url
   if (broken || !url) {
     if (fallback === null) return null
     return (
@@ -35,7 +36,7 @@ export function SongArt({ song, className, eager, fallback = 'initials' }: SongA
       loading={eager ? 'eager' : 'lazy'}
       onError={() => {
         failed.add(url)
-        setBroken(true)
+        setBadUrl(url)
       }}
       className={cn('shrink-0 bg-secondary object-cover ring-1 ring-border dark:brightness-90', className)}
     />
