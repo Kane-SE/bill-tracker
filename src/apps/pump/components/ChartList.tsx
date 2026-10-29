@@ -1,4 +1,4 @@
-import { memo, useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { defaultRangeExtractor, useWindowVirtualizer, type Range } from '@tanstack/react-virtual'
 import type { SkillId } from '@/apps/pump/data/types'
 import { rowIndexOf, toGridRows, type ListRow } from '@/apps/pump/lib/order'
@@ -54,17 +54,24 @@ export const ChartList = memo(function ChartList({ rows: listRows, view, selecte
   })
 
   // Anchor: the first chart whose row starts at or below the bottom of the sticky
-  // stack (page header + level header). Recomputed every render (the virtualizer
-  // re-renders on scroll), but frozen on the render where the view changes, since
-  // that one already lays out the new rows at the old scroll offset.
+  // stack (page header + level header), measured against the live window.scrollY.
+  // A scroll listener keeps it current; it is frozen once the view changes, since
+  // the new rows would be measured against the old scroll offset.
   const anchorId = useRef<number | null>(null)
   const shownView = useRef(view)
-  if (shownView.current === view) {
-    const line = Math.max(window.scrollY + head, scrollMargin) + HEADER_HEIGHT
-    const first = virtualizer.getVirtualItems().find((it) => rows[it.index]?.kind !== 'header' && it.start >= line - 1)
-    const row = first && rows[first.index]
-    if (row && row.kind !== 'header') anchorId.current = row.kind === 'pair' ? row.charts[0].id : row.chart.id
-  }
+  useEffect(() => {
+    if (shownView.current !== view) return
+    const update = () => {
+      const stack = (parseFloat(document.documentElement.style.getPropertyValue('--pump-head')) || 0) + HEADER_HEIGHT
+      const line = Math.max(window.scrollY + stack, scrollMargin + HEADER_HEIGHT)
+      const m = virtualizer.measurementsCache.find((it) => rows[it.index]?.kind !== 'header' && it.start >= line - 1)
+      const row = m && rows[m.index]
+      if (row && row.kind !== 'header') anchorId.current = row.kind === 'pair' ? row.charts[0].id : row.chart.id
+    }
+    update()
+    window.addEventListener('scroll', update, { passive: true })
+    return () => window.removeEventListener('scroll', update)
+  }, [rows, view, scrollMargin, virtualizer])
   useLayoutEffect(() => {
     if (shownView.current === view) return
     shownView.current = view
