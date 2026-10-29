@@ -55,8 +55,11 @@ export const ChartList = memo(function ChartList({ rows: listRows, view, selecte
 
   // Anchor: the first chart whose row starts at or below the bottom of the sticky
   // stack (page header + level header), measured against the live window.scrollY.
-  // A scroll listener keeps it current; it is frozen once the view changes, since
-  // the new rows would be measured against the old scroll offset.
+  // A scroll listener keeps it current. On a view switch the layout effect below
+  // first scrolls to the stored anchor and sets shownView; only then does this
+  // effect re-run (for the new rows) and update() re-measure the anchor from the
+  // restored scroll position. Until then the effect returns early, so the old
+  // anchor is not overwritten by measuring the new rows at the old scroll offset.
   const anchorId = useRef<number | null>(null)
   const shownView = useRef(view)
   useEffect(() => {
