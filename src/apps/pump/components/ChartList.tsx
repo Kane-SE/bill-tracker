@@ -42,7 +42,10 @@ export const ChartList = memo(function ChartList({ rows: listRows, view, selecte
     [stickyIndexes],
   )
 
+  // Height of the sticky stack (page header + level header): where the anchor row should start.
+  const head = parseFloat(document.documentElement.style.getPropertyValue('--pump-head')) || 0
   const virtualizer = useWindowVirtualizer({
+    scrollPaddingStart: head + HEADER_HEIGHT,
     count: rows.length,
     estimateSize: (i) => (rows[i].kind === 'header' ? HEADER_HEIGHT : rows[i].kind === 'pair' ? GRID_ROW_HEIGHT : ROW_HEIGHT),
     overscan: 8,
@@ -57,7 +60,6 @@ export const ChartList = memo(function ChartList({ rows: listRows, view, selecte
   const anchorId = useRef<number | null>(null)
   const shownView = useRef(view)
   if (shownView.current === view) {
-    const head = parseFloat(document.documentElement.style.getPropertyValue('--pump-head')) || 0
     const line = Math.max(window.scrollY + head, scrollMargin) + HEADER_HEIGHT
     const first = virtualizer.getVirtualItems().find((it) => rows[it.index]?.kind !== 'header' && it.start >= line - 1)
     const row = first && rows[first.index]
@@ -67,7 +69,7 @@ export const ChartList = memo(function ChartList({ rows: listRows, view, selecte
     if (shownView.current === view) return
     shownView.current = view
     const i = anchorId.current === null ? -1 : rowIndexOf(rows, anchorId.current)
-    if (i >= 0) virtualizer.scrollToIndex(i, { align: 'start' })
+    if (i >= 0) virtualizer.scrollToIndex(i, { align: 'start' }) // padded by the sticky stack
   }, [view, rows, virtualizer])
 
   return (
