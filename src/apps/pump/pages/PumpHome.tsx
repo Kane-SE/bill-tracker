@@ -31,7 +31,7 @@ export default function PumpHome() {
   const earned = useMemo(() => new Set(earnedList), [earnedList])
   const presets = usePumpStore((s) => s.presets)
   const view = usePumpStore((s) => s.view)
-  const { toggleTitle, savePreset, deletePreset } = usePumpStore.getState()
+  const { toggleTitle, savePreset, deletePreset, setView } = usePumpStore.getState()
 
   // The list follows a deferred copy, so typing and chip taps stay responsive.
   const deferred = useDeferredValue(filters)
@@ -80,7 +80,14 @@ export default function PumpHome() {
 
   return (
     <div className="mx-auto max-w-lg px-4 pb-44">
-      <PumpHeader tab={tab} onTab={switchTab} subtitle={subtitle} onInfo={() => about.open()} />
+      <PumpHeader
+        tab={tab}
+        onTab={switchTab}
+        subtitle={subtitle}
+        onInfo={() => about.open()}
+        view={tab === 'charts' ? view : undefined}
+        onView={tab === 'charts' ? setView : undefined}
+      />
 
       {tab === 'charts' ? (
         <>

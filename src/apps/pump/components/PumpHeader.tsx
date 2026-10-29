@@ -1,6 +1,8 @@
 import { useLayoutEffect, useRef } from 'react'
 import { Info } from 'lucide-react'
 import type { PumpTab } from '@/apps/pump/hooks/usePumpFilters'
+import type { ChartView } from '@/apps/pump/store/usePumpStore'
+import { ViewToggle } from '@/apps/pump/components/ViewToggle'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { Button } from '@/shared/ui/button'
 import { cn } from '@/shared/lib/utils'
@@ -10,10 +12,13 @@ interface PumpHeaderProps {
   onTab(t: PumpTab): void
   subtitle: React.ReactNode
   onInfo(): void
+  /** The grid/list toggle shows only when both are given (Charts tab). */
+  view?: ChartView
+  onView?(v: ChartView): void
 }
 
 /** Sticky header with Charts | Titles tabs. Publishes its height as --pump-head for the sticky level headers. */
-export function PumpHeader({ tab, onTab, subtitle, onInfo }: PumpHeaderProps) {
+export function PumpHeader({ tab, onTab, subtitle, onInfo, view, onView }: PumpHeaderProps) {
   const ref = useRef<HTMLElement>(null)
   useLayoutEffect(() => {
     const el = ref.current
@@ -32,9 +37,12 @@ export function PumpHeader({ tab, onTab, subtitle, onInfo }: PumpHeaderProps) {
       subtitle={subtitle}
       backTo="/"
       actions={
-        <Button variant="ghost" size="icon" aria-label="About this data" onClick={onInfo}>
-          <Info className="h-5 w-5" />
-        </Button>
+        <>
+          {view && onView && <ViewToggle view={view} onChange={onView} />}
+          <Button variant="ghost" size="icon" aria-label="About this data" onClick={onInfo}>
+            <Info className="h-5 w-5" />
+          </Button>
+        </>
       }
     >
       <div role="group" aria-label="View" className="mt-3 grid grid-cols-2 gap-1 rounded-lg border border-border p-0.5">

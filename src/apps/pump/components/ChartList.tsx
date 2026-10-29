@@ -1,7 +1,7 @@
 import { memo, useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { defaultRangeExtractor, useWindowVirtualizer, type Range } from '@tanstack/react-virtual'
 import type { SkillId } from '@/apps/pump/data/types'
-import { toGridRows, type ListRow } from '@/apps/pump/lib/order'
+import { rowIndexOf, toGridRows, type ListRow } from '@/apps/pump/lib/order'
 import type { ChartView } from '@/apps/pump/store/usePumpStore'
 import { ChartRow, ROW_HEIGHT } from '@/apps/pump/components/ChartRow'
 import { ChartTile, GRID_ROW_HEIGHT } from '@/apps/pump/components/ChartTile'
@@ -49,6 +49,26 @@ export const ChartList = memo(function ChartList({ rows: listRows, view, selecte
     scrollMargin,
     rangeExtractor,
   })
+
+  // Anchor: the first chart whose row starts at or below the bottom of the sticky
+  // stack (page header + level header). Recomputed every render (the virtualizer
+  // re-renders on scroll), but frozen on the render where the view changes, since
+  // that one already lays out the new rows at the old scroll offset.
+  const anchorId = useRef<number | null>(null)
+  const shownView = useRef(view)
+  if (shownView.current === view) {
+    const head = parseFloat(document.documentElement.style.getPropertyValue('--pump-head')) || 0
+    const line = Math.max(window.scrollY + head, scrollMargin) + HEADER_HEIGHT
+    const first = virtualizer.getVirtualItems().find((it) => rows[it.index]?.kind !== 'header' && it.start >= line - 1)
+    const row = first && rows[first.index]
+    if (row && row.kind !== 'header') anchorId.current = row.kind === 'pair' ? row.charts[0].id : row.chart.id
+  }
+  useLayoutEffect(() => {
+    if (shownView.current === view) return
+    shownView.current = view
+    const i = anchorId.current === null ? -1 : rowIndexOf(rows, anchorId.current)
+    if (i >= 0) virtualizer.scrollToIndex(i, { align: 'start' })
+  }, [view, rows, virtualizer])
 
   return (
     <div ref={listRef} className="relative" style={{ height: virtualizer.getTotalSize() }}>
