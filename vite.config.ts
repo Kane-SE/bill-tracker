@@ -43,6 +43,23 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         // /api/* is the token function, never the app shell. GitHub calls are cross-origin and never cached.
         navigateFallbackDenylist: [/^\/api\//],
+        // Song jackets are hotlinked, never precached: cache the ones a phone has shown.
+        runtimeCaching: [
+          {
+            urlPattern:
+              /^https:\/\/(pumpout\.anyhowstep\.com\/img\/card\/|raw\.githubusercontent\.com\/aaaaaa2493\/pumpout-db-updates\/ed314a8216f9c0dfe7cef29a1de5ce84ec4f1e44\/img\/)/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'pump-art',
+              expiration: {
+                maxEntries: 700,
+                maxAgeSeconds: 90 * 24 * 60 * 60,
+                purgeOnQuotaError: true,
+              },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
       },
       devOptions: {
         enabled: true,
