@@ -1,13 +1,16 @@
 import { memo, useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { defaultRangeExtractor, useWindowVirtualizer, type Range } from '@tanstack/react-virtual'
 import type { SkillId } from '@/apps/pump/data/types'
-import type { ListRow } from '@/apps/pump/lib/order'
+import { toGridRows, type ListRow } from '@/apps/pump/lib/order'
+import type { ChartView } from '@/apps/pump/store/usePumpStore'
 import { ChartRow, ROW_HEIGHT } from '@/apps/pump/components/ChartRow'
+import { ChartTile, GRID_ROW_HEIGHT } from '@/apps/pump/components/ChartTile'
 
 export const HEADER_HEIGHT = 32
 
 interface ChartListProps {
   rows: ListRow[]
+  view: ChartView
   selectedSkills: readonly SkillId[]
   earned: ReadonlySet<string>
   onOpen(id: number): void
@@ -19,7 +22,8 @@ interface ChartListProps {
  * using TanStack Virtual's sticky pattern: the active header is always rendered
  * and positioned sticky; everything else is absolute.
  */
-export const ChartList = memo(function ChartList({ rows, selectedSkills, earned, onOpen }: ChartListProps) {
+export const ChartList = memo(function ChartList({ rows: listRows, view, selectedSkills, earned, onOpen }: ChartListProps) {
+  const rows = useMemo(() => (view === 'grid' ? toGridRows(listRows) : listRows), [listRows, view])
   const listRef = useRef<HTMLDivElement>(null)
   const [scrollMargin, setScrollMargin] = useState(0)
   useLayoutEffect(() => {
@@ -40,7 +44,7 @@ export const ChartList = memo(function ChartList({ rows, selectedSkills, earned,
 
   const virtualizer = useWindowVirtualizer({
     count: rows.length,
-    estimateSize: (i) => (rows[i].kind === 'header' ? HEADER_HEIGHT : ROW_HEIGHT),
+    estimateSize: (i) => (rows[i].kind === 'header' ? HEADER_HEIGHT : rows[i].kind === 'pair' ? GRID_ROW_HEIGHT : ROW_HEIGHT),
     overscan: 8,
     scrollMargin,
     rangeExtractor,
@@ -59,6 +63,18 @@ export const ChartList = memo(function ChartList({ rows, selectedSkills, earned,
             {row.kind === 'header' ? (
               <div className="flex h-8 items-center bg-background/95 text-xs font-bold uppercase tracking-wide text-muted-foreground backdrop-blur">
                 Lv {row.level} · {row.count}
+              </div>
+            ) : row.kind === 'pair' ? (
+              <div className="grid h-[156px] grid-cols-2 gap-2 pb-2">
+                {row.charts.map((c) => (
+                  <ChartTile
+                    key={c.id}
+                    chart={c}
+                    selectedSkills={selectedSkills}
+                    earned={c.titleIds.some((id) => earned.has(id))}
+                    onOpen={onOpen}
+                  />
+                ))}
               </div>
             ) : (
               <ChartRow

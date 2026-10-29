@@ -30,6 +30,7 @@ export default function PumpHome() {
   const earnedList = usePumpStore((s) => s.earnedTitles)
   const earned = useMemo(() => new Set(earnedList), [earnedList])
   const presets = usePumpStore((s) => s.presets)
+  const view = usePumpStore((s) => s.view)
   const { toggleTitle, savePreset, deletePreset } = usePumpStore.getState()
 
   // The list follows a deferred copy, so typing and chip taps stay responsive.
@@ -84,7 +85,7 @@ export default function PumpHome() {
       {tab === 'charts' ? (
         <>
           {results.length > 0 ? (
-            <ChartList rows={rows} selectedSkills={deferred.skills} earned={earned} onOpen={onOpen} />
+            <ChartList rows={rows} view={view} selectedSkills={deferred.skills} earned={earned} onOpen={onOpen} />
           ) : (
             <EmptyResults suggestions={suggestions} onApply={setFilters} onClear={() => setFilters({ ...defaultFilters })} />
           )}
