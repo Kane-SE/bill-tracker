@@ -5,6 +5,7 @@ import { chartFacts, MODE_SHORT, titleName } from '@/apps/pump/lib/labels'
 import { EarnedToggle } from '@/apps/pump/components/EarnedToggle'
 import { LevelBadge } from '@/apps/pump/components/LevelBadge'
 import { SheetGrabber } from '@/apps/pump/components/SheetGrabber'
+import { SongArt } from '@/apps/pump/components/SongArt'
 import { Dialog, DialogContent, DialogTitle } from '@/shared/ui/dialog'
 import { cn } from '@/shared/lib/utils'
 
@@ -53,7 +54,8 @@ export function ChartSheet({ chart, siblings, titles, earned, onToggleTitle, onP
         <SheetGrabber onDismiss={onClose} />
         {c && (
           <>
-            <div className="-mt-3 flex items-center gap-3 pr-10">
+            <SongArt key={c.song.title} song={c.song} eager className="aspect-video max-h-[28vh] w-full rounded-lg" />
+            <div className="flex items-center gap-3 pr-10">
               <LevelBadge mode={c.mode} level={c.level} />
               <div className="min-w-0">
                 <DialogTitle ref={titleRef} tabIndex={-1} className="leading-snug outline-none">

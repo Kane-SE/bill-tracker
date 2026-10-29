@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { encodeCatalog, stringifyCatalog } from './encode.mjs'
 
 const songs = new Map([
-  [1, { id: 1, title: 'Bee', titleKo: null, artist: 'BanYa', cut: 'ARCADE', channel: 'ORIGINAL', series: 'NX~NXA', bpm: [147, 147] }],
-  [2, { id: 2, title: '1948', titleKo: '천구백사십팔', artist: 'X', cut: 'ARCADE', channel: null, series: 'PHOENIX 2', bpm: null }],
+  [1, { id: 1, title: 'Bee', titleKo: null, artist: 'BanYa', cut: 'ARCADE', channel: 'ORIGINAL', series: 'NX~NXA', bpm: [147, 147], card: { host: 1, file: 'Phoenix_STAGER.png' } }],
+  [2, { id: 2, title: '1948', titleKo: '천구백사십팔', artist: 'X', cut: 'ARCADE', channel: null, series: 'PHOENIX 2', bpm: null, card: null }],
 ])
 const charts = [
   { id: 20, songId: 2, mode: 'D', level: null, prevLevel: null, premium: false, steamLink: false, stepArtist: null },
@@ -20,7 +20,7 @@ describe('encodeCatalog', () => {
     songs, charts, byChart, skillsById,
     gimmickFrom: new Map([[10, ['PHOENIX 2 SLOW Lv.1']]]),
     titles: [{ id: 'RUN_S_5', track: 'RUN S', lv: 5, chart: 10 }],
-    meta: { game: 'PHOENIX 2', patch: '1.01.0', builtAt: '2026-10-14', sources: [] },
+    meta: { game: 'PHOENIX 2', patch: '1.01.0', builtAt: '2026-10-14', sources: [], imgHosts: ['https://a/', 'https://b/'] },
   })
 
   it('orders charts by id and indexes songs, badges and step artists', () => {
@@ -38,11 +38,14 @@ describe('encodeCatalog', () => {
   })
   it('falls back to the PIU Scores level when pumpout has none, with a warning', () => {
     expect(file.charts[1].lv).toBe(29)
-    expect(warnings).toEqual(['1948 D: no pumpout level, using PIU Scores D29'])
+    expect(warnings).toEqual(['1948 D: no pumpout level, using PIU Scores D29', 'no song art: 1948'])
   })
   it('keeps optional song fields out when empty', () => {
-    expect(file.songs[0]).toEqual({ t: 'Bee', a: 'BanYa', y: 'ARCADE', ch: 'ORIGINAL', se: 'NX~NXA', bpm: [147, 147] })
+    expect(file.songs[0]).toEqual({ t: 'Bee', a: 'BanYa', y: 'ARCADE', ch: 'ORIGINAL', se: 'NX~NXA', bpm: [147, 147], i: [1, 'Phoenix_STAGER.png'] })
     expect(file.songs[1]).toEqual({ t: '1948', k: '천구백사십팔', a: 'X', y: 'ARCADE', se: 'PHOENIX 2' })
+  })
+  it('passes meta.imgHosts through', () => {
+    expect(file.meta.imgHosts).toEqual(['https://a/', 'https://b/'])
   })
   it('stringifies one array element per line and round-trips', () => {
     const text = stringifyCatalog(file)

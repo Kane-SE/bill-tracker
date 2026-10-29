@@ -13,6 +13,7 @@ export const chartsFileSchema = z.object({
     sources: z.array(z.object({ name: z.string(), url: z.string(), ref: z.string() })),
     badgeNames: z.array(z.string()),
     stepArtists: z.array(z.string()),
+    imgHosts: z.array(z.string()), // song art base URLs, indexed by song.i[0]
   }),
   songs: z.array(
     z.object({
@@ -23,6 +24,7 @@ export const chartsFileSchema = z.object({
       ch: z.string().optional(), // channel
       se: z.enum(SERIES), // series (debut group)
       bpm: z.tuple([z.number(), z.number()]).optional(),
+      i: z.tuple([z.number().int().nonnegative(), z.string()]).optional(), // song art: [host index, file]
     }),
   ),
   charts: z.array(

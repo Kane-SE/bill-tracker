@@ -3,7 +3,7 @@ import { checkCatalog, diffCatalogs } from './report.mjs'
 
 const file = (charts) => ({
   meta: {}, titles: Array(90).fill({}),
-  songs: [{ t: 'Bee' }, { t: 'Conflict' }],
+  songs: [{ t: 'Bee', i: 'a.png' }, { t: 'Conflict', i: 'b.png' }],
   charts,
 })
 
@@ -30,5 +30,13 @@ describe('checkCatalog', () => {
       sdCount: 100, sdWithSkills: 90, bytes: 600_001,
     })
     expect(errors).toHaveLength(5)
+  })
+  it('passes at 668/669 songs with art and fails below 95%', () => {
+    const withArt = (n) => ({
+      ...file([{ id: 1, s: 0, m: 'S', lv: 19 }]),
+      songs: Array.from({ length: 669 }, (_, k) => (k < n ? { t: 'x', i: 'a.png' } : { t: 'x' })),
+    })
+    expect(checkCatalog(withArt(668), ok)).toEqual([])
+    expect(checkCatalog(withArt(300), ok)).toEqual(['Only 300/669 songs have song art (need ≥ 95%)'])
   })
 })

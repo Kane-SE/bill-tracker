@@ -33,6 +33,43 @@ export function toRows(sorted: readonly Chart[]): ListRow[] {
   return rows
 }
 
+/** A grid-view row: a level header, or up to two charts side by side. */
+export type GridRow = Extract<ListRow, { kind: 'header' }> | { kind: 'pair'; key: string; charts: Chart[] }
+
+/** List rows → grid rows: charts two per row; a pair never crosses a header. Pair key = first chart's row key. */
+export function toGridRows(rows: readonly ListRow[]): GridRow[] {
+  const out: GridRow[] = []
+  for (const r of rows) {
+    const last = out[out.length - 1]
+    if (r.kind === 'header') out.push(r)
+    else if (last?.kind === 'pair' && last.charts.length < 2) last.charts.push(r.chart)
+    else out.push({ kind: 'pair', key: r.key, charts: [r.chart] })
+  }
+  return out
+}
+
+/** Index of the row (list or grid shape) holding the chart, or -1. */
+export function rowIndexOf(rows: readonly (ListRow | GridRow)[], chartId: number): number {
+  return rows.findIndex((r) =>
+    r.kind === 'chart' ? r.chart.id === chartId : r.kind === 'pair' && r.charts.some((c) => c.id === chartId),
+  )
+}
+
+/**
+ * The level header to pin: the last header whose top has reached `line` (where
+ * it sticks), else the first header. `startOf(i)` is row i's top, in the same
+ * coordinates as `line`. 0 when there are no headers.
+ */
+export function activeHeader(rows: readonly { kind: string }[], startOf: (i: number) => number, line: number): number {
+  let active = -1
+  for (let i = 0; i < rows.length; i++) {
+    if (rows[i].kind !== 'header') continue
+    if (active === -1 || startOf(i) <= line) active = i
+    else break
+  }
+  return Math.max(active, 0)
+}
+
 /** Up to `max` skill tags for a row: selected skills first, then gimmick, then by coverage. */
 export function rowSkills(chart: Chart, selected: readonly SkillId[], max = 2): SkillId[] {
   const strength = (s: SkillId) => (s === 'gimmick' ? 101 : (chart.coverage?.[s] ?? 0))

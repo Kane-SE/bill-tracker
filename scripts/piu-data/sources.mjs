@@ -12,6 +12,10 @@ export const PUMPOUT = {
   get url() {
     return `https://raw.githubusercontent.com/${PUMPOUT_REPO}/${this.commit}/${this.file}`
   },
+  /** Card image hosts: 0 = pumpout's site, 1 = the pinned GitHub commit */
+  get imgHosts() {
+    return ['https://pumpout.anyhowstep.com/img/card/', `https://raw.githubusercontent.com/${PUMPOUT_REPO}/${this.commit}/img/`]
+  },
   /** `version.versionId` rows inside the .db */
   version: 201, // PHOENIX 2 v1.01.0
   prevVersion: 199, // PHOENIX v2.12.0 — for "was D20 in PHOENIX"

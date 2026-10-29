@@ -12,6 +12,8 @@ import { uid } from '@/shared/lib/utils'
 export const PUMP_STORAGE_KEY = 'pump-store'
 export const MAX_PRESETS = 12
 
+export type ChartView = 'grid' | 'list'
+
 export interface Preset {
   id: string
   name: string
@@ -23,6 +25,7 @@ const persistedSchema = z.object({
   lastFilters: z.string().catch(''),
   presets: z.array(z.object({ id: z.string(), name: z.string(), query: z.string() })).max(MAX_PRESETS).catch([]),
   earnedTitles: z.array(z.string()).catch([]),
+  view: z.enum(['grid', 'list']).catch('grid'),
 })
 
 interface PumpState extends z.infer<typeof persistedSchema> {
@@ -32,6 +35,7 @@ interface PumpState extends z.infer<typeof persistedSchema> {
   deletePreset(id: string): void
   toggleTitle(id: string): void
   setEarnedTitles(ids: string[]): void
+  setView(v: ChartView): void
 }
 
 export const usePumpStore = create<PumpState>()(
@@ -40,6 +44,7 @@ export const usePumpStore = create<PumpState>()(
       lastFilters: '',
       presets: [],
       earnedTitles: [],
+      view: 'grid',
 
       setLastFilters(query) {
         if (get().lastFilters !== query) set({ lastFilters: query })
@@ -65,11 +70,15 @@ export const usePumpStore = create<PumpState>()(
       setEarnedTitles(ids) {
         set({ earnedTitles: [...new Set(ids)] })
       },
+
+      setView(v) {
+        set({ view: v })
+      },
     }),
     {
       name: PUMP_STORAGE_KEY,
       version: 1,
-      partialize: (s) => ({ lastFilters: s.lastFilters, presets: s.presets, earnedTitles: s.earnedTitles }),
+      partialize: (s) => ({ lastFilters: s.lastFilters, presets: s.presets, earnedTitles: s.earnedTitles, view: s.view }),
       // Validate what comes back from localStorage; a bad field falls back to its default.
       merge: (persisted, current) => {
         const r = persistedSchema.safeParse(persisted ?? {})

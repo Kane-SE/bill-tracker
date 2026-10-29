@@ -1,13 +1,16 @@
-import { memo, useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { defaultRangeExtractor, useWindowVirtualizer, type Range } from '@tanstack/react-virtual'
 import type { SkillId } from '@/apps/pump/data/types'
-import type { ListRow } from '@/apps/pump/lib/order'
+import { activeHeader, rowIndexOf, toGridRows, type ListRow } from '@/apps/pump/lib/order'
+import type { ChartView } from '@/apps/pump/store/usePumpStore'
 import { ChartRow, ROW_HEIGHT } from '@/apps/pump/components/ChartRow'
+import { ChartTile, GRID_ROW_HEIGHT } from '@/apps/pump/components/ChartTile'
 
 export const HEADER_HEIGHT = 32
 
 interface ChartListProps {
   rows: ListRow[]
+  view: ChartView
   selectedSkills: readonly SkillId[]
   earned: ReadonlySet<string>
   onOpen(id: number): void
@@ -19,7 +22,8 @@ interface ChartListProps {
  * using TanStack Virtual's sticky pattern: the active header is always rendered
  * and positioned sticky; everything else is absolute.
  */
-export const ChartList = memo(function ChartList({ rows, selectedSkills, earned, onOpen }: ChartListProps) {
+export const ChartList = memo(function ChartList({ rows: listRows, view, selectedSkills, earned, onOpen }: ChartListProps) {
+  const rows = useMemo(() => (view === 'grid' ? toGridRows(listRows) : listRows), [listRows, view])
   const listRef = useRef<HTMLDivElement>(null)
   const [scrollMargin, setScrollMargin] = useState(0)
   useLayoutEffect(() => {
@@ -27,30 +31,72 @@ export const ChartList = memo(function ChartList({ rows, selectedSkills, earned,
     if (el) setScrollMargin(el.getBoundingClientRect().top + window.scrollY)
   }, [rows.length])
 
-  const stickyIndexes = useMemo(() => rows.flatMap((r, i) => (r.kind === 'header' ? [i] : [])), [rows])
-  const activeSticky = useRef(0)
+  // The pinned level header is always rendered, whatever the range.
+  const [activeSticky, setActiveSticky] = useState(0)
   const rangeExtractor = useCallback(
-    (range: Range) => {
-      activeSticky.current = [...stickyIndexes].reverse().find((i) => range.startIndex >= i) ?? 0
-      const next = new Set([activeSticky.current, ...defaultRangeExtractor(range)])
-      return [...next].sort((a, b) => a - b)
-    },
-    [stickyIndexes],
+    (range: Range) => [...new Set([activeSticky, ...defaultRangeExtractor(range)])].sort((a, b) => a - b),
+    [activeSticky],
   )
 
+  // Height of the sticky stack (page header + level header): where the anchor row should start.
+  const head = parseFloat(document.documentElement.style.getPropertyValue('--pump-head')) || 0
   const virtualizer = useWindowVirtualizer({
+    scrollPaddingStart: head + HEADER_HEIGHT,
     count: rows.length,
-    estimateSize: (i) => (rows[i].kind === 'header' ? HEADER_HEIGHT : ROW_HEIGHT),
+    estimateSize: (i) => (rows[i].kind === 'header' ? HEADER_HEIGHT : rows[i].kind === 'pair' ? GRID_ROW_HEIGHT : ROW_HEIGHT),
     overscan: 8,
     scrollMargin,
     rangeExtractor,
   })
 
+  // Which level header is pinned: measured from the page header's bottom edge on
+  // every scroll. The virtualizer's range starts at the window top, under the page
+  // header, and only changes when a row crosses it, so it can't decide this.
+  useEffect(() => {
+    const update = () => {
+      const line = window.scrollY + (parseFloat(document.documentElement.style.getPropertyValue('--pump-head')) || 0)
+      const m = virtualizer.measurementsCache
+      setActiveSticky(activeHeader(rows, (i) => m[i]?.start ?? 0, line))
+    }
+    update()
+    window.addEventListener('scroll', update, { passive: true })
+    return () => window.removeEventListener('scroll', update)
+  }, [rows, scrollMargin, virtualizer])
+
+  // Anchor: the first chart whose row starts at or below the bottom of the sticky
+  // stack (page header + level header), measured against the live window.scrollY.
+  // A scroll listener keeps it current. On a view switch the layout effect below
+  // first scrolls to the stored anchor and sets shownView; only then does this
+  // effect re-run (for the new rows) and update() re-measure the anchor from the
+  // restored scroll position. Until then the effect returns early, so the old
+  // anchor is not overwritten by measuring the new rows at the old scroll offset.
+  const anchorId = useRef<number | null>(null)
+  const shownView = useRef(view)
+  useEffect(() => {
+    if (shownView.current !== view) return
+    const update = () => {
+      const stack = (parseFloat(document.documentElement.style.getPropertyValue('--pump-head')) || 0) + HEADER_HEIGHT
+      const line = Math.max(window.scrollY + stack, scrollMargin + HEADER_HEIGHT)
+      const m = virtualizer.measurementsCache.find((it) => rows[it.index]?.kind !== 'header' && it.start >= line - 1)
+      const row = m && rows[m.index]
+      if (row && row.kind !== 'header') anchorId.current = row.kind === 'pair' ? row.charts[0].id : row.chart.id
+    }
+    update()
+    window.addEventListener('scroll', update, { passive: true })
+    return () => window.removeEventListener('scroll', update)
+  }, [rows, view, scrollMargin, virtualizer])
+  useLayoutEffect(() => {
+    if (shownView.current === view) return
+    shownView.current = view
+    const i = anchorId.current === null ? -1 : rowIndexOf(rows, anchorId.current)
+    if (i >= 0) virtualizer.scrollToIndex(i, { align: 'start' }) // padded by the sticky stack
+  }, [view, rows, virtualizer])
+
   return (
     <div ref={listRef} className="relative" style={{ height: virtualizer.getTotalSize() }}>
       {virtualizer.getVirtualItems().map((item) => {
         const row = rows[item.index]
-        const sticky = activeSticky.current === item.index
+        const sticky = activeSticky === item.index
         const style: React.CSSProperties = sticky
           ? { position: 'sticky', top: 'var(--pump-head, 0px)', zIndex: 1 }
           : { position: 'absolute', top: 0, left: 0, width: '100%', transform: `translateY(${item.start - virtualizer.options.scrollMargin}px)` }
@@ -59,6 +105,18 @@ export const ChartList = memo(function ChartList({ rows, selectedSkills, earned,
             {row.kind === 'header' ? (
               <div className="flex h-8 items-center bg-background/95 text-xs font-bold uppercase tracking-wide text-muted-foreground backdrop-blur">
                 Lv {row.level} · {row.count}
+              </div>
+            ) : row.kind === 'pair' ? (
+              <div className="grid h-[156px] grid-cols-2 gap-2 pb-2">
+                {row.charts.map((c) => (
+                  <ChartTile
+                    key={c.id}
+                    chart={c}
+                    selectedSkills={selectedSkills}
+                    earned={c.titleIds.some((id) => earned.has(id))}
+                    onOpen={onOpen}
+                  />
+                ))}
               </div>
             ) : (
               <ChartRow

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Chart } from '@/apps/pump/data/types'
-import { chartFacts, chartLine2, countLabel, levelLabel, modesLabel, titleName } from './labels'
+import { chartFacts, chartLine2, countLabel, levelLabel, modesLabel, songInitials, titleName } from './labels'
 
 const chart = {
   song: { title: 'Gargoyle', artist: 'SHK', type: 'FULLSONG', channel: 'ORIGINAL', series: 'XX', bpm: [150, 150], search: '' },
@@ -30,4 +30,15 @@ describe('labels', () => {
     expect(countLabel(0, 'chart')).toBe('0 charts')
     expect(countLabel(4448, 'chart')).toBe('4,448 charts')
   })
+})
+
+describe('songInitials', () => {
+  it.each([
+    ['Iolite Sky', 'IS'],
+    ['STAGER', 'S'],
+    ['Come to Me', 'CT'],
+    ['%X (Percent X)', 'XP'],
+    ['8 6', '86'],
+    ['!!!', '!'],
+  ])('songInitials(%s)', (title, want) => expect(songInitials(title)).toBe(want))
 })

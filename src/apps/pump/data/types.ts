@@ -28,6 +28,8 @@ export interface Song {
   channel?: string
   series: Series
   bpm?: [number, number]
+  /** full URL of the song jacket art */
+  image?: string
   /** fold(title + titleKo + artist), for search */
   search: string
 }
