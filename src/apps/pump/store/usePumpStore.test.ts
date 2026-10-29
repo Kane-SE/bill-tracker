@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { MAX_PRESETS, PUMP_STORAGE_KEY, usePumpStore } from './usePumpStore'
 
 beforeEach(() => {
-  usePumpStore.setState({ lastFilters: '', presets: [], earnedTitles: [] })
+  usePumpStore.setState({ lastFilters: '', presets: [], earnedTitles: [], view: 'grid' })
 })
 
 describe('usePumpStore', () => {
@@ -27,14 +27,24 @@ describe('usePumpStore', () => {
     toggleTitle('HALF_1')
     expect(usePumpStore.getState().earnedTitles).toEqual(['TWIST_D_7'])
   })
-  it('persists only the three data fields', () => {
+  it('persists only the data fields', () => {
     usePumpStore.getState().toggleTitle('RUN_S_1')
     const stored = JSON.parse(localStorage.getItem(PUMP_STORAGE_KEY)!)
-    expect(Object.keys(stored.state).sort()).toEqual(['earnedTitles', 'lastFilters', 'presets'])
+    expect(Object.keys(stored.state).sort()).toEqual(['earnedTitles', 'lastFilters', 'presets', 'view'])
   })
   it('falls back field by field when stored data is malformed', async () => {
     localStorage.setItem(PUMP_STORAGE_KEY, JSON.stringify({ state: { lastFilters: 5, presets: 'x', earnedTitles: ['A'] }, version: 1 }))
     await usePumpStore.persist.rehydrate()
     expect(usePumpStore.getState()).toMatchObject({ lastFilters: '', presets: [], earnedTitles: ['A'] })
+  })
+  it('defaults to the grid and remembers the list', () => {
+    expect(usePumpStore.getState().view).toBe('grid')
+    usePumpStore.getState().setView('list')
+    expect(JSON.parse(localStorage.getItem(PUMP_STORAGE_KEY)!).state.view).toBe('list')
+  })
+  it('falls back to the grid when the stored view is garbage', async () => {
+    localStorage.setItem(PUMP_STORAGE_KEY, JSON.stringify({ state: { view: 'tiles', earnedTitles: ['A'] }, version: 1 }))
+    await usePumpStore.persist.rehydrate()
+    expect(usePumpStore.getState()).toMatchObject({ view: 'grid', earnedTitles: ['A'] })
   })
 })
