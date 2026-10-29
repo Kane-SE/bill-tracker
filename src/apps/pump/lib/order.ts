@@ -55,6 +55,21 @@ export function rowIndexOf(rows: readonly (ListRow | GridRow)[], chartId: number
   )
 }
 
+/**
+ * The level header to pin: the last header whose top has reached `line` (where
+ * it sticks), else the first header. `startOf(i)` is row i's top, in the same
+ * coordinates as `line`. 0 when there are no headers.
+ */
+export function activeHeader(rows: readonly { kind: string }[], startOf: (i: number) => number, line: number): number {
+  let active = -1
+  for (let i = 0; i < rows.length; i++) {
+    if (rows[i].kind !== 'header') continue
+    if (active === -1 || startOf(i) <= line) active = i
+    else break
+  }
+  return Math.max(active, 0)
+}
+
 /** Up to `max` skill tags for a row: selected skills first, then gimmick, then by coverage. */
 export function rowSkills(chart: Chart, selected: readonly SkillId[], max = 2): SkillId[] {
   const strength = (s: SkillId) => (s === 'gimmick' ? 101 : (chart.coverage?.[s] ?? 0))

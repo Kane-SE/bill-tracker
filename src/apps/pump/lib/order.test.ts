@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { makeChart, makeSong } from './__fixtures__/charts'
-import { rowIndexOf, rowSkills, songCharts, sortCharts, toGridRows, toRows } from './order'
+import { activeHeader, rowIndexOf, rowSkills, songCharts, sortCharts, toGridRows, toRows } from './order'
 
 const a = makeSong({ title: 'apple' })
 const b = makeSong({ title: 'Banana' })
@@ -72,5 +72,26 @@ describe('songCharts', () => {
   })
   it('includes Steam Link charts only when they are shown', () => {
     expect(songCharts(charts, charts[0], true).map((c) => c.id)).toEqual([4, 2, 1, 5])
+  })
+})
+
+describe('activeHeader', () => {
+  // Lv 19 header at 0, three 64 px rows, Lv 20 header at 224, one row, Lv 21 header at 320.
+  const kinds = ['header', 'chart', 'chart', 'chart', 'header', 'chart', 'header', 'chart'].map((kind) => ({ kind }))
+  const starts = [0, 32, 96, 160, 224, 256, 320, 352]
+  const at = (line: number) => activeHeader(kinds, (i) => starts[i], line)
+  it('pins the last header whose top has reached the line', () => {
+    expect(at(0)).toBe(0)
+    expect(at(223)).toBe(0)
+    expect(at(224)).toBe(4)
+    expect(at(319)).toBe(4)
+    expect(at(1000)).toBe(6)
+  })
+  it('keeps the first header pinned above the list', () => {
+    expect(at(-50)).toBe(0)
+  })
+  it('falls back to 0 when there are no headers or rows', () => {
+    expect(activeHeader([{ kind: 'chart' }], () => 0, 10)).toBe(0)
+    expect(activeHeader([], () => 0, 10)).toBe(0)
   })
 })

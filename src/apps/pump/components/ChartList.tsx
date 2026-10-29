@@ -1,7 +1,7 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { defaultRangeExtractor, useWindowVirtualizer, type Range } from '@tanstack/react-virtual'
 import type { SkillId } from '@/apps/pump/data/types'
-import { rowIndexOf, toGridRows, type ListRow } from '@/apps/pump/lib/order'
+import { activeHeader, rowIndexOf, toGridRows, type ListRow } from '@/apps/pump/lib/order'
 import type { ChartView } from '@/apps/pump/store/usePumpStore'
 import { ChartRow, ROW_HEIGHT } from '@/apps/pump/components/ChartRow'
 import { ChartTile, GRID_ROW_HEIGHT } from '@/apps/pump/components/ChartTile'
@@ -31,15 +31,11 @@ export const ChartList = memo(function ChartList({ rows: listRows, view, selecte
     if (el) setScrollMargin(el.getBoundingClientRect().top + window.scrollY)
   }, [rows.length])
 
-  const stickyIndexes = useMemo(() => rows.flatMap((r, i) => (r.kind === 'header' ? [i] : [])), [rows])
-  const activeSticky = useRef(0)
+  // The pinned level header is always rendered, whatever the range.
+  const [activeSticky, setActiveSticky] = useState(0)
   const rangeExtractor = useCallback(
-    (range: Range) => {
-      activeSticky.current = [...stickyIndexes].reverse().find((i) => range.startIndex >= i) ?? 0
-      const next = new Set([activeSticky.current, ...defaultRangeExtractor(range)])
-      return [...next].sort((a, b) => a - b)
-    },
-    [stickyIndexes],
+    (range: Range) => [...new Set([activeSticky, ...defaultRangeExtractor(range)])].sort((a, b) => a - b),
+    [activeSticky],
   )
 
   // Height of the sticky stack (page header + level header): where the anchor row should start.
@@ -52,6 +48,20 @@ export const ChartList = memo(function ChartList({ rows: listRows, view, selecte
     scrollMargin,
     rangeExtractor,
   })
+
+  // Which level header is pinned: measured from the page header's bottom edge on
+  // every scroll. The virtualizer's range starts at the window top, under the page
+  // header, and only changes when a row crosses it, so it can't decide this.
+  useEffect(() => {
+    const update = () => {
+      const line = window.scrollY + (parseFloat(document.documentElement.style.getPropertyValue('--pump-head')) || 0)
+      const m = virtualizer.measurementsCache
+      setActiveSticky(activeHeader(rows, (i) => m[i]?.start ?? 0, line))
+    }
+    update()
+    window.addEventListener('scroll', update, { passive: true })
+    return () => window.removeEventListener('scroll', update)
+  }, [rows, scrollMargin, virtualizer])
 
   // Anchor: the first chart whose row starts at or below the bottom of the sticky
   // stack (page header + level header), measured against the live window.scrollY.
@@ -86,7 +96,7 @@ export const ChartList = memo(function ChartList({ rows: listRows, view, selecte
     <div ref={listRef} className="relative" style={{ height: virtualizer.getTotalSize() }}>
       {virtualizer.getVirtualItems().map((item) => {
         const row = rows[item.index]
-        const sticky = activeSticky.current === item.index
+        const sticky = activeSticky === item.index
         const style: React.CSSProperties = sticky
           ? { position: 'sticky', top: 'var(--pump-head, 0px)', zIndex: 1 }
           : { position: 'absolute', top: 0, left: 0, width: '100%', transform: `translateY(${item.start - virtualizer.options.scrollMargin}px)` }
