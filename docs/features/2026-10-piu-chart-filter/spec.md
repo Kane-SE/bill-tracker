@@ -242,7 +242,7 @@ All sizes are CSS px at a 390 px width. Every tap target is ≥ 44 px, or extend
 
 - **List**: `useWindowVirtualizer`.
   - Rows are fixed at **64 px**; level headers are fixed at **32 px** and sticky ("Lv 19 · 51"), via `rangeExtractor`.
-  - Order: level ascending, then title (`Intl.Collator`), then S before D before HDB.
+  - Order: level ascending, then title (`Intl.Collator`), then S before D before HDB. When one computed skill is selected, each level is ranked by that skill's % instead (see `../2026-10-pump-skill-sort/spec.md`).
 - **Row** (the whole row is one button that opens the chart sheet):
   - **Left: `LevelBadge`** (40×40) shows `S19`, `D19` or `HD19`. Single is outlined, Double is filled with `primary`, HD is a dashed outline. The mode is never shown by colour alone.
   - **Line 1:** the title, truncated. _(Self-test 2026-10-21: the Korean title is no longer shown in rows. Most are transliterations that crowded the line; it stays in the chart sheet and in search.)_

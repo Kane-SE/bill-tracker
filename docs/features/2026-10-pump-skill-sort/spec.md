@@ -1,6 +1,6 @@
 # Pump skill sort — Design
 
-**Date:** 2026-11-02 · **Status:** decisions answered 2026-10-31 (grilling, Q1–Q13), awaiting spec review
+**Date:** 2026-11-02 · **Status:** decisions answered 2026-10-31 (grilling, Q1–Q13), built 2026-11-02 (not pushed or merged)
 **Builds on:** [`../2026-10-piu-chart-filter/spec.md`](../2026-10-piu-chart-filter/spec.md) (Pump v1: filters, URL state, list order) · [`../2026-10-pump-song-art/spec.md`](../2026-10-pump-song-art/spec.md) (grid and list views)
 
 ## Problem
