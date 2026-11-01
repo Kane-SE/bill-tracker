@@ -1,8 +1,8 @@
 import { MODES, SERIES, SKILLS, SONG_TYPES, type Series, type SongType } from '@/apps/pump/data/types'
-import type { Filters } from '@/apps/pump/lib/filters'
+import { SORT_DIRS, type Filters } from '@/apps/pump/lib/filters'
 
 /** Query params that hold filters. Everything else (tab, f, c, a) is UI state. */
-export const FILTER_KEYS = ['m', 'lv', 'sk', 'all', 'ty', 'v', 'tc', 'sl', 'np', 'q'] as const
+export const FILTER_KEYS = ['m', 'lv', 'sk', 'all', 'ty', 'v', 'tc', 'sl', 'np', 'so', 'q'] as const
 /** Params that mean "a sheet is open". */
 export const SHEET_KEYS = ['f', 'c', 'a'] as const
 
@@ -44,7 +44,7 @@ export function parseFilters(p: URLSearchParams): Filters {
     steamLink,
     hidePremium: p.get('np') === '1',
     q: p.get('q') ?? '',
-    sort: 'most',
+    sort: SORT_DIRS.find((d) => d === p.get('so')) ?? 'most',
   }
 }
 
@@ -64,6 +64,7 @@ export function serializeFilters(f: Filters): string {
   if (f.titleOnly) p.set('tc', '1')
   if (f.steamLink) p.set('sl', '1')
   if (f.hidePremium) p.set('np', '1')
+  if (f.sort !== 'most') p.set('so', f.sort)
   if (f.q.trim()) p.set('q', f.q)
   return p.toString().replace(/%2C/g, ',')
 }
