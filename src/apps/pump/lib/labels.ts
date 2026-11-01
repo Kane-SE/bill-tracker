@@ -1,4 +1,5 @@
-import type { Chart, Mode, SongType } from '@/apps/pump/data/types'
+import type { Chart, ComputedSkill, Mode, SongType } from '@/apps/pump/data/types'
+import type { SortDir } from '@/apps/pump/lib/filters'
 
 export const MODE_SHORT: Record<Mode, string> = { S: 'S', D: 'D', HDB: 'HD' }
 export const MODE_LABEL: Record<Mode, string> = { S: 'Single', D: 'Double', HDB: 'Half-Double' }
@@ -53,4 +54,21 @@ export function songInitials(title: string): string {
     .map((w) => w[0])
     .join('')
     .toUpperCase()
+}
+
+/** The order the sort chip moves to next: most → least → A–Z → most. */
+export function nextSort(d: SortDir): SortDir {
+  return d === 'most' ? 'least' : d === 'least' ? 'az' : 'most'
+}
+
+/** Sort chip text, e.g. "Most run". */
+export function sortLabel(d: SortDir, skill: ComputedSkill): string {
+  return d === 'most' ? `Most ${skill}` : d === 'least' ? `Least ${skill}` : 'A–Z'
+}
+
+/** Sort chip screen-reader text: the current order and what a tap does. */
+export function sortAriaLabel(d: SortDir, skill: ComputedSkill): string {
+  if (d === 'most') return `Order: most ${skill} first. Tap for least first`
+  if (d === 'least') return `Order: least ${skill} first. Tap for A to Z`
+  return `Order: A to Z. Tap for most ${skill} first`
 }

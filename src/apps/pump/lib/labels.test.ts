@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Chart } from '@/apps/pump/data/types'
-import { chartFacts, chartLine2, countLabel, levelLabel, modesLabel, songInitials, titleName } from './labels'
+import { chartFacts, chartLine2, countLabel, levelLabel, modesLabel, nextSort, songInitials, sortAriaLabel, sortLabel, titleName } from './labels'
 
 const chart = {
   song: { title: 'Gargoyle', artist: 'SHK', type: 'FULLSONG', channel: 'ORIGINAL', series: 'XX', bpm: [150, 150], search: '' },
@@ -41,4 +41,20 @@ describe('songInitials', () => {
     ['8 6', '86'],
     ['!!!', '!'],
   ])('songInitials(%s)', (title, want) => expect(songInitials(title)).toBe(want))
+})
+
+describe('sort labels', () => {
+  it('cycles most, least, az', () => {
+    expect(nextSort('most')).toBe('least')
+    expect(nextSort('least')).toBe('az')
+    expect(nextSort('az')).toBe('most')
+  })
+  it('names the skill', () => {
+    expect(sortLabel('most', 'run')).toBe('Most run')
+    expect(sortLabel('least', 'twist')).toBe('Least twist')
+    expect(sortLabel('az', 'run')).toBe('A–Z')
+    expect(sortAriaLabel('most', 'run')).toBe('Order: most run first. Tap for least first')
+    expect(sortAriaLabel('least', 'twist')).toBe('Order: least twist first. Tap for A to Z')
+    expect(sortAriaLabel('az', 'run')).toBe('Order: A to Z. Tap for most run first')
+  })
 })
