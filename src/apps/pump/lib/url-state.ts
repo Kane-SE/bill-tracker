@@ -44,6 +44,7 @@ export function parseFilters(p: URLSearchParams): Filters {
     steamLink,
     hidePremium: p.get('np') === '1',
     q: p.get('q') ?? '',
+    sort: 'most',
   }
 }
 

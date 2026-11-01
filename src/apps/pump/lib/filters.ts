@@ -1,7 +1,10 @@
-import { MODES, SERIES, SKILLS, SONG_TYPES, type Chart, type Mode, type Series, type SkillId, type SongType } from '@/apps/pump/data/types'
+import { COMPUTED_SKILLS, MODES, SERIES, SKILLS, SONG_TYPES, type Chart, type ComputedSkill, type Mode, type Series, type SkillId, type SongType } from '@/apps/pump/data/types'
 import { tokens } from '@/apps/pump/lib/normalize'
 import { matchesSearch } from '@/apps/pump/lib/search'
 import { levelLabel, modesLabel, SONG_TYPE_LABEL } from '@/apps/pump/lib/labels'
+
+export type SortDir = 'most' | 'least' | 'az'
+export const SORT_DIRS: readonly SortDir[] = ['most', 'least', 'az']
 
 /** Live filter state. An empty list means "no restriction" for that facet. */
 export interface Filters {
@@ -17,6 +20,8 @@ export interface Filters {
   steamLink: boolean
   hidePremium: boolean
   q: string
+  /** list order while one computed skill is selected; not a facet */
+  sort: SortDir
 }
 
 export const defaultFilters: Filters = {
@@ -30,6 +35,7 @@ export const defaultFilters: Filters = {
   steamLink: false,
   hidePremium: false,
   q: '',
+  sort: 'most',
 }
 
 type Facet = 'modes' | 'level' | 'skills' | 'types' | 'series' | 'titleOnly' | 'hidePremium' | 'q'
@@ -49,6 +55,12 @@ export function passes(c: Chart, f: Filters, toks: readonly string[], skip?: Fac
   if (skip !== 'hidePremium' && f.hidePremium && c.premium) return false
   if (skip !== 'q' && toks.length > 0 && !matchesSearch(c, toks)) return false
   return true
+}
+
+/** The skill the list ranks by: exactly one selected skill with a coverage %, else null. */
+export function rankSkill(f: Filters): ComputedSkill | null {
+  const [only] = f.skills
+  return f.skills.length === 1 && (COMPUTED_SKILLS as readonly string[]).includes(only) ? (only as ComputedSkill) : null
 }
 
 /** The charts that pass, in their input order. */

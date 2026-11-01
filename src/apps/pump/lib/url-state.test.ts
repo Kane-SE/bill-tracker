@@ -5,7 +5,7 @@ import { hasFilterParams, mergeLiveFilters, paramsAfterClose, parseFilters, pars
 const p = (s: string) => new URLSearchParams(s)
 const full: Filters = {
   modes: ['S', 'D'], level: [18, 20], skills: ['twist', 'bracket'], skillsAll: true, types: ['SHORTCUT'],
-  series: ['FIESTA~FIESTA 2', 'XX'], titleOnly: true, steamLink: true, hidePremium: true, q: 'vook',
+  series: ['FIESTA~FIESTA 2', 'XX'], titleOnly: true, steamLink: true, hidePremium: true, q: 'vook', sort: 'most',
 }
 
 describe('serializeFilters / parseFilters', () => {

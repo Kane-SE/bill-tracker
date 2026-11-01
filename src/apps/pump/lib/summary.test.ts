@@ -20,3 +20,9 @@ describe('activeFacetCount', () => {
     expect(activeFacetCount({ ...defaultFilters, modes: ['S', 'D'], skills: ['run'], steamLink: true, q: 'x' })).toBe(3)
   })
 })
+
+describe('sort order', () => {
+  it('is not a facet', () => {
+    expect(activeFacetCount({ ...defaultFilters, sort: 'least' })).toBe(0)
+  })
+})
