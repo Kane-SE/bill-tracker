@@ -1,5 +1,5 @@
 import { Gem, Trophy } from 'lucide-react'
-import type { Chart, SkillId } from '@/apps/pump/data/types'
+import type { Chart, ComputedSkill, SkillId } from '@/apps/pump/data/types'
 import { chartLine2 } from '@/apps/pump/lib/labels'
 import { rowSkills } from '@/apps/pump/lib/order'
 import { LevelBadge } from '@/apps/pump/components/LevelBadge'
@@ -14,6 +14,8 @@ interface ChartRowProps {
   selectedSkills: readonly SkillId[]
   /** the chart unlocks a title the user has ticked */
   earned: boolean
+  /** the skill the list is ranked by; its tag shows the chart's % */
+  rankedSkill: ComputedSkill | null
   onOpen(id: number): void
 }
 
@@ -21,17 +23,20 @@ interface RowIconsProps {
   chart: Chart
   selectedSkills: readonly SkillId[]
   earned: boolean
+  rankedSkill: ComputedSkill | null
+  /** most skill tags to show */
+  maxSkills?: number
   className?: string
 }
 
 /** A chart's skill tags, trophy and gem; draws nothing (no empty box) when it has none. */
-export function RowIcons({ chart, selectedSkills, earned, className }: RowIconsProps) {
-  const skills = rowSkills(chart, selectedSkills)
+export function RowIcons({ chart, selectedSkills, earned, rankedSkill, maxSkills, className }: RowIconsProps) {
+  const skills = rowSkills(chart, selectedSkills, maxSkills)
   if (skills.length === 0 && chart.titleIds.length === 0 && !chart.premium) return null
   return (
     <span className={cn('flex shrink-0 items-center gap-1', className)}>
       {skills.map((s) => (
-        <SkillTag key={s} skill={s} active={selectedSkills.includes(s)} />
+        <SkillTag key={s} skill={s} active={selectedSkills.includes(s)} pct={s === rankedSkill ? chart.coverage?.[s] : undefined} />
       ))}
       {chart.titleIds.length > 0 && (
         <Trophy className={cn('h-4 w-4', earned ? 'text-primary' : 'text-muted-foreground')} aria-label={earned ? 'Title chart, earned' : 'Title chart'} />
@@ -42,7 +47,7 @@ export function RowIcons({ chart, selectedSkills, earned, className }: RowIconsP
 }
 
 /** One chart: the whole 64 px row opens the chart sheet. Song art fades in on the right. */
-export function ChartRow({ chart, selectedSkills, earned, onOpen }: ChartRowProps) {
+export function ChartRow({ chart, selectedSkills, earned, rankedSkill, onOpen }: ChartRowProps) {
   return (
     <button
       type="button"
@@ -58,7 +63,7 @@ export function ChartRow({ chart, selectedSkills, earned, onOpen }: ChartRowProp
         <span className="block truncate text-sm font-semibold">{chart.song.title}</span>
         <span className="block truncate text-xs text-muted-foreground">{chartLine2(chart)}</span>
       </span>
-      <RowIcons chart={chart} selectedSkills={selectedSkills} earned={earned} className="relative rounded-md bg-background/85 px-1" />
+      <RowIcons chart={chart} selectedSkills={selectedSkills} earned={earned} rankedSkill={rankedSkill} className="relative rounded-md bg-background/85 px-1" />
     </button>
   )
 }

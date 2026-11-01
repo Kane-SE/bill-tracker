@@ -1,6 +1,6 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { defaultRangeExtractor, useWindowVirtualizer, type Range } from '@tanstack/react-virtual'
-import type { SkillId } from '@/apps/pump/data/types'
+import type { ComputedSkill, SkillId } from '@/apps/pump/data/types'
 import { activeHeader, rowIndexOf, toGridRows, type ListRow } from '@/apps/pump/lib/order'
 import type { ChartView } from '@/apps/pump/store/usePumpStore'
 import { ChartRow, ROW_HEIGHT } from '@/apps/pump/components/ChartRow'
@@ -13,6 +13,7 @@ interface ChartListProps {
   view: ChartView
   selectedSkills: readonly SkillId[]
   earned: ReadonlySet<string>
+  rankedSkill: ComputedSkill | null
   onOpen(id: number): void
 }
 
@@ -22,7 +23,7 @@ interface ChartListProps {
  * using TanStack Virtual's sticky pattern: the active header is always rendered
  * and positioned sticky; everything else is absolute.
  */
-export const ChartList = memo(function ChartList({ rows: listRows, view, selectedSkills, earned, onOpen }: ChartListProps) {
+export const ChartList = memo(function ChartList({ rows: listRows, view, selectedSkills, earned, rankedSkill, onOpen }: ChartListProps) {
   const rows = useMemo(() => (view === 'grid' ? toGridRows(listRows) : listRows), [listRows, view])
   const listRef = useRef<HTMLDivElement>(null)
   const [scrollMargin, setScrollMargin] = useState(0)
@@ -114,6 +115,7 @@ export const ChartList = memo(function ChartList({ rows: listRows, view, selecte
                     chart={c}
                     selectedSkills={selectedSkills}
                     earned={c.titleIds.some((id) => earned.has(id))}
+                    rankedSkill={rankedSkill}
                     onOpen={onOpen}
                   />
                 ))}
@@ -123,6 +125,7 @@ export const ChartList = memo(function ChartList({ rows: listRows, view, selecte
                 chart={row.chart}
                 selectedSkills={selectedSkills}
                 earned={row.chart.titleIds.some((id) => earned.has(id))}
+                rankedSkill={rankedSkill}
                 onOpen={onOpen}
               />
             )}

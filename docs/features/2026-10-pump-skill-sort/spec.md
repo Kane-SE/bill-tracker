@@ -19,7 +19,7 @@ Filtering D18 + run shows the 93 run-tagged D18 charts, sorted by title. To pick
 | 6 | **The selected skill's tag shows its %** while ranking, e.g. "run 67%". |
 | 7 | **The order is filter state**: it lives in the URL and comes back with the last filters. |
 | 8 | **The control is a chip in the bottom dock**, right after the skill chip. Each tap moves to the next order. |
-| 9 | **Grid view shows the % too.** Correction to the grilling answer: grid tiles already show skill tags below the art (song-art spec, decision 2), so the tile's tag reads "run 67%" exactly like the list row, and no separate badge is added. |
+| 9 | **Grid view shows the % too.** Correction to the grilling answer: grid tiles already show skill tags below the art (song-art spec, decision 2), so the tile's tag reads "run 67%" exactly like the list row, and no separate badge is added. Built with the fallback: at 360 px "bracket 100%", a second tag and a trophy measured about 162 px of icons in a 142 px tile, so while ranking the tile shows only the selected tag (`max = 1`). |
 | 10 | **Charts with no %** (Steam Link and 11 others with no coverage data; they can still be tagged through an official title list) go to the end of their level in both directions and show no %. |
 | 11 | **The chosen direction carries over** when the skill changes (run → twist, or removed and another added). Most first is only the starting value. |
 | 12 | **Titles tab unchanged.** Ranking by more than one skill is out of scope. |

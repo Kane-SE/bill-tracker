@@ -1,7 +1,8 @@
 import type { SkillId } from '@/apps/pump/data/types'
 import { cn } from '@/shared/lib/utils'
 
-export function SkillTag({ skill, active }: { skill: SkillId; active?: boolean }) {
+/** A skill tag; `pct` appends the chart's coverage, e.g. "run 67%". */
+export function SkillTag({ skill, active, pct }: { skill: SkillId; active?: boolean; pct?: number }) {
   return (
     <span
       className={cn(
@@ -11,6 +12,12 @@ export function SkillTag({ skill, active }: { skill: SkillId; active?: boolean }
       )}
     >
       {skill}
+      {pct !== undefined && (
+        <>
+          {' '}
+          <span className="tabular-nums">{pct}%</span>
+        </>
+      )}
     </span>
   )
 }
