@@ -1,4 +1,5 @@
-import type { Chart, Mode, SkillId } from '@/apps/pump/data/types'
+import type { Chart, ComputedSkill, Mode, SkillId } from '@/apps/pump/data/types'
+import type { SortDir } from '@/apps/pump/lib/filters'
 
 const collator = new Intl.Collator('en', { sensitivity: 'base', numeric: true })
 const MODE_ORDER: Record<Mode, number> = { S: 0, D: 1, HDB: 2 }
@@ -12,6 +13,17 @@ export function sortCharts(charts: readonly Chart[]): Chart[] {
       MODE_ORDER[a.mode] - MODE_ORDER[b.mode] ||
       a.id - b.id,
   )
+}
+
+/** Each level's charts by `skill` coverage (most or least first); no-% charts last; ties keep input order. 'az' returns the input. */
+export function rankCharts(sorted: readonly Chart[], skill: ComputedSkill, dir: SortDir): readonly Chart[] {
+  if (dir === 'az') return sorted
+  const sign = dir === 'most' ? -1 : 1
+  return [...sorted].sort((a, b) => {
+    const pa = a.coverage?.[skill]
+    const pb = b.coverage?.[skill]
+    return a.level - b.level || Number(pa === undefined) - Number(pb === undefined) || (pa === undefined || pb === undefined ? 0 : sign * (pa - pb))
+  })
 }
 
 export type ListRow =
