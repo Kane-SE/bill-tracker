@@ -44,12 +44,16 @@ export async function listPlaylist(listId, { fetch: fetchFn = globalThis.fetch, 
 
   const videos = []
   const state = { token: null }
+  const seen = new Set()
   collect(JSON.parse(data[1]), videos, state)
   let page = 1
   onPage?.(page, videos.length)
   while (state.token) {
     const continuation = state.token
     state.token = null
+    // never request the same page twice: a repeated token would loop forever
+    if (seen.has(continuation)) throw new Error('YouTube repeated a continuation token; the page format may have changed')
+    seen.add(continuation)
     if (pauseMs) await sleep(pauseMs)
     const next = await get(fetchFn, BROWSE, {
       method: 'POST',

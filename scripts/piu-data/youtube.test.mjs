@@ -28,6 +28,13 @@ describe('listPlaylist', () => {
     expect(fake).toHaveBeenCalledTimes(2)
   })
 
+  it('stops when a continuation repeats its token', async () => {
+    const loop = { onResponseReceivedActions: [{ appendContinuationItemsAction: { continuationItems: [lockup('a3', 'Third'), { continuationCommand: { token: 'T1' } }] } }] }
+    const fake = vi.fn(async (url) => (url.startsWith('https://www.youtube.com/playlist') ? ok(pageHtml) : ok(JSON.stringify(loop))))
+    await expect(listPlaylist('L1', { fetch: fake, pauseMs: 0 })).rejects.toThrow('repeated a continuation token')
+    expect(fake).toHaveBeenCalledTimes(2)
+  })
+
   it('throws when the page has no ytInitialData', async () => {
     await expect(listPlaylist('L1', { fetch: page('<html>consent</html>'), pauseMs: 0 })).rejects.toThrow('YouTube page format changed')
   })
