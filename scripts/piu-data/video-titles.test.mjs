@@ -40,6 +40,11 @@ describe('parseVideoTitle', () => {
     expect(parseVideoTitle('[PUMP IT UP XX] Monolith D22 (pre D23 → D22)')).toMatchObject({ mix: 'XX', era: 'XX', rank: 5, codes: [{ mode: 'D', level: 22 }] })
     expect(parseVideoTitle('[PUMP IT UP XX] Radetzky Can Can S8 & S13(Update for 2.05) | PIU XX 2.05 Update').codes).toHaveLength(2)
   })
+  it('keeps a chart video whose notes mention a BGA version', () => {
+    expect(parseVideoTitle('[PUMP IT UP PHOENIX] Ultimatum(얼티메이텀) S17 & S21 (Phoenix Modified ver.) & S17 BGA On Ver.')).toMatchObject({
+      mix: 'PHOENIX', codes: [{ mode: 'S', level: 17 }, { mode: 'S', level: 21 }],
+    })
+  })
   it('lists the XX levels a PHOENIX title says moved', () => {
     expect(parseVideoTitle('[PUMP IT UP PHOENIX] Night Duty (야근) S17 & S20 (XX S19 / SLOW LV.4 TITLE)').moved).toEqual([{ mode: 'S', level: 19 }])
     expect(parseVideoTitle('[PUMP IT UP PHOENIX] Last Rebirth(라스트 리버스) D17 (pre D16 → D17 / Phoenix Modified ver.)').moved).toEqual([{ mode: 'D', level: 16 }])

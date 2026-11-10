@@ -21,7 +21,9 @@ const TAGS = [
   { re: /^펌프\s?잇\s?업 20주년$/, rank: 6, mix: 'XX', era: 'XX', artist: true },
 ]
 
-const SKIP = /mirror pattern|\bcompare\b|random skin|random step|\bbga\b|\b(sp|dp)\d|\bco-?op\b|\b[456]k\b|\?\?/i
+// A BGA-only video has no chart code, so it fails the code check below; a
+// chart video may still mention its "BGA On" version in the notes.
+const SKIP = /mirror pattern|\bcompare\b|random skin|random step|\b(sp|dp)\d|\bco-?op\b|\b[456]k\b|\?\?/i
 const CODE = String.raw`(?:S|D|HDB|HD)\d{1,2}`
 const CODE_GROUP = new RegExp(String.raw`(?:^|\s)(${CODE}(?:\s*&\s*${CODE})*)(?=\s|$|\(|\|)`)
 const PNX1 = /\bPNX1\s/

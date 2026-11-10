@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "piu:data": "node scripts/piu-data/build.mjs"
+    "piu:data": "node scripts/piu-data/build.mjs",
+    "piu:videos": "node scripts/piu-data/videos.mjs"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.4",
