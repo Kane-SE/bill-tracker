@@ -57,30 +57,38 @@ export function ChartSheet({ chart, siblings, titles, earned, onToggleTitle, onP
         <SheetGrabber onDismiss={onClose} />
         {c && (
           <>
-            {video ? (
-              <a href={videoUrl(video)} target="_blank" rel="noreferrer" className="block space-y-1.5 rounded-lg">
-                <span className="relative block">
-                  <SongArt key={c.song.title} song={c.song} eager className="aspect-video max-h-[28vh] w-full rounded-lg" />
-                  <span aria-hidden className="absolute inset-0 grid place-items-center">
-                    <span className="grid h-12 w-12 place-items-center rounded-full bg-black/60 text-white">
-                      <Play className="ml-0.5 h-6 w-6 fill-current" />
-                    </span>
-                  </span>
-                </span>
-                <span className="block text-sm text-primary">
-                  {/* wrap between parts only, so "left side" never splits */}
-                  {videoCaption(c, video)
-                    .split(' · ')
-                    .map((part, i) => (
-                      <Fragment key={part}>
-                        {i > 0 && ' · '}
-                        <span className="whitespace-nowrap">{part}</span>
-                      </Fragment>
-                    ))}
-                </span>
-              </a>
-            ) : (
+            {/* The art keeps its place in the tree whether or not there's a video, so
+                the image isn't remounted when the videos load or a sibling has none. */}
+            <div className="relative">
               <SongArt key={c.song.title} song={c.song} eager className="aspect-video max-h-[28vh] w-full rounded-lg" />
+              {video && (
+                // a second tap target for the caption link below, so it's hidden from screen readers
+                <a
+                  href={videoUrl(video)}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-hidden
+                  tabIndex={-1}
+                  className="absolute inset-0 grid place-items-center rounded-lg"
+                >
+                  <span className="grid h-12 w-12 place-items-center rounded-full bg-black/60 text-white">
+                    <Play className="ml-0.5 h-6 w-6 fill-current" />
+                  </span>
+                </a>
+              )}
+            </div>
+            {video && (
+              <a href={videoUrl(video)} target="_blank" rel="noreferrer" className="-mt-1.5 text-sm text-primary">
+                {/* wrap between parts only, so "left side" never splits */}
+                {videoCaption(c, video)
+                  .split(' · ')
+                  .map((part, i) => (
+                    <Fragment key={part}>
+                      {i > 0 && ' · '}
+                      <span className="whitespace-nowrap">{part}</span>
+                    </Fragment>
+                  ))}
+              </a>
             )}
             <div className="flex items-center gap-3 pr-10">
               <LevelBadge mode={c.mode} level={c.level} />
