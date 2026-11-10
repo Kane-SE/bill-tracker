@@ -368,6 +368,7 @@ If the CSV fetch fails, the build stops and the committed `charts.json` stays as
 
 - The repo only gains derived facts: titles, artists, levels, modes, flags, skill tags and coverage percentages. There's no step data, no `.ssc` files, and no piucenter chart JSON.
 - The About dialog credits every source.
+- Chart videos (added 2026-11, [`../2026-11-pump-chart-videos/spec.md`](../2026-11-pump-chart-videos/spec.md)) are links only. The repo holds YouTube video IDs matched from NEVSISTER's public video titles, and no video, thumbnail or title text. About credits NEVSISTER.
 - Before the PR merges, both maintainers are asked; Claude drafts the messages and the user sends them. If either says no, the fallback is an import-on-phone data file, which gets its own small design.
 
 ## Out of scope (v1)

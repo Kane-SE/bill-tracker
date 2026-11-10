@@ -1,6 +1,6 @@
 # Pump chart videos — Design
 
-**Date:** 2026-11-11 · **Status:** draft, waiting for approval
+**Date:** 2026-11-11 · **Status:** approved by Evan 2026-11-11, built 2026-11-11 on `feature/pump-chart-videos` (not merged). The first build gives S 2,706/2,752 (98.3 %), D 1,773/1,783 (99.4 %) and HD 31/790 (3.9 %): 4,510 charts on 3,535 videos. A spot-check of 20 picks against PIU Scores found 19 identical and 1 equivalent (Cynical S8: the official channel's video of the same chart) after one parser fix (a "BGA On" note no longer hides a video).
 **Builds on:** [`../2026-10-piu-chart-filter/spec.md`](../2026-10-piu-chart-filter/spec.md) (Pump v1, data build) · [`../2026-10-pump-song-art/spec.md`](../2026-10-pump-song-art/spec.md) (chart sheet hero; its "YouTube links" non-goal is this feature)
 
 ## Problem
@@ -34,7 +34,7 @@ NEVSISTER (`네브시스터NEVSISTER`, channel `UCicVRsgv4iIhZGZcbx7xUkw`, about
 | `[PUMP IT UP XX]`, `[펌프잇업 20주년]` | `Monkey Fingers S15` | XX |
 | `[PUMP IT UP RISE]`, **half-doubles only** | `Lucky Star (럭키 스타) HD18` | RISE (the Steam game; it's where the Steam Link HDB charts come from) |
 
-The following are skipped: play sessions (`[PIU …] NEVSIST - …`), mirror, BGA, co-op, random-step and gimmick-compare videos, SP/DP performances, EZ2ON 4K/5K/6K, and `??` levels.
+The following are skipped: play sessions (`[PIU …] NEVSIST - …`), mirror, co-op, random-step and gimmick-compare videos, SP/DP performances, EZ2ON 4K/5K/6K, and `??` levels. BGA-only videos have no chart code, so they drop out on their own; a chart video whose notes mention its "BGA On" version is kept.
 
 ### Build
 
@@ -47,7 +47,7 @@ The following are skipped: play sessions (`[PIU …] NEVSIST - …`), mirror, BG
 
 The script stops without writing, and leaves the committed file as it was, if the list has fewer than 10,000 videos or singles and doubles together drop below 95 % coverage. Either one means the lister or the parser broke.
 
-`charts.json` is unchanged. `videos.json` is a separate file of about 90 KB, loaded the first time a chart sheet opens. It keeps `charts.json` under its 600 KB budget and is precached for offline use like the rest of the app.
+`charts.json` is unchanged. `videos.json` is a separate file of about 125 KB (51 KB gzipped), loaded the first time a chart sheet opens. It keeps `charts.json` under its 600 KB budget and is precached for offline use like the rest of the app.
 
 ### Matching rules
 

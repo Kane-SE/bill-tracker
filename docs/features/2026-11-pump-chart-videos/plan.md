@@ -43,7 +43,7 @@
 - Produces: `listPlaylist(listId: string, opts?: { fetch?: typeof fetch, pauseMs?: number, onPage?: (page: number, count: number) => void }) => Promise<{ id: string, title: string }[]>`. Order is page order, so an uploads list comes newest first.
 - Produces: `NEVSISTER = { name: 'NEVSISTER', channelId: 'UCicVRsgv4iIhZGZcbx7xUkw', url: 'https://www.youtube.com/@NEVSISTER', uploads: 'UUicVRsgv4iIhZGZcbx7xUkw' }` in `sources.mjs`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 The fake fetch answers a GET of `https://www.youtube.com/playlist?list=L1` with HTML containing `"INNERTUBE_CLIENT_VERSION":"2.20261101.00.00"` and `var ytInitialData = {…};</script>`. That JSON nests two `lockupViewModel`s (`contentId: 'a1'` / `metadata.lockupMetadataViewModel.title.content: 'First'`, and `'a2'` / `'Second'`) and a `continuationCommand: { token: 'T1' }`. A POST to `https://www.youtube.com/youtubei/v1/browse?prettyPrint=false` answers JSON with one lockup (`'a3'`, `'Third'`) and no token.
 
@@ -63,15 +63,15 @@ it('throws on an HTTP error', async () => {
 })
 ```
 
-- [ ] **Step 2: Run `npx vitest run scripts/piu-data/youtube.test.mjs`.** Expected: FAIL (module not found).
+- [x] **Step 2: Run `npx vitest run scripts/piu-data/youtube.test.mjs`.** Expected: FAIL (module not found).
 
-- [ ] **Step 3: Implement `listPlaylist` in `youtube.mjs` and add `NEVSISTER` to `sources.mjs`**
+- [x] **Step 3: Implement `listPlaylist` in `youtube.mjs` and add `NEVSISTER` to `sources.mjs`**
 
 Send `Accept-Language: en-US,en;q=0.9` and a desktop Chrome `User-Agent`. Collect by walking the JSON tree: a `lockupViewModel` with a `contentId` is a video, and the last `continuationCommand.token` seen is the next page. Port it from the spike (`list-playlist.mjs` in the session scratchpad).
 
-- [ ] **Step 4: Run the test again.** Expected: 3 passed.
+- [x] **Step 4: Run the test again.** Expected: 3 passed.
 
-- [ ] **Step 5: Commit** `feat(pump): list a YouTube playlist without an API key`
+- [x] **Step 5: Commit** `feat(pump): list a YouTube playlist without an API key`
 
 ---
 
@@ -101,7 +101,7 @@ Tags (first match wins; spaces in the Korean tags are optional):
 
 Return `null` for any other tag, and for a head (the title before ` | `) matching `/mirror|compare|random skin|random step|\bbga\b|\b(sp|dp)\d|co-?op|\b[456]k\b|\?\?/i`, or with no code group. A code group is `(S|D|HDB|HD)\d{1,2}` joined by `&`, and it must be followed by a space, `(`, `|` or the end. `HD` maps to `HDB`.
 
-- [ ] **Step 1: Write the failing tests** (`it.each` over real titles from the spike)
+- [x] **Step 1: Write the failing tests** (`it.each` over real titles from the spike)
 
 ```js
 expect(parseVideoTitle('[PUMP IT UP PHOENIX] Sarabande (사라반드) D21 | RUN D LV.6 Title'))
@@ -135,15 +135,15 @@ expect(songKeys('Dement ~After Legend~')).toContain('dement')
 expect(songKeys('Reincarnate in “A” (리인카네이트 인 “A”)')[0]).toBe(songKeys('Reincarnate in "A"')[0])
 ```
 
-- [ ] **Step 2: Run `npx vitest run scripts/piu-data/video-titles.test.mjs`.** Expected: FAIL.
+- [x] **Step 2: Run `npx vitest run scripts/piu-data/video-titles.test.mjs`.** Expected: FAIL.
 
-- [ ] **Step 3: Implement both functions in `video-titles.mjs`**
+- [x] **Step 3: Implement both functions in `video-titles.mjs`**
 
 Port `keys()` and the parse loop from the spike's `match2.mjs`. The key fold is NFKD, combining marks dropped, lower-cased, then everything except `\p{L}\p{N}` removed. Variants, in order: Hangul brackets removed; that minus a trailing `full song (mix)` / `short cut` / `remix`; all brackets removed (`()`, `（）`, `〈〉`, `<>`, `~~`, `[]`); that minus ` ft.`/` feat.` onward; that minus the trailing type words. A title whose unbracketed text holds Hangul also gets each Latin bracket content as a key. Strip `- SHORT CUT -` / `- FULL SONG -` from `song` after reading `type`.
 
-- [ ] **Step 4: Run the tests again.** Expected: all pass.
+- [x] **Step 4: Run the tests again.** Expected: all pass.
 
-- [ ] **Step 5: Commit** `feat(pump): parse NEVSISTER chart video titles`
+- [x] **Step 5: Commit** `feat(pump): parse NEVSISTER chart video titles`
 
 ---
 
@@ -169,7 +169,7 @@ Matching rules:
 - **Ordering:** best `rank`, then a solo video before a shared one, then the earlier position in `videos` (newer).
 - **Side:** only when the picked video has exactly two `S` codes. The chart's code with the lower level is `'L'`, the higher `'R'`; equal levels get no side.
 
-- [ ] **Step 1: Write the failing tests** against a small catalog fixture (`songs`: Sarabande ARCADE, Sarabande SHORTCUT, Mr. Larpus, Night Duty, Jogging, Lucky Star, Underworld, Underworld (PIU Edit.), Banya Remix [REMIX])
+- [x] **Step 1: Write the failing tests** against a small catalog fixture (`songs`: Sarabande ARCADE, Sarabande SHORTCUT, Mr. Larpus, Night Duty, Jogging, Lucky Star, Underworld, Underworld (PIU Edit.), Banya Remix [REMIX])
 
 ```js
 it('picks Sarabande D21 from its PHOENIX video', () => expect(pick(chartD21)).toMatchObject({ v: 'F9jchbo1OFI', mix: 'PHOENIX' }))
@@ -195,13 +195,13 @@ it('encodes picks sorted by chart id with mix indexes and sides', () => {
 })
 ```
 
-- [ ] **Step 2: Run `npx vitest run scripts/piu-data/video-match.test.mjs`.** Expected: FAIL.
+- [x] **Step 2: Run `npx vitest run scripts/piu-data/video-match.test.mjs`.** Expected: FAIL.
 
-- [ ] **Step 3: Implement the six exports in `video-match.mjs`** (port the spike's index and lookup from `match2.mjs`)
+- [x] **Step 3: Implement the six exports in `video-match.mjs`** (port the spike's index and lookup from `match2.mjs`)
 
-- [ ] **Step 4: Run the tests again.** Expected: all pass.
+- [x] **Step 4: Run the tests again.** Expected: all pass.
 
-- [ ] **Step 5: Commit** `feat(pump): match chart videos to the catalog`
+- [x] **Step 5: Commit** `feat(pump): match chart videos to the catalog`
 
 ---
 
@@ -219,17 +219,17 @@ it('encodes picks sorted by chart id with mix indexes and sides', () => {
 - Produces in `lib/video.ts`: `videoUrl(v: ChartVideo): string` and `videoCaption(chart: Pick<Chart, 'mode' | 'level'>, v: ChartVideo): string`.
 - Produces in `hooks/useChartVideo.ts`: `useChartVideo(chartId: number | undefined): ChartVideo | undefined`. It returns `undefined` until loaded or on failure, and swallows the error.
 
-- [ ] **Step 1: Write `videos.mjs` and run it**
+- [x] **Step 1: Write `videos.mjs` and run it**
 
 The CLI reads `charts.json`. It reads `.cache/piu-data/nevsister-<today>.json`, or lists `NEVSISTER.uploads` and saves the list there. It then runs `matchVideos`, `applyOverrides` (`video-overrides.json`) and `checkVideos`, and prints a report: listed and parsed counts, coverage by mode, S/D charts without a video grouped by song, the top 20 unknown video songs, the number of XX picks, and overrides applied. On errors it exits 1 without writing. Otherwise it writes `stringifyVideos(encodeVideos(…))`.
 
 Run: `npm run piu:videos`. Expected: about 12,400 listed; S ≥ 2,701/2,752, D ≥ 1,772/1,783, HDB ≥ 31/790; and `Wrote src/apps/pump/data/videos.json`.
 
-- [ ] **Step 2: Spot-check 20 picks against PIU Scores**
+- [x] **Step 2: Spot-check 20 picks against PIU Scores**
 
 In the browser pane, open 20 PIU Scores chart pages (`https://piuscores.arroweclip.se/Charts/phoenix-2/<slug>/<code>`, with URLs from its export's `ChartUrl` column): at least 8 XX picks, 4 PNX1 or re-rated charts, 4 shared-video sides and 4 PHOENIX picks. Read each page's `youtube.com/embed/<id>` and compare it with ours. A different ID is not automatically wrong, since PIU Scores may pick another upload of the same chart. Open both and confirm the chart and level. Fix real mistakes with `video-overrides.json` and rerun Step 1. Record the results in the PR body.
 
-- [ ] **Step 3: Write the failing app tests**
+- [x] **Step 3: Write the failing app tests**
 
 ```ts
 // videos.test.ts
@@ -252,24 +252,24 @@ expect(videoCaption({ mode: 'S', level: 17 }, { id: 'x', mix: 'XX', side: 'left'
 expect(videoCaption({ mode: 'HDB', level: 18 }, { id: 'x', mix: 'RISE' })).toBe('Watch HD18 on YouTube · NEVSISTER · RISE')
 ```
 
-- [ ] **Step 4: Run `npx vitest run src/apps/pump/data/videos.test.ts src/apps/pump/lib/video.test.ts`.** Expected: FAIL.
+- [x] **Step 4: Run `npx vitest run src/apps/pump/data/videos.test.ts src/apps/pump/lib/video.test.ts`.** Expected: FAIL.
 
-- [ ] **Step 5: Implement `videosFileSchema`, `videos.ts`, `lib/video.ts` and `useChartVideo`.** Then run the step 4 command again. Expected: pass.
+- [x] **Step 5: Implement `videosFileSchema`, `videos.ts`, `lib/video.ts` and `useChartVideo`.** Then run the step 4 command again. Expected: pass.
 
-- [ ] **Step 6: Wire up the sheet and About**
+- [x] **Step 6: Wire up the sheet and About**
 
 - `ChartSheet`: `const video = useChartVideo(c?.id)`. With a video, wrap the `SongArt` and a caption line in a single `<a href={videoUrl(video)} target="_blank" rel="noreferrer" className="block space-y-1.5">`. Overlay the art with a centred `Play` icon (lucide, filled) on a `bg-black/60` circle, h-12 w-12, white. Below it, a `<span className="text-sm text-primary">{videoCaption(c, video)}</span>`. Without a video, render as today.
 - `AboutDialog`: add the paragraph `Chart videos: links to NEVSISTER (네브시스터) on YouTube.`, with "NEVSISTER (네브시스터)" linking to `https://www.youtube.com/@NEVSISTER`.
 
-- [ ] **Step 7: Check in the browser**
+- [x] **Step 7: Check in the browser**
 
 Start the dev server with `preview_start`. Open Sarabande D21: the ▶ shows and the link is `…watch?v=F9jchbo1OFI`. Tap the S17 chip of Sarabande SHORT CUT: the caption ends with `left side`. Pick a chart with no video (a half-double without a RISE video, e.g. Sarabande HD11): no ▶ and no caption. Check the About credit. Check light and dark mode, with no console errors. Take a screenshot for the PR.
 
-- [ ] **Step 8: Full checks**
+- [x] **Step 8: Full checks**
 
 Run: `npm test`, then `npm run build`. Expected: all pass. The build output has a separate `videos.json` chunk listed in `dist/sw.js`'s precache, and `charts.json`'s size is unchanged.
 
-- [ ] **Step 9: Commit** `feat(pump): watch a chart's video from its sheet`, including `videos.json`, the overrides file, the README section (*Chart videos*: when to run `piu:videos`, the report, overrides, the thresholds) and `package.json`.
+- [x] **Step 9: Commit** `feat(pump): watch a chart's video from its sheet`, including `videos.json`, the overrides file, the README section (*Chart videos*: when to run `piu:videos`, the report, overrides, the thresholds) and `package.json`.
 
 ---
 
@@ -279,7 +279,7 @@ Run: `npm test`, then `npm run build`. Expected: all pass. The build output has 
 - Modify: `docs/features/2026-11-pump-chart-videos/spec.md` (status: approved and built, plus the measured coverage), `docs/features/2026-10-pump-song-art/spec.md` (its "YouTube links" non-goal now points here), and `docs/features/2026-10-piu-chart-filter/spec.md` §Licensing (add NEVSISTER as a link-only source)
 - Republish: the explainer "Nook Split, Explained" (https://claude.ai/artifact/TmrnZ3PofbjKp8Ped4ZFs4). Add the video link to its Pump content with the Task 4 screenshot, and refresh the Synced line.
 
-- [ ] **Step 1:** Grep `docs/` and `README.md` for `YouTube`, `video` and `Sources` to find any other doc that describes the sheet or the data sources, and update each one.
-- [ ] **Step 2:** Update the three specs and commit: `docs(pump): chart videos spec built; sources and song-art non-goal`.
-- [ ] **Step 3:** Read the explainer, edit it, and republish it to the same URL.
-- [ ] **Step 4:** Push `feature/pump-chart-videos` and open the PR. The body covers what, why, coverage, the spot-check table, a screenshot, and test results. End it with the Claude Code line.
+- [x] **Step 1:** Grep `docs/` and `README.md` for `YouTube`, `video` and `Sources` to find any other doc that describes the sheet or the data sources, and update each one.
+- [x] **Step 2:** Update the three specs and commit: `docs(pump): chart videos spec built; sources and song-art non-goal`.
+- [x] **Step 3:** Read the explainer, edit it, and republish it to the same URL.
+- [x] **Step 4:** Push `feature/pump-chart-videos` and open the PR. The body covers what, why, coverage, the spot-check table, a screenshot, and test results. End it with the Claude Code line.
