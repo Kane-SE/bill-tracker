@@ -63,7 +63,7 @@ export function ChartRow({ chart, selectedSkills, earned, rankedSkill, onOpen }:
         <span className="block truncate text-sm font-semibold">{chart.song.title}</span>
         <span className="block truncate text-xs text-muted-foreground">{chartLine2(chart)}</span>
       </span>
-      <RowIcons chart={chart} selectedSkills={selectedSkills} earned={earned} rankedSkill={rankedSkill} className="relative rounded-md bg-background/85 px-1" />
+      <RowIcons chart={chart} selectedSkills={selectedSkills} earned={earned} rankedSkill={rankedSkill} className="relative rounded-lg bg-background/85 p-0.5" />
     </button>
   )
 }
