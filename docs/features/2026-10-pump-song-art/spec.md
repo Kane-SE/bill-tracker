@@ -163,6 +163,6 @@ Vitest, pure logic only, as in v1.
 ## Out of scope
 
 - Official Andamiro files (the DrMurloc message asks about the mapping, for later).
-- YouTube links, the other half of the Hub idea; not researched yet.
+- YouTube links, the other half of the Hub idea. Since built as its own feature: [`../2026-11-pump-chart-videos/spec.md`](../2026-11-pump-chart-videos/spec.md). The sheet's art is now the link to the chart's video.
 - Bundled or precached art, image resizing, blur-up previews.
 - Art on the Titles tab.

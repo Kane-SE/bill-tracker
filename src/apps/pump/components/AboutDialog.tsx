@@ -30,6 +30,13 @@ export function AboutDialog({ open, meta, onClose }: { open: boolean; meta: Cata
           Chart data: Pump Out (Haru-kaze, AnyhowStep) and pumpout-db-updates (aaaaaa2493). Skill tags are computed from
           piucenter.com&apos;s step analysis (maxwshen), via PIU Scores (DrMurloc). Gimmick tags come from official title lists.
         </p>
+        <p className="text-sm text-muted-foreground">
+          Chart videos: links to{' '}
+          <a href="https://www.youtube.com/@NEVSISTER" target="_blank" rel="noreferrer" className="underline underline-offset-4">
+            NEVSISTER (네브시스터)
+          </a>{' '}
+          on YouTube.
+        </p>
         <p className="text-sm text-muted-foreground">Not affiliated with Andamiro.</p>
       </DialogContent>
     </Dialog>
