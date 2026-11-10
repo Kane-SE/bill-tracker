@@ -32,10 +32,12 @@ export const ChartList = memo(function ChartList({ rows: listRows, view, selecte
     if (el) setScrollMargin(el.getBoundingClientRect().top + window.scrollY)
   }, [rows.length])
 
-  // The pinned level header is always rendered, whatever the range.
+  // The pinned level header is always rendered, whatever the range. Until the scroll
+  // effect re-measures, it can still point past the end of a shorter new list: skip it then.
   const [activeSticky, setActiveSticky] = useState(0)
   const rangeExtractor = useCallback(
-    (range: Range) => [...new Set([activeSticky, ...defaultRangeExtractor(range)])].sort((a, b) => a - b),
+    (range: Range) =>
+      [...new Set([...(activeSticky < range.count ? [activeSticky] : []), ...defaultRangeExtractor(range)])].sort((a, b) => a - b),
     [activeSticky],
   )
 
