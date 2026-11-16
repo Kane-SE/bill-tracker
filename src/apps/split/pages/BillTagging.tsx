@@ -54,7 +54,8 @@ export function BillTagging() {
         if (cancelled) return
         setLoaded(photo && photo.nightId === id ? { state: 'ready', photo } : { state: 'missing' })
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error('Could not load bill photo', err)
         if (!cancelled) setLoaded({ state: 'missing' })
       })
     return () => {
