@@ -32,7 +32,19 @@ function openDb(): Promise<IDBDatabase> {
       const store = req.result.createObjectStore(STORE, { keyPath: 'id' })
       store.createIndex('nightId', 'nightId', { unique: false })
     }
-    req.onsuccess = () => resolve(req.result)
+    req.onsuccess = () => {
+      const db = req.result
+      // The browser dropped the connection, or another tab wants to upgrade: forget it so the next call reopens.
+      const forget = () => {
+        if (dbPromise === p) dbPromise = null
+      }
+      db.onclose = forget
+      db.onversionchange = () => {
+        forget()
+        db.close()
+      }
+      resolve(db)
+    }
     req.onerror = () => reject(req.error ?? new Error('Could not open the photo database'))
     req.onblocked = () => reject(new Error('The photo database is blocked'))
   })

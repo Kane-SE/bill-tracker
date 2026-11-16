@@ -13,24 +13,26 @@ export function useBillPhotos(nightId: string | undefined): {
   const [loading, setLoading] = useState(nightId !== undefined)
   const [tick, setTick] = useState(0)
 
+  // Another Nomnom: drop the old list at once so it never shows under the new one.
+  useEffect(() => {
+    setPhotos([])
+  }, [nightId])
+
+  // Revoke a list's URLs only after a newer list has replaced it (or on unmount).
+  useEffect(() => () => photos.forEach((p) => URL.revokeObjectURL(p.url)), [photos])
+
   useEffect(() => {
     if (!nightId) {
-      setPhotos([])
       setLoading(false)
       return
     }
     let cancelled = false
-    const urls: string[] = []
     setLoading(true)
     listPhotos(nightId)
       .then((list) => {
         if (cancelled) return
         setPhotos(
-          list.map((p) => {
-            const url = URL.createObjectURL(p.blob)
-            urls.push(url)
-            return { ...p, url }
-          }),
+          list.map((p) => ({ ...p, url: URL.createObjectURL(p.blob) })),
         )
       })
       .catch((e) => {
@@ -42,7 +44,6 @@ export function useBillPhotos(nightId: string | undefined): {
       })
     return () => {
       cancelled = true
-      urls.forEach((u) => URL.revokeObjectURL(u))
     }
   }, [nightId, tick])
 
