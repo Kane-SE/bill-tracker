@@ -12,7 +12,13 @@ export async function downscaleToJpeg(
   max = 1600,
   quality = 0.8,
 ): Promise<{ blob: Blob; width: number; height: number }> {
-  const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' })
+  let bitmap: ImageBitmap
+  try {
+    bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' })
+  } catch {
+    // Older Safari rejects the options bag; retry plain before giving up.
+    bitmap = await createImageBitmap(file)
+  }
   try {
     const { width, height } = fitWithin(bitmap.width, bitmap.height, max)
     const canvas = document.createElement('canvas')

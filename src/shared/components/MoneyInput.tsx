@@ -7,6 +7,7 @@ interface MoneyInputProps {
   onChange: (value: number) => void
   placeholder?: string
   id?: string
+  'aria-label'?: string
   className?: string
   autoFocus?: boolean
   /** 1000 = the bill shows thousands: typing 250 means 250.000 ₫. Default 1. */
@@ -22,6 +23,7 @@ export function MoneyInput({
   onChange,
   placeholder,
   id,
+  'aria-label': ariaLabel,
   className,
   autoFocus,
   unit = 1,
@@ -31,6 +33,7 @@ export function MoneyInput({
     <div className="relative">
       <Input
         id={id}
+        aria-label={ariaLabel}
         inputMode="numeric"
         autoComplete="off"
         autoFocus={autoFocus}

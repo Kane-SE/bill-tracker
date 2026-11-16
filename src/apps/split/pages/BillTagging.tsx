@@ -167,12 +167,15 @@ function Tagging({
   const [committing, setCommitting] = useState(false)
   // Set synchronously so a fast double tap on Done can't add the lines twice.
   const committingRef = useRef(false)
+  // Already-added total at the moment Done was tapped (see done()).
+  const committedBase = useRef(0)
 
   const unit = thousands ? 1000 : 1
   const billPeople = useMemo(() => [...participants, ...extraPeople], [participants, extraPeople])
 
   const alreadyAdded = addedItems.reduce((sum, i) => sum + i.amount, 0)
-  const assigned = assignedTotal(lines, alreadyAdded)
+  // While committing, the drafts are also in addedItems; use the pre-commit base so nothing is counted twice.
+  const assigned = assignedTotal(lines, committing ? committedBase.current : alreadyAdded)
   const check = reconcile(assigned, total || undefined)
   const readyCount = lines.filter((l) => lineStatus(l) === 'ready').length
   const nonEmptyCount = lines.filter((l) => lineStatus(l) !== 'empty').length
@@ -207,6 +210,7 @@ function Tagging({
   }
 
   function tryLeave() {
+    if (committingRef.current) return
     if (!readOnly && nonEmptyCount > 0) setConfirmLeave(true)
     else onClose()
   }
@@ -220,11 +224,22 @@ function Tagging({
       return
     }
     committingRef.current = true
+    // Captured before the write: once addItems runs, night.items already holds these lines.
+    committedBase.current = alreadyAdded
     setCommitting(true)
-    const items = draftToItems(lines, payer, photo.id)
-    // A name added and then left unused doesn't join the Nomnom.
-    const used = new Set(lines.filter((l) => lineStatus(l) === 'ready').flatMap((l) => l.people))
-    addItems(nightId, items, extraPeople.filter((n) => used.has(n)))
+    let items: Omit<Item, 'id'>[]
+    try {
+      items = draftToItems(lines, payer, photo.id)
+      // A name added and then left unused doesn't join the Nomnom.
+      const used = new Set(lines.filter((l) => lineStatus(l) === 'ready').flatMap((l) => l.people))
+      addItems(nightId, items, extraPeople.filter((n) => used.has(n)))
+    } catch (err) {
+      console.error('Could not add the bill lines', err)
+      committingRef.current = false
+      setCommitting(false)
+      toast.error("Couldn't add the lines")
+      return
+    }
     try {
       await updatePhoto(photo.id, { payer, total: total || undefined, thousands })
     } catch (err) {
@@ -235,7 +250,7 @@ function Tagging({
     onClose()
   }
 
-  const addedList = addedItems.length > 0 && (
+  const addedList = addedItems.length > 0 && !(committing && !readOnly) && (
     <div className="mt-4">
       <h2 className="text-sm font-semibold">
         {readOnly ? 'Lines from this bill' : 'Already added · edit them in the Nomnom'}
@@ -256,7 +271,7 @@ function Tagging({
   return (
     <div className="mx-auto max-w-lg px-4 pb-24">
       <header className="sticky top-0 z-20 -mx-4 flex items-center gap-2 border-b border-border bg-background/80 px-4 py-3 backdrop-blur">
-        <Button variant="ghost" size="icon" className="-ml-2 shrink-0" onClick={tryLeave} aria-label="Close">
+        <Button variant="ghost" size="icon" className="-ml-2 shrink-0" onClick={tryLeave} disabled={committing} aria-label="Close">
           <X className="h-5 w-5" />
         </Button>
         <div className="min-w-0 flex-1">
@@ -264,7 +279,7 @@ function Tagging({
           <p className="truncate text-xs text-muted-foreground">{nightTitle}</p>
         </div>
         {!readOnly && (
-          <Button size="sm" disabled={!payer || readyCount === 0 || committing} onClick={() => void done()}>
+          <Button size="sm" disabled={!payer || nonEmptyCount === 0 || committing} onClick={() => void done()}>
             Done
           </Button>
         )}
@@ -291,7 +306,7 @@ function Tagging({
           <div className="mt-4 grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="bill-payer">Paid by</Label>
-              <Select value={payer} onValueChange={setPayer}>
+              <Select value={payer} onValueChange={setPayer} disabled={addedItems.length > 0}>
                 <SelectTrigger id="bill-payer">
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
@@ -306,13 +321,14 @@ function Tagging({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="bill-total">Bill total (optional)</Label>
-              <MoneyInput id="bill-total" value={total} unit={unit} onChange={setTotal} />
+              <MoneyInput id="bill-total" aria-label="Bill total" value={total} unit={unit} onChange={setTotal} />
             </div>
           </div>
 
-          <label className="mt-3 flex items-center gap-2 text-sm">
+          <label htmlFor="bill-thousands" className="mt-3 flex items-center gap-2 text-sm">
             <input
               type="checkbox"
+              id="bill-thousands"
               checked={thousands}
               onChange={(e) => setThousands(e.target.checked)}
               className="h-5 w-5 shrink-0 accent-[hsl(var(--primary))]"
@@ -394,6 +410,7 @@ function Tagging({
               onOpenChange={(o) => !o && setAdjustKey(null)}
               participants={billPeople}
               payerLocked
+              unlockShares={!adjusting.shares}
               initial={{
                 id: adjusting.key,
                 label: adjusting.label,

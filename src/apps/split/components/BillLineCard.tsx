@@ -91,8 +91,8 @@ export function BillLineCard({
     } else if (equal) {
       footer = `${formatMoney(shares[0].amount)} each`
     } else {
-      // Equal split with a remainder: show the base share.
-      footer = `${formatMoney(Math.min(...shares.map((s) => s.amount)))} each`
+      // Equal split with a remainder: the base share, approximately.
+      footer = `≈ ${formatMoney(Math.min(...shares.map((s) => s.amount)))} each`
     }
   }
 
@@ -110,6 +110,7 @@ export function BillLineCard({
           <MoneyInput
             value={line.amount}
             unit={unit}
+            aria-label={line.label.trim() ? `Amount for ${line.label.trim()}` : 'Amount'}
             onChange={(v) => change(setLineAmount(line, v))}
             className="font-semibold"
           />

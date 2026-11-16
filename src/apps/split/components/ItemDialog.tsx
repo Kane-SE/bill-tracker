@@ -27,6 +27,8 @@ interface ItemDialogProps {
   initial?: Item
   /** Payer is fixed to `initial.payer` and can't be changed (bill-photo Adjust). */
   payerLocked?: boolean
+  /** Load `initial` shares as auto (unlocked) so editing one person re-splits the rest. Default false. */
+  unlockShares?: boolean
   onSubmit: (draft: ItemDraft) => void
 }
 
@@ -36,7 +38,7 @@ interface ItemDialogProps {
  * remaining total live (see `redistribute` in lib/calc). "Split equally"
  * unlocks everyone again.
  */
-export function ItemDialog({ open, onOpenChange, participants, initial, payerLocked = false, onSubmit }: ItemDialogProps) {
+export function ItemDialog({ open, onOpenChange, participants, initial, payerLocked = false, unlockShares = false, onSubmit }: ItemDialogProps) {
   const [label, setLabel] = React.useState('')
   const [payer, setPayer] = React.useState('')
   const [amount, setAmount] = React.useState(0)
@@ -49,13 +51,13 @@ export function ItemDialog({ open, onOpenChange, participants, initial, payerLoc
       setLabel(initial.label)
       setPayer(initial.payer)
       setAmount(initial.amount)
-      // Saved amounts load as locked so they display exactly as stored.
+      // Saved amounts load as locked so they display exactly as stored (unless unlockShares).
       const byName = new Map(initial.shares.map((s) => [s.name, s.amount]))
       setRows(
         participants.map((name) => ({
           name,
           included: byName.has(name),
-          locked: byName.has(name),
+          locked: !unlockShares && byName.has(name),
           amount: byName.get(name) ?? 0,
         })),
       )

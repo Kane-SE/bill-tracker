@@ -228,9 +228,10 @@ export function NightDetail() {
                 variant="secondary"
                 onClick={() => fileInput.current?.click()}
                 disabled={night.participants.length === 0 || savingPhoto}
+                aria-label={savingPhoto ? 'Saving…' : 'From photo'}
               >
                 <Camera className="h-4 w-4" />
-                {savingPhoto ? 'Saving…' : 'From photo'}
+                <span className="hidden min-[400px]:inline">{savingPhoto ? 'Saving…' : 'From photo'}</span>
               </Button>
               <Button
                 size="sm"
@@ -364,9 +365,9 @@ export function NightDetail() {
         title="Delete this bill photo?"
         description={
           deletingPhotoItems.length > 0
-            ? `Its ${deletingPhotoItems.length} ${deletingPhotoItems.length === 1 ? 'line' : 'lines'} (${formatMoney(
+            ? `Its ${deletingPhotoItems.length === 1 ? '1 line' : `${deletingPhotoItems.length} lines`} (${formatMoney(
                 deletingPhotoItems.reduce((s, i) => s + i.amount, 0),
-              )}) are removed too.`
+              )}) ${deletingPhotoItems.length === 1 ? 'is' : 'are'} removed too.`
             : 'It has no lines yet.'
         }
         confirmLabel="Delete"

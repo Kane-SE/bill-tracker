@@ -143,19 +143,23 @@ export const useSplitStore = create<AppState>()(
       },
 
       addItemsFromPhoto(nightId, items, newNames) {
+        const night = get().nights.find((n) => n.id === nightId)
+        if (!night) return
+        // Only names that really join the Nomnom become known names.
+        const participants = [...night.participants]
+        const added: string[] = []
+        for (const raw of newNames) {
+          const name = raw.trim()
+          if (name && !participants.some((p) => p.toLowerCase() === name.toLowerCase())) {
+            participants.push(name)
+            added.push(name)
+          }
+        }
+        const newItems = items.map((it) => ({ ...it, id: uid() }))
         set((s) => ({
-          nights: mapNight(s.nights, nightId, (n) => {
-            const participants = [...n.participants]
-            for (const raw of newNames) {
-              const name = raw.trim()
-              if (name && !participants.some((p) => p.toLowerCase() === name.toLowerCase())) {
-                participants.push(name)
-              }
-            }
-            return { ...n, participants, items: [...n.items, ...items.map((it) => ({ ...it, id: uid() }))] }
-          }),
+          nights: mapNight(s.nights, nightId, (n) => ({ ...n, participants, items: [...n.items, ...newItems] })),
         }))
-        newNames.forEach((name) => get().addKnownName(name))
+        added.forEach((name) => get().addKnownName(name))
         get().promoteFrequentNames()
       },
 

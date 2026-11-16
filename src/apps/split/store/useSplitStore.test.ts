@@ -80,6 +80,27 @@ describe('bill photo actions', () => {
     expect(useSplitStore.getState().knownNames).toContain('Thảo')
   })
 
+  it('adds one participant for names differing only in case', () => {
+    const id = useSplitStore.getState().addNight({ participants: ['Minh'] })
+    useSplitStore.getState().addItemsFromPhoto(id, [line('Bò', 'ph1')], ['Thảo', 'thảo'])
+    const n = useSplitStore.getState().nights.find((x) => x.id === id)!
+    expect(n.participants).toEqual(['Minh', 'Thảo'])
+    expect(useSplitStore.getState().knownNames).toEqual(['Thảo'])
+  })
+
+  it('does not add a known name for a name that matched an existing participant', () => {
+    const id = useSplitStore.getState().addNight({ participants: ['Minh', 'Lan'] })
+    useSplitStore.getState().addItemsFromPhoto(id, [line('Bò', 'ph1')], ['lan'])
+    expect(useSplitStore.getState().knownNames).not.toContain('lan')
+  })
+
+  it('does nothing, including knownNames, for an unknown night', () => {
+    const before = useSplitStore.getState().knownNames
+    useSplitStore.getState().addItemsFromPhoto('nope', [line('Bò', 'ph1')], ['Thảo'])
+    expect(useSplitStore.getState().knownNames).toEqual(before)
+    expect(useSplitStore.getState().knownNames).not.toContain('Thảo')
+  })
+
   it('deleteItemsByPhoto removes only that photo\'s lines and returns the count', () => {
     const id = useSplitStore.getState().addNight({ participants: ['Minh'] })
     useSplitStore.getState().addItemsFromPhoto(
