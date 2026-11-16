@@ -1,8 +1,8 @@
 # Split: Add from a bill photo — Design
 
-**Date:** 2026-11-17 · **Status:** approved (grilling rounds 1–5), ready for planning
+**Date:** 2026-11-17 · **Status:** built on `feature/bill-photo` (2026-11-17), verified below, not merged yet
 **Branch:** `feature/bill-photo` → one PR
-**Decisions log:** `decisions.md` (rounds 1–5) · **Mockups:** explainer "Nook Split, Explained", section 7, https://claude.ai/artifact/TmrnZ3PofbjKp8Ped4ZFs4#photo
+**Decisions log:** `decisions.md` (rounds 1–6) · **Mockups:** explainer "Nook Split, Explained", section 7, https://claude.ai/artifact/TmrnZ3PofbjKp8Ped4ZFs4#photo
 
 ## Problem
 
@@ -195,6 +195,33 @@ After `applyBackup`, call `sweepOrphanPhotos` with the restored Nomnom ids (#24)
 - `useSplitStore.test.ts`: `addItemsFromPhoto` (one write, new names deduplicated case-insensitively, known names updated), `deleteItemsByPhoto` (count, other items untouched), and `updateItem` keeping `photoId`.
 - `backup.test.ts`: `photoId` round-trips.
 - In a real browser at 390px, using your two sample images (kept outside the repo), pick a bill image, tag 6 lines with one Adjust, Done, then check balances. Leave midway and resume. Delete the photo and confirm the lines go. Delete the Nomnom and confirm IndexedDB is empty. Settle the Nomnom and check read-only mode. Reload offline and the photo still shows.
+
+## Verified (2026-11-17)
+
+- **Tests:** 460 passing, up from 425. New: `billDraft.test.ts` (18, including the hotpot example and both real bills, with exact balances), `image.test.ts` (5), `format.test.ts` (4, `scaleMoney`), and store and backup tests for `photoId`, `addItemsFromPhoto` and `deleteItemsByPhoto`. `tsc --noEmit` and `npm run build` are clean.
+- **Built-in browser at 375×812, dev server, both sample bills.** The browser pane can't pick files, so the file input was fed through `DataTransfer`.
+  - Capture: a 473×1024 PNG of 218 KB was stored as a 60 KB `image/jpeg` in `nook-split/billPhotos`, not upscaled.
+  - Sample 1: 4 lines, "All assigned ✓" against 260.000. Balances: Minh → Lan 30.000, Huy → Lan 30.000.
+  - Sample 2: with ×1.000 on, the box shows 27.143 and holds 27.143.000. The Everyone chip worked. Adjust set Rượu to An 280.000 · Huy 140.000. The 13 lines total 27.143.000, Cua's shares are 3.488.334/3.488.333/3.488.333, and the balances are exactly the four in Example.
+  - Done tapped twice in a row: 4 lines were added, not 8.
+  - Resume: the payer, total and ×1.000 switch were restored, the "Already added" list showed, and the payer can't be changed.
+  - ✕ with a draft: "Discard 1 line?". Nothing was written.
+  - Delete photo: its 13 lines and the IndexedDB record were removed.
+  - Settled Nomnom: the photo opens read-only, with no inputs, no Done and no delete.
+  - Delete Nomnom: its photo was purged from IndexedDB.
+  - Console: no errors.
+- **Fixed after the whole-branch review and browser check** (commit `5c32e5b`):
+  - Adjust on an equal line opens with the shares unlocked, so typing An's amount re-splits the rest.
+  - A split that leaves a remainder shows "≈ X each".
+  - The amount, bill-total and ×1.000 controls have accessible names.
+  - "From photo" is icon-only below 400px, so the Items title stays on one line.
+  - ✕ is disabled while Done is saving.
+  - The bill-total check no longer flashes "Over by" during Done.
+  - Done explains a half-filled line instead of staying disabled.
+  - Known names only gain names that were actually added.
+  - The singular delete copy reads "is removed".
+  - `createImageBitmap` retries without options on older Safari.
+- **Not verified:** a real phone camera and the OS picker, HEIC, pinch zoom with real fingers (the zoom buttons were seen, not exercised), offline after install (the service worker is off in dev), and pasting into Excel (not in scope).
 
 ## Risks
 
