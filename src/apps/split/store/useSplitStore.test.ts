@@ -57,6 +57,39 @@ describe('photoId', () => {
   })
 })
 
+describe('bill photo actions', () => {
+  const line = (label: string, photoId?: string) => ({
+    label, payer: 'Minh', amount: 100000, shares: [{ name: 'Minh', amount: 100000 }], photoId,
+  })
+  const itemsOf = (id: string) => useSplitStore.getState().nights.find((x) => x.id === id)!.items
+
+  it('adds every line', () => {
+    const id = useSplitStore.getState().addNight({ participants: ['Minh'] })
+    useSplitStore.getState().addItemsFromPhoto(id, [line('Bò', 'ph1'), line('Gà', 'ph1')], [])
+    const items = itemsOf(id)
+    expect(items.map((i) => i.label)).toEqual(['Bò', 'Gà'])
+    expect(items[0].id).not.toBe(items[1].id)
+    expect(items.every((i) => i.photoId === 'ph1')).toBe(true)
+  })
+
+  it('dedupes case-insensitively', () => {
+    const id = useSplitStore.getState().addNight({ participants: ['Minh', 'Lan'] })
+    useSplitStore.getState().addItemsFromPhoto(id, [line('Bò', 'ph1')], ['lan', 'Thảo'])
+    const n = useSplitStore.getState().nights.find((x) => x.id === id)!
+    expect(n.participants).toEqual(['Minh', 'Lan', 'Thảo'])
+    expect(useSplitStore.getState().knownNames).toContain('Thảo')
+  })
+
+  it('deleteItemsByPhoto removes only that photo\'s lines and returns the count', () => {
+    const id = useSplitStore.getState().addNight({ participants: ['Minh'] })
+    useSplitStore.getState().addItemsFromPhoto(
+      id, [line('a', 'ph1'), line('b', 'ph1'), line('c', 'ph2'), line('hand')], [])
+    expect(useSplitStore.getState().deleteItemsByPhoto(id, 'ph1')).toBe(2)
+    expect(itemsOf(id).map((i) => i.label)).toEqual(['c', 'hand'])
+    expect(useSplitStore.getState().deleteItemsByPhoto(id, 'ph1')).toBe(0)
+  })
+})
+
 function fixtureNights(): Night[] {
   return [
     {
