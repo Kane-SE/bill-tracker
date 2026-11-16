@@ -2,6 +2,7 @@ import { Route } from 'react-router-dom'
 import { SplitHome } from '@/apps/split/pages/SplitHome'
 import { NewNomnom } from '@/apps/split/pages/NewNomnom'
 import { NightDetail } from '@/apps/split/pages/NightDetail'
+import { BillTagging } from '@/apps/split/pages/BillTagging'
 import { Archive } from '@/apps/split/pages/Archive'
 import { SplitNames } from '@/apps/split/pages/SplitNames'
 
@@ -11,6 +12,7 @@ export const splitRoutes = (
     <Route path="/split" element={<SplitHome />} />
     <Route path="/split/new" element={<NewNomnom />} />
     <Route path="/split/night/:id" element={<NightDetail />} />
+    <Route path="/split/night/:id/photo/:photoId" element={<BillTagging />} />
     <Route path="/split/archive" element={<Archive />} />
     <Route path="/split/names" element={<SplitNames />} />
   </>
