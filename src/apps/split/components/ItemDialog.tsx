@@ -25,6 +25,8 @@ interface ItemDialogProps {
   onOpenChange: (open: boolean) => void
   participants: string[]
   initial?: Item
+  /** Payer is fixed to `initial.payer` and can't be changed (bill-photo Adjust). */
+  payerLocked?: boolean
   onSubmit: (draft: ItemDraft) => void
 }
 
@@ -34,7 +36,7 @@ interface ItemDialogProps {
  * remaining total live (see `redistribute` in lib/calc). "Split equally"
  * unlocks everyone again.
  */
-export function ItemDialog({ open, onOpenChange, participants, initial, onSubmit }: ItemDialogProps) {
+export function ItemDialog({ open, onOpenChange, participants, initial, payerLocked = false, onSubmit }: ItemDialogProps) {
   const [label, setLabel] = React.useState('')
   const [payer, setPayer] = React.useState('')
   const [amount, setAmount] = React.useState(0)
@@ -141,16 +143,18 @@ export function ItemDialog({ open, onOpenChange, participants, initial, onSubmit
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="item-payer">Paid by</Label>
-              <Select value={payer} onValueChange={setPayer}>
+              <Select value={payer} onValueChange={setPayer} disabled={payerLocked}>
                 <SelectTrigger id="item-payer">
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
                 <SelectContent>
-                  {participants.map((p) => (
-                    <SelectItem key={p} value={p}>
-                      {p}
-                    </SelectItem>
-                  ))}
+                  {(payerLocked && payer && !participants.includes(payer) ? [payer, ...participants] : participants).map(
+                    (p) => (
+                      <SelectItem key={p} value={p}>
+                        {p}
+                      </SelectItem>
+                    ),
+                  )}
                 </SelectContent>
               </Select>
             </div>

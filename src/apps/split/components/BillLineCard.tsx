@@ -20,6 +20,8 @@ interface BillLineCardProps {
   knownNames: string[]
   /** Half-filled line that blocks Done. */
   invalid?: boolean
+  /** Why Adjust is unavailable right now (e.g. no payer yet); disables the button and shows this hint. */
+  adjustDisabledHint?: string
   /** 1000 when the bill shows thousands. */
   unit?: 1 | 1000
   onChange: (line: DraftLine) => void
@@ -39,6 +41,7 @@ export function BillLineCard({
   billPeople,
   knownNames,
   invalid,
+  adjustDisabledHint,
   unit = 1,
   onChange,
   onAddPerson,
@@ -170,8 +173,13 @@ export function BillLineCard({
         <div className="mt-2.5 flex items-center justify-between gap-2 text-sm text-muted-foreground">
           <span className="min-w-0">{wasReset && !line.shares ? 'back to equal split' : footer}</span>
           {canAdjust && (
-            <button type="button" onClick={onAdjust} className="shrink-0 font-medium text-primary">
-              Uneven? Adjust ›
+            <button
+              type="button"
+              onClick={onAdjust}
+              disabled={!!adjustDisabledHint}
+              className="shrink-0 font-medium text-primary disabled:text-muted-foreground"
+            >
+              {adjustDisabledHint ?? 'Uneven? Adjust ›'}
             </button>
           )}
         </div>
