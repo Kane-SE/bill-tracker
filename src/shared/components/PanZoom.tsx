@@ -48,7 +48,7 @@ function zoomAt(v: View, scale: number, cx: number, cy: number): View {
 export function PanZoom({ src, alt, className }: { src: string; alt: string; className?: string }) {
   const boxRef = useRef<HTMLDivElement>(null)
   const [box, setBox] = useState<Size>({ w: 0, h: 0 })
-  const [natural, setNatural] = useState<Size | null>(null)
+  const [loaded, setNatural] = useState<(Size & { src: string }) | null>(null)
   const [view, setView] = useState<View>(FIT)
   const viewRef = useRef(view)
   const pointers = useRef(new Map<number, { x: number; y: number }>())
@@ -56,6 +56,8 @@ export function PanZoom({ src, alt, className }: { src: string; alt: string; cla
   const lastTap = useRef<{ t: number; x: number; y: number } | null>(null)
   const touchToggledAt = useRef(0)
 
+  // Only a size measured for the current src counts, so a late or early load can't go stale.
+  const natural = loaded?.src === src ? loaded : null
   let fit: Size = { w: 0, h: 0 }
   if (natural && box.w > 0 && box.h > 0) {
     const k = Math.min(box.w / natural.w, box.h / natural.h)
@@ -82,7 +84,6 @@ export function PanZoom({ src, alt, className }: { src: string; alt: string; cla
 
   // A new photo starts fitted.
   useEffect(() => {
-    setNatural(null)
     viewRef.current = FIT
     setView(FIT)
   }, [src])
@@ -199,7 +200,17 @@ export function PanZoom({ src, alt, className }: { src: string; alt: string; cla
           src={src}
           alt={alt}
           draggable={false}
-          onLoad={(e) => setNatural({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })}
+          ref={(img) => {
+            // Already decoded (cached blob): load may have fired before React listened.
+            if (img?.complete && img.naturalWidth > 0) {
+              setNatural((p) =>
+                p?.src === src ? p : { src, w: img.naturalWidth, h: img.naturalHeight },
+              )
+            }
+          }}
+          onLoad={(e) =>
+            setNatural({ src, w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })
+          }
           className="absolute max-w-none"
           style={{
             width: fit.w,
