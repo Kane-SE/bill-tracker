@@ -44,6 +44,19 @@ describe('line payments', () => {
   })
 })
 
+describe('photoId', () => {
+  it('updateItem keeps photoId when the patch has none', () => {
+    const id = useSplitStore.getState().addNight()
+    const shares = [{ name: 'Huy', amount: 180000 }]
+    useSplitStore.getState().addItem(id, { label: 'Bò', payer: 'Huy', amount: 180000, shares, photoId: 'ph1' })
+    const itemId = useSplitStore.getState().nights.find((x) => x.id === id)!.items[0].id
+    useSplitStore.getState().updateItem(id, itemId, { label: 'Bò Mỹ', payer: 'Huy', amount: 180000, shares })
+    const item = useSplitStore.getState().nights.find((x) => x.id === id)!.items[0]
+    expect(item.photoId).toBe('ph1')
+    expect(item.label).toBe('Bò Mỹ')
+  })
+})
+
 function fixtureNights(): Night[] {
   return [
     {

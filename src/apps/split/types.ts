@@ -17,6 +17,8 @@ export const itemSchema = z.object({
   payer: z.string(),
   amount: z.number().nonnegative(),
   shares: z.array(shareSchema),
+  // Set on items made from a bill photo (see docs/features/2026-11-bill-photo). Optional, so old data stays valid.
+  photoId: z.string().optional(),
 })
 export type Item = z.infer<typeof itemSchema>
 
