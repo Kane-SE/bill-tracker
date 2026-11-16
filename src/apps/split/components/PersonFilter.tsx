@@ -22,7 +22,7 @@ export function useActivePerson(people: PersonSummary[]): string | null {
   return valid ? person : null
 }
 
-function Initial({ name, active }: { name: string; active?: boolean }) {
+export function Initial({ name, active }: { name: string; active?: boolean }) {
   return (
     <span
       className={cn(

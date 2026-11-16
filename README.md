@@ -52,6 +52,13 @@ Design: [docs/features/2026-10-piu-chart-filter/spec.md](docs/features/2026-10-p
   [spec](docs/features/2026-09-per-line-payments/spec.md)).
 - **Mark a Nomnom done** — settled Nomnoms move to an Archive (still viewable /
   restorable).
+- **Copy for Excel** — a button on Home's "Current balances" card asks **who
+  you are** (remembered on this device) and copies who owes you, as
+  tab-separated text that pastes straight into Excel: a *Who owes me · Total*
+  table, a blank row, then one row per unpaid Nomnom (*Who owes me · Date ·
+  Nomnom · Amount*). Same numbers as Home's balances; plain integers and
+  `YYYY-MM-DD` dates so Excel reads them in any locale (see
+  [spec](docs/features/2026-11-split-excel-copy/spec.md)).
 - **Backup** — export/import all app data *and* your appearance settings as one
   JSON file (backup v2, see below) to move between devices.
 - **Installable PWA** — add to home screen; works offline; light & dark themes,
@@ -176,13 +183,14 @@ src/
     ui/                     shadcn primitives (button, input, dialog, select, …)
     components/             PageHeader, HeaderIconLink, EmptyState, ConfirmDialog,
                              MoneyInput, Combobox
-    lib/                    utils.ts, theme.ts, palette.ts (color derivation), file.ts
+    lib/                    utils.ts, theme.ts, palette.ts (color derivation), file.ts, clipboard.ts
   apps/split/
     types.ts                Night, Item, schemas
     routes.tsx               <Route> subtree mounted under /split
     store/useSplitStore.ts   nights, knownNames, promotedNames (Zustand + persist)
-    lib/                     calc.ts (pure debt math), format.ts, names.ts
-    components/              BalanceList, DebtLineList, NightCard, ItemRow, ItemDialog, ParticipantEditor
+    store/useMe.ts           "who you are" for Copy for Excel (persisted, this device only)
+    lib/                     calc.ts (pure debt math), excel.ts (Copy for Excel sheet), format.ts, names.ts
+    components/              BalanceList, DebtLineList, NightCard, ItemRow, ItemDialog, ParticipantEditor, ExcelCopySheet
     pages/                   SplitHome, NewNomnom, NightDetail, Archive, SplitNames
 ```
 
@@ -202,7 +210,8 @@ src/
 Everything is stored locally under the `bill-splitter-store` key in
 `localStorage` (unchanged since before the launcher refactor, so existing data
 survives). Clearing browser data erases it — use **Settings → Backup → Export**
-to keep a copy.
+to keep a copy. The name you pick in Copy for Excel lives under `split-me` and
+is not part of backups.
 
 ### Backup v2
 
