@@ -29,3 +29,14 @@ Mockups of every round: the explainer "Nook Split, Explained", section 7 (https:
 | Q14 | When things are saved | The **photo is saved immediately** on capture. Lines stay **drafts until "Done"**, then are added in one go, so leaving midway never leaves a half-filled Nomnom. |
 | Q14b | Resume after leaving | **Yes.** A photo left with no lines (or only some) stays on the Nomnom. Tapping it reopens tagging to finish later. |
 | Q15 | After "Done" | **Ordinary items**, with no locked group (confirms #10). |
+
+## Round 6: two real bills (2026-11-17)
+
+Two sample bills were run through the design and through `calc.ts` (spec › Example › Two real bills): a SoBanHang app screenshot and a handwritten "Hóa đơn bán lẻ".
+
+| # | Finding | Decision |
+|---|---|---|
+| R6-1 | Handwritten bills write amounts in thousands ("250" = 250.000 ₫). Sample 2 would need "000" typed 14 times. | **Yes:** a "Bill shows thousands (×1.000)" switch (spec #27). |
+| R6-2 | 9 of sample 2's 13 lines are shared by everyone, which is about 45 taps. | **Yes:** an "Everyone" chip on each line (spec #28). |
+| R6-3 | A tall screenshot shrinks in the photo panel when fitted whole. | **Not now:** zoom and the panel's collapse cover it. |
+| R6-4 | Equal splits leave odd đồng (3.488.334). | **Not now:** that's today's `equalShares` for every item, outside this feature. |

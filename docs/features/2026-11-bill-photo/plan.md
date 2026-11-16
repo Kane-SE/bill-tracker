@@ -8,7 +8,7 @@
 
 **Tech Stack:** Vite 6, React 18, TypeScript 5, Tailwind 3, Radix Dialog/Select, zustand 5 (persist), zod 3, sonner, react-router-dom 6 (`HashRouter`), Vitest 2 (node environment, no DOM).
 
-**Spec:** `docs/features/2026-11-bill-photo/spec.md` (decisions #1–#26, numbered as cited below) and `decisions.md`. Mockups: https://claude.ai/artifact/TmrnZ3PofbjKp8Ped4ZFs4#photo
+**Spec:** `docs/features/2026-11-bill-photo/spec.md` (decisions #1–#28, numbered as cited below) and `decisions.md`. Mockups: https://claude.ai/artifact/TmrnZ3PofbjKp8Ped4ZFs4#photo
 
 ## Global Constraints
 
@@ -20,7 +20,7 @@
 - `calc.ts` doesn't change. No persist-version bump, no backup-version bump.
 - Photo: long edge ≤ **1600px**, `image/jpeg`, quality **0.8**. IndexedDB database `nook-split` v1, store `billPhotos` (keyPath `id`, index `nightId`).
 - Route: `/split/night/:id/photo/:photoId`.
-- UI copy, exactly: "From photo", "Saving…", "Couldn't read that image", "Couldn't save the photo", "Bill photos", "Not tagged yet", "N line"/"N lines", "Delete this bill photo?", "Its N lines (X) are removed too." / "It has no lines yet.", "Bill photo deleted", "Tag the bill", "Bill photo", "Done", "Paid by", "Bill total (optional)", "Assigned X · Y left", "Over by X", "All assigned ✓", "Assigned X · N lines", "Already added · edit them in the Nomnom", "+ add name", "{amount} each", "{name} only", "uneven", "Uneven? Adjust ›", "back to equal split", "+ Add line", "+ Tax / service", "+ Tip", "Fill in or remove N line(s)", "N lines added", "Discard N lines?", "The photo stays on the Nomnom. Tap it to tag again.", "This bill photo isn't on this device", and the Delete Nomnom text "This permanently removes the Nomnom, its items and its bill photos. This can't be undone."
+- UI copy, exactly: "From photo", "Saving…", "Couldn't read that image", "Couldn't save the photo", "Bill photos", "Not tagged yet", "N line"/"N lines", "Delete this bill photo?", "Its N lines (X) are removed too." / "It has no lines yet.", "Bill photo deleted", "Tag the bill", "Bill photo", "Done", "Paid by", "Bill total (optional)", "Bill shows thousands (×1.000)", "Everyone", "Assigned X · Y left", "Over by X", "All assigned ✓", "Assigned X · N lines", "Already added · edit them in the Nomnom", "+ add name", "{amount} each", "{name} only", "uneven", "Uneven? Adjust ›", "back to equal split", "+ Add line", "+ Tax / service", "+ Tip", "Fill in or remove N line(s)", "N lines added", "Discard N lines?", "The photo stays on the Nomnom. Tap it to tag again.", "This bill photo isn't on this device", and the Delete Nomnom text "This permanently removes the Nomnom, its items and its bill photos. This can't be undone."
 
 ## Review Focus
 
@@ -47,6 +47,8 @@
 | `src/apps/split/store/useBillPhotos.ts` (create) | React hook: a Nomnom's photos + object URLs |
 | `src/shared/components/PanZoom.tsx` (create) | pinch/drag/wheel zoom of one image |
 | `src/apps/split/components/ItemDialog.tsx` (modify) | `payerLocked` prop |
+| `src/apps/split/lib/format.ts` (modify) + `format.test.ts` | `scaleMoney` for the ×1.000 switch |
+| `src/shared/components/MoneyInput.tsx` (modify) | `unit?: 1 \| 1000` prop |
 | `src/apps/split/components/BillLineCard.tsx` (create) | one draft line: label, amount, chips, footer |
 | `src/apps/split/pages/BillTagging.tsx` (create) | the tagging screen |
 | `src/apps/split/routes.tsx` (modify) | the new route |
@@ -91,6 +93,7 @@
   lineShares(line: DraftLine): Share[]
   setLineAmount(line: DraftLine, amount: number): DraftLine            // clears shares when the amount changes
   toggleLinePerson(line: DraftLine, name: string, order: string[]): DraftLine // keeps `people` in `order`; clears shares
+  toggleEveryone(line: DraftLine, order: string[]): DraftLine // #28: all picked → nobody; else everyone in `order`; clears shares
   addBillPerson(billPeople: string[], raw: string): { people: string[]; name: string | null } // trims; case-insensitive reuse; '' → null
   assignedTotal(lines: DraftLine[], alreadyAdded: number): number
   reconcile(assigned: number, total: number | undefined): Reconcile // total undefined or 0 → 'none'
@@ -104,12 +107,14 @@
   - `lineShares uses adjusted shares`: with `shares: [{Minh,90000},{Huy,30000}]` it returns them unchanged.
   - `toggle clears adjusted shares`: start from the adjusted Bia Tiger line (120000, `['Minh','Huy']`, shares 90k/30k). `toggleLinePerson(l, 'Huy', ['Minh','Lan','Huy'])` → `people: ['Minh']`, `shares: undefined`, `lineShares` = `[{Minh,120000}]`. Toggling Minh off as well → `lineStatus` = `'incomplete'`.
   - `toggle keeps bill order`: toggling Huy then Minh on, with order `['Minh','Lan','Huy']` → `people: ['Minh','Huy']`.
+  - `toggleEveryone`: on `['Lan']` with order `['Minh','Lan','Huy']` → `['Minh','Lan','Huy']`. Again → `[]`. On the adjusted Bia Tiger line → everyone, `shares: undefined`.
   - `setLineAmount clears shares only on change`: the same amount keeps `shares`; a new amount clears them.
   - `addBillPerson`: `(['Minh','Lan'], '  lan ')` → `{ people: ['Minh','Lan'], name: 'Lan' }`; `(['Minh'], 'Thảo')` → `{ people: ['Minh','Thảo'], name: 'Thảo' }`; `(['Minh'], '   ')` → `name: null`.
   - `assignedTotal and reconcile`: ready lines 330000+180000+30000+120000 with `alreadyAdded` 0 → 660000. `reconcile(660000, 765000)` → `{kind:'left', amount:105000}`; `reconcile(780000, 765000)` → `{kind:'over', amount:15000}`; `reconcile(765000, 765000)` → `{kind:'exact'}`; `reconcile(660000, undefined)` → `{kind:'none'}`. Incomplete lines don't count toward the assigned total.
   - `draftToItems`: drops empty and incomplete lines, keeps order, turns label `''` into `'Item'`, and sets `payer` and `photoId` on each item.
   - `initialPayer`: the saved payer in participants wins; else the first existing payer that is a participant; else `me` if a participant; else `''`. **`initialPayer ignores a saved payer who left`**: saved `'Tú'`, participants `['Minh','Lan','Huy']`, existing payers `['Huy']` → `'Huy'`.
   - `hotpot example`: the spec's six lines (Bia Tiger adjusted to 90k/30k), `draftToItems(lines, 'Huy', 'ph1')` placed in a night with participants Minh, Lan, Huy. `computeNightLines` gives exactly Minh → Huy 320000 and Lan → Huy 185000.
+  - `sample 1 (SoBanHang)` and `sample 2 (handwritten)`: the two real bills from spec › Example › Two real bills, with the same people, payers and adjusted lines. The amounts add up to 260000 and 27143000, and `computeNightLines` gives exactly the balances listed there. In sample 2, Cua's shares are 3488334/3488333/3488333, and every item's shares add up to its amount.
 - [ ] **Step 2: Run** `npx vitest run src/apps/split/lib/billDraft.test.ts`. Expected: FAIL (module not found).
 - [ ] **Step 3: Implement** `billDraft.ts` with the signatures above. All functions are pure and return new objects.
 - [ ] **Step 4: Run** the same command. Expected: PASS. Then run the full suite: 425 + the new tests passing.
@@ -145,11 +150,11 @@
   fitWithin(width: number, height: number, max: number): { width: number; height: number }
   downscaleToJpeg(file: Blob, max?: number /*1600*/, quality?: number /*0.8*/): Promise<{ blob: Blob; width: number; height: number }>
   // photoStore.ts
-  interface BillPhoto { id; nightId; blob: Blob; width; height; createdAt: string; payer?: string; total?: number }
+  interface BillPhoto { id; nightId; blob: Blob; width; height; createdAt: string; payer?: string; total?: number; thousands?: boolean }
   savePhoto(p: Omit<BillPhoto,'id'|'createdAt'>): Promise<BillPhoto>
   getPhoto(id: string): Promise<BillPhoto | undefined>
   listPhotos(nightId: string): Promise<BillPhoto[]>            // oldest first
-  updatePhoto(id: string, patch: Pick<BillPhoto,'payer'|'total'>): Promise<void>
+  updatePhoto(id: string, patch: Pick<BillPhoto,'payer'|'total'|'thousands'>): Promise<void>
   deletePhoto(id: string): Promise<void>
   deletePhotosForNight(nightId: string): Promise<void>
   sweepOrphanPhotos(nightIds: string[]): Promise<number>      // returns how many were removed
@@ -196,16 +201,22 @@
   - Header: ✕ (handled in Task 7) and the title "Tag the bill", with the Nomnom's title or date below.
   - The sticky photo panel is `h-[38vh]`, holds `PanZoom`, and has a chevron that collapses it to `h-14`.
   - "Paid by" is a Select of `night.participants`, defaulting to `initialPayer`. "Bill total (optional)" is a MoneyInput prefilled from `photo.total`.
+  - The switch "Bill shows thousands (×1.000)" (#27) is a checkbox styled like ItemDialog's, starting from `photo.thousands ?? false`. While it's on, the bill total and every line amount get `unit={1000}`.
 - [ ] **Step 3: Draft state** lives in the component: `lines: DraftLine[]`, starting as `[newLine(k)]`, and `extraPeople: string[]`. Bill people = `night.participants` + `extraPeople`.
   - Quick buttons: "+ Add line" adds `newLine(k)`; "+ Tax / service" adds `newLine(k, { label: 'Tax / service', people: billPeople })`; "+ Tip" adds `newLine(k, { label: 'Tip', people: billPeople })`.
 - [ ] **Step 4: Build `BillLineCard`.**
-  - Label input, MoneyInput (calls `setLineAmount`), and chips for `billPeople` (calls `toggleLinePerson`; a picked chip uses the primary colours, as in the mockup).
+  - Label input, MoneyInput (calls `setLineAmount`), then an **Everyone** chip (calls `toggleEveryone`; it's on when every bill person is picked), then chips for `billPeople` (calls `toggleLinePerson`; a picked chip uses the primary colours, as in the mockup).
   - "+ add name" opens an inline `Combobox` whose suggestions are `knownNames` not on the bill (case-insensitive). On select, it calls `onAddPerson`, then toggles the returned name on.
   - Footer: "{amount} each" when everyone's share is equal, "{name} only" for one person, and the adjusted breakdown with an "uneven" pill. When a change cleared the adjusted shares, it shows "back to equal split" for that render.
   - "Uneven? Adjust ›" appears when there are at least 2 people and an amount. A × removes the line. `invalid` gives a destructive outline.
-- [ ] **Step 5: Check bar** from `assignedTotal` and `reconcile`, using the exact copy from Global Constraints and a progress bar (`min(assigned/total, 1)`).
-- [ ] **Step 6: Verify** with `npx tsc --noEmit` (clean) and the full suite (all passing).
-- [ ] **Step 7: Commit** `feat(split): tagging screen with bill lines and people chips`.
+- [ ] **Step 5: `MoneyInput` `unit`.** First write the failing test in `format.test.ts`:
+  - `scaleMoney.parse('250', 1000)` → 250000;
+  - `scaleMoney.display(3488334, 1000)` → `'3.488'` (rounded down);
+  - `scaleMoney.display(250000, 1)` → `'250.000'`.
+  Then add `scaleMoney = { parse(text: string, unit: number): number; display(value: number, unit: number): string }` to `format.ts`. It is built on `parseMoney` and `formatNumber`; `display` returns `''` for 0. `MoneyInput` uses it and shows the suffix `.000 ₫` instead of `₫` when `unit` is 1000. Existing callers don't change.
+- [ ] **Step 6: Check bar** from `assignedTotal` and `reconcile`, using the exact copy from Global Constraints and a progress bar (`min(assigned/total, 1)`).
+- [ ] **Step 7: Verify** with `npx tsc --noEmit` (clean) and the full suite (all passing).
+- [ ] **Step 8: Commit** `feat(split): tagging screen with bill lines and people chips`.
 
 ### Task 7: Tagging screen — Adjust, Done, leaving, resume, read-only
 
@@ -220,7 +231,7 @@
 - [ ] **Step 2: Adjust.** It opens `ItemDialog` with `participants = billPeople`, `payerLocked`, and `initial = { id: line.key, label, payer, amount, shares: lineShares(line) }`. On submit, the line takes the label, amount, `people` (included share names in bill order) and `shares`. Adjust is disabled until a payer is chosen, with the hint "Pick who paid first".
 - [ ] **Step 3: Done.**
   - Lines with status `incomplete` → a toast "Fill in or remove N line(s)", and those cards get `invalid`.
-  - Otherwise: set `committing` (ignore further taps — Review Focus 5), then `addItemsFromPhoto(night.id, draftToItems(lines, payer, photo.id), newNames)`, where `newNames` is the names in `extraPeople` picked on at least one ready line (a name added and then left unused doesn't join the Nomnom), `await updatePhoto(photo.id, { payer, total: total || undefined })`, a toast "N lines added", and `navigate(-1)` back to the Nomnom.
+  - Otherwise: set `committing` (ignore further taps — Review Focus 5), then `addItemsFromPhoto(night.id, draftToItems(lines, payer, photo.id), newNames)`, where `newNames` is the names in `extraPeople` picked on at least one ready line (a name added and then left unused doesn't join the Nomnom), `await updatePhoto(photo.id, { payer, total: total || undefined, thousands })`, a toast "N lines added", and `navigate(-1)` back to the Nomnom.
   - Done is disabled when there's no payer or no ready line.
 - [ ] **Step 4: Leaving.** ✕ with at least one non-empty line opens a `ConfirmDialog` ("Discard N lines?" · "The photo stays on the Nomnom. Tap it to tag again.", destructive "Discard"). Otherwise ✕ navigates back at once.
 - [ ] **Step 5: Resume (#17).** Items in the Nomnom whose `photoId` matches are listed under "Already added · edit them in the Nomnom" as compact rows (label, amount, people) and passed as `alreadyAdded` to `assignedTotal`. Their payers feed `initialPayer`.
@@ -256,7 +267,7 @@
 - Modify: `src/settings/Settings.tsx`, `README.md`, `docs/features/2026-11-bill-photo/spec.md`, `D:\study\now\bill-splitter.md` (personal-hub repo)
 
 - [ ] **Step 1: Restore sweep (#24).** In `Settings.tsx`, right after `applyBackup(result.data)`, call `sweepOrphanPhotos(result.data.apps.split.nights.map(n => n.id)).catch(console.error)`.
-- [ ] **Step 2: Browser check** at 390×844 (`npm run dev`, Playwright; the recipe is in memory `explainer-artifact-sync`). Use a fixture bill image (a JPEG of the spec's hotpot bill, made in the scratchpad, never committed), and run every scenario in the spec's Testing list, plus:
+- [ ] **Step 2: Browser check** at 390×844 (`npm run dev`, Playwright; the recipe is in memory `explainer-artifact-sync`). Use your two sample images: the SoBanHang screenshot and the handwritten Hóa đơn bán lẻ. They are kept outside the repo and never committed. Tag sample 2 with the ×1.000 switch on and the Everyone chip, and check that its balances match spec › Example. Then and run every scenario in the spec's Testing list, plus:
   - two quick taps on Done → 6 items, not 12;
   - pinch zoom and the + / − / fit buttons;
   - an unreadable file (rename a `.txt` to `.jpg`) → the toast.

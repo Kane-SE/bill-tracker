@@ -40,6 +40,8 @@ The first 15 rows are yours, from `decisions.md`. The rest are my calls made whi
 | 24 | After a **backup restore**, photos whose Nomnom no longer exists are swept from IndexedDB. | my call |
 | 25 | After the first photo is saved, the app asks the browser once to keep its storage (`navigator.storage.persist()`), as a best effort. | my call |
 | 26 | **No new libraries:** a hand-written IndexedDB wrapper, canvas downscaling and pointer-event pan/zoom. | my call |
+| 27 | A **"Bill shows thousands (×1.000)"** switch on the tagging screen. When it's on, the line amounts and the bill total read and show in thousands: typing `250` means 250.000 ₫, and the box shows `250` followed by `.000 ₫`. Stored amounts are always whole đồng, and switching never changes them. An amount typed with the switch off that isn't a whole number of thousands shows rounded down while it's on and keeps its exact value unless retyped. The switch is off by default and is saved on the photo record (#15). Adjust's ItemDialog keeps full đồng. | yours (2026-11-17, from sample 2) |
+| 28 | An **"Everyone" chip** comes first on each line. It is on when everyone on the bill is picked. Tapping it picks everyone (in bill order) or, if everyone is already picked, clears the line. Like any change of people, it clears an uneven split (#20). A name added later isn't added to lines picked with Everyone. | yours (2026-11-17, from sample 2) |
 
 ## Example
 
@@ -55,6 +57,14 @@ Hotpot Sat: Minh, Lan and Huy. Huy paid a 765.000 ₫ bill:
 | Phí phục vụ (tax / service) | 60.000 | Minh, Lan, Huy | 20.000 each |
 
 Done adds 6 items, each with `payer: 'Huy'` and the photo's id. The Nomnom's balances: Minh → Huy 320.000, Lan → Huy 185.000.
+
+### Two real bills (dry run, 2026-11-17)
+
+These were run through `calc.ts` with made-up people. Both also become tests in `billDraft.test.ts`.
+
+- **Sample 1, a SoBanHang app screenshot** (a phone screenshot, not paper, picked from Photos). Lan paid 260.000: Trà sữa 200.000 (Lan), two bags of milk at 15.000 each (Minh; Huy), and Sandwich x2 30.000 (Minh and Huy, equal). The total matches the printed "Tổng 5SP 260.000". Balances: Minh → Lan 30.000, Huy → Lan 30.000.
+- **Sample 2, a handwritten "Hóa đơn bán lẻ"** with amounts written in thousands, which is why #27 exists. Huy paid 27.143.000 for An, Bình, Chi, Huy and Lan. It has 13 lines, 9 of them shared by everyone (#28). Cua 10.465.000 is split between An, Bình and Huy as 3.488.334 / 3.488.333 / 3.488.333. Rượu 420.000 is adjusted to An 280.000 · Huy 140.000. The lines add up exactly to the written 27.143.000. Reading line 4 as 6.973 instead of 6.975 leaves "2.000 ₫ left" in the bill-total check, which is how a misread gets caught. Balances: An → Huy 7.003.934, Bình → Huy 6.713.933, Chi → Huy 3.285.600, Lan → Huy 3.285.600.
+- **Noted, not changed:** a tall screenshot like sample 1 shrinks in the photo panel when fitted whole. Zoom or the panel's collapse handles it. Equal splits leave odd đồng (3.488.334). That is today's `equalShares` behaviour, outside this feature.
 
 ## Data
 
@@ -88,6 +98,7 @@ export interface BillPhoto {
   createdAt: string   // ISO
   payer?: string      // saved on Done (#15)
   total?: number      // bill total, saved on Done when entered
+  thousands?: boolean // the ×1.000 switch (#27), saved on Done
 }
 ```
 
@@ -109,6 +120,7 @@ export function lineStatus(line: DraftLine): LineStatus
 export function lineShares(line: DraftLine): Share[]            // shares ?? equalShares(amount, people)
 export function setLineAmount(line: DraftLine, amount: number): DraftLine
 export function toggleLinePerson(line: DraftLine, name: string, order: string[]): DraftLine
+export function toggleEveryone(line: DraftLine, order: string[]): DraftLine   // #28
 export function assignedTotal(lines: DraftLine[], alreadyAdded: number): number
 export function reconcile(assigned: number, total: number | undefined):
   | { kind: 'none' } | { kind: 'left'; amount: number } | { kind: 'over'; amount: number } | { kind: 'exact' }
@@ -160,10 +172,10 @@ deleteItemsByPhoto(nightId: string, photoId: string): number
 
 - **Header:** ✕ on the left, then "Tag the bill" with the Nomnom's name below it, and **Done** on the right. In read-only mode (#22) the title is "Bill photo" and there's no Done.
 - **Photo panel:** sticky at the top, about 38% of the screen height. Pinch or drag on touch, ctrl+wheel on desktop, double-tap toggles 1× and 2.5×, plus + / − / fit buttons. A chevron collapses the panel to a 56px strip so there's room while typing.
-- **Paid by** (a Select of the Nomnom's people, default from #21) and **Bill total (optional)** (MoneyInput, prefilled from the photo).
+- **Paid by** (a Select of the Nomnom's people, default from #21) and **Bill total (optional)** (MoneyInput, prefilled from the photo). Below them is the switch **"Bill shows thousands (×1.000)"** (#27). It goes through a new `MoneyInput` prop, `unit?: 1 | 1000`.
 - **Check bar:** with a total it says "Assigned 660.000 ₫ · 105.000 ₫ left", "Over by 15.000 ₫" in the destructive colour, or "All assigned ✓" in the success colour, with a progress bar. Without a total it says "Assigned 660.000 ₫ · 4 lines".
 - **Already added** (resume, #17): compact read-only rows with the label, amount and people, under the heading "Already added · edit them in the Nomnom".
-- **Line cards:** a label input, a MoneyInput, then chips for everyone on the bill: the Nomnom's people plus names added here. The last chip is **"+ add name"**, which opens an inline Combobox suggesting known names not yet on the bill. A new name is added to the bill and picked on that line.
+- **Line cards:** a label input, a MoneyInput, then an **Everyone** chip (#28) and chips for everyone on the bill: the Nomnom's people plus names added here. The last chip is **"+ add name"**, which opens an inline Combobox suggesting known names not yet on the bill. A new name is added to the bill and picked on that line.
   - The footer shows "110.000 ₫ each", "Lan only", or for an adjusted line "Minh 90.000 · Huy 30.000" with an **uneven** pill. With 2 or more people and an amount, it also has **"Uneven? Adjust ›"**. Each card has × to remove the line.
 - **Adjust:** opens ItemDialog with `participants` set to everyone on the bill, `initial` built from the line, and a new prop **`payerLocked`** (the Select is disabled and shows the bill's payer). On save, the line takes the dialog's label, amount, people (from included shares) and shares.
 - **Add buttons:** "+ Add line", "+ Tax / service" and "+ Tip" (#19). A new photo starts with one empty line.
@@ -177,11 +189,12 @@ After `applyBackup`, call `sweepOrphanPhotos` with the restored Nomnom ids (#24)
 
 ## Testing
 
-- `billDraft.test.ts`: line status, equal and adjusted shares, the reset back to equal, assigned total and the reconcile kinds, `draftToItems` (order, empty label, only ready lines), and `initialPayer` order. Plus the hotpot example, which must give Minh → Huy 320.000 and Lan → Huy 185.000 through `computeNightLines`.
+- `billDraft.test.ts`: line status, equal and adjusted shares, the reset back to equal, assigned total and the reconcile kinds, `draftToItems` (order, empty label, only ready lines), `initialPayer` order, and `toggleEveryone` (picks all in bill order, clears when all are picked, drops uneven shares). The hotpot example and both real bills from the Example section must give exactly the balances listed there through `computeNightLines`.
+- `MoneyInput` with `unit={1000}`: there is no DOM in Vitest, so the display and parse rule lives in a pure helper in `format.ts`, `scaleMoney`, which is tested: `250` → 250000, 3488334 shows as `3.488`.
 - `image.test.ts`: `fitWithin` (landscape, portrait, already small, square).
 - `useSplitStore.test.ts`: `addItemsFromPhoto` (one write, new names deduplicated case-insensitively, known names updated), `deleteItemsByPhoto` (count, other items untouched), and `updateItem` keeping `photoId`.
 - `backup.test.ts`: `photoId` round-trips.
-- In a real browser at 390px: pick a bill image, tag 6 lines with one Adjust, Done, then check balances. Leave midway and resume. Delete the photo and confirm the lines go. Delete the Nomnom and confirm IndexedDB is empty. Settle the Nomnom and check read-only mode. Reload offline and the photo still shows.
+- In a real browser at 390px, using your two sample images (kept outside the repo), pick a bill image, tag 6 lines with one Adjust, Done, then check balances. Leave midway and resume. Delete the photo and confirm the lines go. Delete the Nomnom and confirm IndexedDB is empty. Settle the Nomnom and check read-only mode. Reload offline and the photo still shows.
 
 ## Risks
 
