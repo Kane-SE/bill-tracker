@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Archive, Moon, Plus, Settings, UsersRound, Wallet } from 'lucide-react'
+import { Archive, FileSpreadsheet, Moon, Plus, Settings, UsersRound, Wallet } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { BottomBar } from '@/shared/components/BottomBar'
 import { BalanceList } from '@/apps/split/components/BalanceList'
@@ -17,6 +17,7 @@ import { formatMoney } from '@/apps/split/lib/format'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog'
 import { ResolvePlanSummary } from '@/apps/split/components/ResolvePlanSummary'
+import { ExcelCopySheet } from '@/apps/split/components/ExcelCopySheet'
 import type { Debt } from '@/apps/split/types'
 
 export function SplitHome() {
@@ -46,6 +47,8 @@ export function SplitHome() {
     )
   }
   const [selected, setSelected] = useState<Debt | null>(null)
+  const [copying, setCopying] = useState(false)
+  const names = useMemo(() => people.map((p) => p.name), [people])
   const resolvePair = useSplitStore((s) => s.resolvePair)
   const restoreNightsSnapshot = useSplitStore((s) => s.restoreNightsSnapshot)
   const [confirming, setConfirming] = useState<Debt | null>(null)
@@ -121,6 +124,12 @@ export function SplitHome() {
         <CardHeader className="flex-row items-center gap-2 space-y-0">
           <Wallet className="h-5 w-5 text-primary" />
           <CardTitle>Current balances</CardTitle>
+          {balances.length > 0 && (
+            <Button variant="outline" size="sm" className="ml-auto h-11 px-3" onClick={() => setCopying(true)}>
+              <FileSpreadsheet />
+              Copy for Excel
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           {activeNights.length === 0 ? (
@@ -177,6 +186,7 @@ export function SplitHome() {
         onOpenChange={(open) => !open && setSelected(null)}
         onResolve={setConfirming}
       />
+      <ExcelCopySheet open={copying} onOpenChange={setCopying} nights={nights} names={names} />
       <ConfirmDialog
         open={confirming != null}
         onOpenChange={(open) => !open && setConfirming(null)}
