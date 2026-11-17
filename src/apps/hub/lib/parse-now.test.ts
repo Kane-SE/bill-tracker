@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import bill from './__fixtures__/now-bill-splitter.md?raw'
 import idle from './__fixtures__/now-idle-farming.md?raw'
+import calendar from './__fixtures__/now-calendar.md?raw'
 import { parseNowNote } from './parse-now'
 
 describe('parseNowNote', () => {
@@ -17,6 +18,7 @@ describe('parseNowNote', () => {
       waitingOnOthers: null,
       inFlight: ['main = PR #2 merged 2026-09-30', 'main auto-deploys on Vercel, so changes go through a branch + PR'],
       plans: 'bill-splitter/DEPLOY.md · bill-splitter/docs/superpowers/specs/',
+      forYou: null,
     })
   })
 
@@ -44,5 +46,38 @@ describe('parseNowNote', () => {
 
   it('handles CRLF files', () => {
     expect(parseNowNote('now/b.md', bill.replace(/\n/g, '\r\n')).machine).toBe('pc')
+  })
+
+  describe('For you lines', () => {
+    it('reads Next, Then and Blocked from the For you section', () => {
+      expect(parseNowNote('now/calendar.md', calendar).forYou).toEqual({
+        next: 'Check the week view on your phone after PR #4 deploys',
+        then: ['Merge PR #4', 'Pick a colour for booked days'],
+        blocked: null,
+      })
+    })
+
+    it('still reads the For Claude fields below it', () => {
+      const card = parseNowNote('now/calendar.md', calendar)
+      expect(card.lastWorked).toBe('2026-11-16')
+      expect(card.machine).toBe('fedora')
+      expect(card.nextAction).toMatch(/^Check the week view on a phone/)
+      expect(card.waitingSince).toBe('2026-11-16')
+      expect(card.inFlight).toEqual(['PR #4 open (fix/week-scroll)', 'main deploys on push'])
+    })
+
+    it('keeps a blocker and drops an empty Then', () => {
+      const note = "## For you\nNext: Ship it\nThen: —\nBlocked: the client's answer\n"
+      expect(parseNowNote('now/x.md', note).forYou).toEqual({ next: 'Ship it', then: [], blocked: "the client's answer" })
+    })
+
+    it('does not take For you keys from other sections', () => {
+      const note = '## For you\nNext: Ship it\n\n## For Claude\nThen: not a For you line\nBlocked: neither\n'
+      expect(parseNowNote('now/x.md', note).forYou).toEqual({ next: 'Ship it', then: [], blocked: null })
+    })
+
+    it('is null for a note written before the For you section existed', () => {
+      expect(parseNowNote('now/idle-farming.md', idle).forYou).toBeNull()
+    })
   })
 })

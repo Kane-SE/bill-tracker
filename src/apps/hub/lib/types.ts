@@ -5,6 +5,14 @@ export const STAGES: Stage[] = ['idea', 'exploring', 'building', 'shipped', 'dro
 /** Stages shown under the "Active" filter and eligible for "quiet" nudges. */
 export const ACTIVE_STAGES: Stage[] = ['idea', 'exploring', 'building']
 
+/** A NOW note's `## For you` lines: the few things the user reads at a glance. */
+export interface ForYou {
+  next: string | null
+  /** At most two more steps, in order. */
+  then: string[]
+  blocked: string | null
+}
+
 /** One `now/<project>.md` note. Dates are YYYY-MM-DD strings. */
 export interface WipCard {
   file: string
@@ -17,6 +25,8 @@ export interface WipCard {
   waitingOnOthers: string | null
   inFlight: string[]
   plans: string | null
+  /** Null for a note without a `## For you` section (written before it existed). */
+  forYou: ForYou | null
 }
 
 export type ProjectStatus = 'active' | 'paused' | 'archived'

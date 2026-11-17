@@ -14,7 +14,8 @@ apps get added.
 A second mini-app: your NOW notes, ideas and projects from the private `personal-hub` repo, with
 "New idea", "Add note" and "Move stage" saved back as commits. Sign-in uses a GitHub App and one
 Vercel function (`api/github/token.ts`). Setup: [docs/hub-setup.md](docs/hub-setup.md).
-Design: [docs/features/2026-10-hub-dashboard/spec.md](docs/features/2026-10-hub-dashboard/spec.md).
+Design: [docs/features/2026-10-hub-dashboard/spec.md](docs/features/2026-10-hub-dashboard/spec.md);
+each note's short "For you" lines come first: [docs/features/2026-11-hub-for-you/spec.md](docs/features/2026-11-hub-for-you/spec.md).
 
 ## Pump
 

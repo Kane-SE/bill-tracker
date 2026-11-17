@@ -1,5 +1,6 @@
 import nowBill from '@/apps/hub/lib/__fixtures__/now-bill-splitter.md?raw'
 import nowIdle from '@/apps/hub/lib/__fixtures__/now-idle-farming.md?raw'
+import nowCalendar from '@/apps/hub/lib/__fixtures__/now-calendar.md?raw'
 import projectsMd from '@/apps/hub/lib/__fixtures__/projects.md?raw'
 import ideasMd from '@/apps/hub/lib/__fixtures__/ideas.md?raw'
 import type { GitHubClient } from '@/apps/hub/github/client'
@@ -31,6 +32,7 @@ export function createDemoClient(): GitHubClient {
   const files = new Map<string, string>([
     ['now/bill-splitter.md', nowBill],
     ['now/idle-farming.md', nowIdle],
+    ['now/calendar.md', nowCalendar],
     ['projects.md', projectsMd],
     ['ideas.md', ideasMd],
   ])
