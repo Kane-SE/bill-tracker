@@ -22,6 +22,15 @@ export const PUMPOUT = {
   patch: '1.01.0',
 }
 
+/** Chart videos: NEVSISTER's uploads, matched to charts by `npm run piu:videos`. */
+export const NEVSISTER = {
+  name: 'NEVSISTER',
+  channelId: 'UCicVRsgv4iIhZGZcbx7xUkw',
+  url: 'https://www.youtube.com/@NEVSISTER',
+  /** the channel's uploads playlist: "UU" + the channel ID after "UC" */
+  uploads: 'UUicVRsgv4iIhZGZcbx7xUkw',
+}
+
 export const PIUSCORES = {
   name: 'PIU Scores',
   site: 'https://piuscores.arroweclip.se',

@@ -21,9 +21,12 @@ Design: [docs/features/2026-10-hub-dashboard/spec.md](docs/features/2026-10-hub-
 A third mini-app: every PHOENIX 2 Pump It Up chart, filtered one-handed at the arcade by mode,
 level range, skills (half, run, twist, bracket, drill, gimmick), song type, version and search, plus
 the nine skill-title tracks with earned ticks. Works offline; the chart data is bundled.
+A chart's sheet links to NEVSISTER's YouTube video of that chart (98 % of singles, 99 % of doubles).
 Data: `npm run piu:data` rebuilds `src/apps/pump/data/charts.json` from pumpout-db-updates and the
-PIU Scores export ([scripts/piu-data/README.md](scripts/piu-data/README.md)).
-Design: [docs/features/2026-10-piu-chart-filter/spec.md](docs/features/2026-10-piu-chart-filter/spec.md).
+PIU Scores export, then `npm run piu:videos` rebuilds `src/apps/pump/data/videos.json`
+([scripts/piu-data/README.md](scripts/piu-data/README.md)).
+Design: [docs/features/2026-10-piu-chart-filter/spec.md](docs/features/2026-10-piu-chart-filter/spec.md);
+videos: [docs/features/2026-11-pump-chart-videos/spec.md](docs/features/2026-11-pump-chart-videos/spec.md).
 
 ## Features
 
