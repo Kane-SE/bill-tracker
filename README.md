@@ -62,6 +62,8 @@ videos: [docs/features/2026-11-pump-chart-videos/spec.md](docs/features/2026-11-
   Nomnom · Amount*). Same numbers as Home's balances; plain integers and
   `YYYY-MM-DD` dates so Excel reads them in any locale (see
   [spec](docs/features/2026-11-split-excel-copy/spec.md)).
+- **Bill photos** — attach a photo of the bill to a Nomnom and tag its lines to
+  people. Photos stay on this device and are not included in backups.
 - **Backup** — export/import all app data *and* your appearance settings as one
   JSON file (backup v2, see below) to move between devices.
 - **Installable PWA** — add to home screen; works offline; light & dark themes,

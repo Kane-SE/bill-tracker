@@ -30,6 +30,22 @@ export function parseMoney(input: string): number {
   return Number.isFinite(n) ? n : 0
 }
 
+/**
+ * Typing/showing money in units (1 = full dong, 1000 = "bill shows thousands").
+ * Stored values are always whole dong.
+ */
+export const scaleMoney = {
+  /** "250" with unit 1000 -> 250000 */
+  parse(text: string, unit: number): number {
+    return parseMoney(text) * unit
+  },
+  /** 3488334 with unit 1000 -> "3.488" (rounded down); 0 -> '' */
+  display(value: number, unit: number): string {
+    const shown = Math.floor(value / unit)
+    return shown > 0 ? formatNumber(shown) : ''
+  },
+}
+
 const dateFmt = new Intl.DateTimeFormat('en-GB', {
   day: '2-digit',
   month: 'short',

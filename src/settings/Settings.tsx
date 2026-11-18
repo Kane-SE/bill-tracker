@@ -11,6 +11,7 @@ import { applyTheme, DEFAULT_CUSTOM, getStoredTheme, PALETTES, type Palette, typ
 import { CustomPaletteDialog } from '@/settings/CustomPaletteDialog'
 import { GitHubCard } from '@/settings/GitHubCard'
 import type { CustomColors } from '@/shared/lib/palette'
+import { sweepOrphanPhotos } from '@/apps/split/lib/photoStore'
 import { toast } from 'sonner'
 
 export function Settings() {
@@ -49,6 +50,8 @@ export function Settings() {
         return
       }
       applyBackup(result.data)
+      // Photos live in IndexedDB, not the backup: drop those whose Nomnom is gone.
+      sweepOrphanPhotos(result.data.apps.split.nights.map((n) => n.id)).catch(console.error)
       if (result.data.appearance) setTheme(result.data.appearance)
       toast.success('Backup restored')
     } catch {

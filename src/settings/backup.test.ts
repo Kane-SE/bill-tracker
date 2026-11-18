@@ -40,6 +40,16 @@ describe('parseBackup', () => {
     expect(r.ok).toBe(true)
     if (r.ok) expect(r.data.apps.split.nights[0].payments).toEqual(night.payments)
   })
+  it('keeps photoId on items through parseBackup', () => {
+    const night = {
+      id: 'n1', date: '2026-09-29', status: 'active', participants: ['A', 'B'],
+      items: [{ id: 'i1', label: 'Bò', payer: 'A', amount: 100, shares: [{ name: 'A', amount: 100 }], photoId: 'ph1' }],
+    }
+    const file = { ...v2, apps: { split: { ...v2.apps.split, nights: [night] } } }
+    const r = parseBackup(JSON.stringify(file))
+    expect(r.ok).toBe(true)
+    if (r.ok) expect(r.data.apps.split.nights[0].items[0].photoId).toBe('ph1')
+  })
 })
 
 describe('backup and Pump earned titles', () => {
