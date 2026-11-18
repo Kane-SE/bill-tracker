@@ -670,12 +670,12 @@
 {"t":"Ghost Bloody Train","k":"유령혈차","a":"Fiverwater","y":"ARCADE","ch":"ORIGINAL","se":"PHOENIX 2","bpm":[192,192],"i":[1,"Phoenix2_Ghost_Bloody_Train.png"]},
 {"t":"L (PIU Edit)","a":"Ice","y":"ARCADE","ch":"WORLD MUSIC","se":"PHOENIX 2","bpm":[155,155],"i":[1,"Phoenix2_L_PIU_Edit.png"]},
 {"t":"Can I friend you on Bassbook? lol","k":"베이스라인 하고있니? ㅎ","a":"Camellia & Nanahira","y":"ARCADE","ch":"WORLD MUSIC","se":"PHOENIX 2","bpm":[128,128],"i":[1,"Phoenix2_Can_I_friend_you_on_Bassbook_lol.png"]},
-{"t":"NEMONEMO","k":"네모네모","a":"YENA","y":"ARCADE","ch":"K-POP","se":"PHOENIX 2","bpm":[138,138],"i":[1,"Phoenix2_NEMONEMO.png"]},
-{"t":"Mephitz","k":"메피츠","a":"litmus* & Ester","y":"ARCADE","ch":"ORIGINAL","se":"PHOENIX 2","bpm":[195,195],"i":[1,"Phoenix2_Mephitz.png"]},
-{"t":"Falling Stars","k":"꼬리별","a":"WyvernP","y":"ARCADE","ch":"ORIGINAL","se":"PHOENIX 2","bpm":[200,200],"i":[1,"Phoenix2_Falling_Stars.png"]},
-{"t":"Until Defined","k":"언틸 디파인드","a":"Palami & Dyon Joo & neur6sia","y":"ARCADE","ch":"ORIGINAL","se":"PHOENIX 2","bpm":[180,180],"i":[1,"Phoenix2_Until_Defined.png"]},
-{"t":"PHYSALIS","k":"피살리스","a":"TAG","y":"ARCADE","ch":"WORLD MUSIC","se":"PHOENIX 2","bpm":[200,200],"i":[1,"Phoenix2_PHYSALIS.png"]},
-{"t":"Assault TAXI","k":"어썰트 택시","a":"ASA","y":"ARCADE","ch":"WORLD MUSIC","se":"PHOENIX 2","bpm":[154,154],"i":[1,"Phoenix2_Assault_TAXI.png"]}
+{"t":"NEMONEMO","k":"네모네모","a":"YENA","y":"ARCADE","ch":"K-POP","se":"PHOENIX 2","bpm":[138,138],"i":[1,"Phoenix2_NEMONEMO.png"],"n":1},
+{"t":"Mephitz","k":"메피츠","a":"litmus* & Ester","y":"ARCADE","ch":"ORIGINAL","se":"PHOENIX 2","bpm":[195,195],"i":[1,"Phoenix2_Mephitz.png"],"n":1},
+{"t":"Falling Stars","k":"꼬리별","a":"WyvernP","y":"ARCADE","ch":"ORIGINAL","se":"PHOENIX 2","bpm":[200,200],"i":[1,"Phoenix2_Falling_Stars.png"],"n":1},
+{"t":"Until Defined","k":"언틸 디파인드","a":"Palami & Dyon Joo & neur6sia","y":"ARCADE","ch":"ORIGINAL","se":"PHOENIX 2","bpm":[180,180],"i":[1,"Phoenix2_Until_Defined.png"],"n":1},
+{"t":"PHYSALIS","k":"피살리스","a":"TAG","y":"ARCADE","ch":"WORLD MUSIC","se":"PHOENIX 2","bpm":[200,200],"i":[1,"Phoenix2_PHYSALIS.png"],"n":1},
+{"t":"Assault TAXI","k":"어썰트 택시","a":"ASA","y":"ARCADE","ch":"WORLD MUSIC","se":"PHOENIX 2","bpm":[154,154],"i":[1,"Phoenix2_Assault_TAXI.png"],"n":1}
 ],
 "charts": [
 {"id":6,"s":0,"m":"S","lv":3,"sk":0,"cov":[0,13,0,0,0],"b":[8,11,18],"by":3},

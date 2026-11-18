@@ -25,6 +25,7 @@ export const chartsFileSchema = z.object({
       se: z.enum(SERIES), // series (debut group)
       bpm: z.tuple([z.number(), z.number()]).optional(),
       i: z.tuple([z.number().int().nonnegative(), z.string()]).optional(), // song art: [host index, file]
+      n: z.literal(1).optional(), // new in this patch
     }),
   ),
   charts: z.array(

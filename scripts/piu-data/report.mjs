@@ -33,6 +33,7 @@ export function checkCatalog(file, { missingTitles, unmatched, sdCount, sdWithSk
 export function renderReport({ file, diff, stats, unmatched, warnings, errors }) {
   const modes = {}
   for (const c of file.charts) modes[c.m] = (modes[c.m] ?? 0) + 1
+  const newSongs = file.songs.filter((s) => s.n === 1).map((s) => s.t) // marked NEW in the app
   const lines = [
     `# Pump data — ${file.meta.game} ${file.meta.patch} (${file.meta.builtAt})`,
     '',
@@ -42,6 +43,7 @@ export function renderReport({ file, diff, stats, unmatched, warnings, errors })
     `New (${diff.added.length}): ${diff.added.slice(0, 40).join(', ')}${diff.added.length > 40 ? ' …' : ''}`,
     `Removed (${diff.removed.length}): ${diff.removed.join(', ')}`,
     `Re-rated (${diff.rerated.length}): ${diff.rerated.join(', ')}`,
+    `New songs (${newSongs.length}): ${newSongs.join(', ') || '—'}`,
     '',
     '## Skills',
     ...stats.map(

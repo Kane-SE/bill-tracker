@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { checkCatalog, diffCatalogs } from './report.mjs'
+import { checkCatalog, diffCatalogs, renderReport } from './report.mjs'
 
 const file = (charts) => ({
   meta: {}, titles: Array(90).fill({}),
@@ -38,5 +38,18 @@ describe('checkCatalog', () => {
     })
     expect(checkCatalog(withArt(668), ok)).toEqual([])
     expect(checkCatalog(withArt(300), ok)).toEqual(['Only 300/669 songs have song art (need ≥ 95%)'])
+  })
+})
+
+describe('renderReport', () => {
+  const report = (songs) =>
+    renderReport({
+      file: { meta: {}, titles: [], charts: [], songs },
+      diff: { added: [], removed: [], rerated: [] },
+      stats: [], unmatched: [], warnings: [], errors: [],
+    })
+  it('lists the new songs', () => {
+    expect(report([{ t: 'Bee', n: 1 }, { t: 'Conflict' }])).toContain('New songs (1): Bee')
+    expect(report([{ t: 'Bee' }])).toContain('New songs (0): —')
   })
 })

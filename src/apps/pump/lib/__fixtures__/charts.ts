@@ -2,7 +2,7 @@ import type { Chart, Song } from '@/apps/pump/data/types'
 import { fold } from '@/apps/pump/lib/normalize'
 
 export function makeSong(over: Partial<Omit<Song, 'search'>> = {}): Song {
-  const s = { title: 'Song', artist: 'Artist', type: 'ARCADE', series: 'XX', ...over } as Omit<Song, 'search'>
+  const s = { title: 'Song', artist: 'Artist', type: 'ARCADE', series: 'XX', isNew: false, ...over } as Omit<Song, 'search'>
   return { ...s, search: fold([s.title, s.titleKo ?? '', s.artist].join(' ')) }
 }
 

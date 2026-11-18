@@ -44,6 +44,8 @@ export interface Song {
   bpm?: [number, number]
   /** full URL of the song jacket art */
   image?: string
+  /** first playable in this data's patch (meta.patch); shown with a NEW mark */
+  isNew: boolean
   /** fold(title + titleKo + artist), for search */
   search: string
 }

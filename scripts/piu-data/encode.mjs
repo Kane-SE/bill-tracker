@@ -45,6 +45,7 @@ export function encodeCatalog({ songs, charts, byChart, skillsById, gimmickFrom,
     if (s.bpm) out.bpm = s.bpm
     if (s.card) out.i = [s.card.host, s.card.file]
     else warnings.push(`no song art: ${s.title}`)
+    if (s.isNew) out.n = 1
     return out
   })
 
