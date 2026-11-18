@@ -33,12 +33,14 @@ export const CUT_BY_NAME = { 'Short Cut': 'SHORTCUT', Arcade: 'ARCADE', Remix: '
 
 const ANC = 'anc AS (SELECT ancestorId, ancestorSortOrder FROM _derived_versionAncestor WHERE versionId = :v)'
 
-const STATE_SQL = `
-WITH ${ANC},
-sv AS (SELECT s.songId, s.operationId,
+const LIVE_SONGS_CTE = `sv AS (SELECT s.songId, s.operationId,
          ROW_NUMBER() OVER (PARTITION BY s.songId ORDER BY a.ancestorSortOrder DESC, s.operationId DESC) rn
        FROM songVersion s JOIN anc a ON a.ancestorId = s.versionId),
-live_songs AS (SELECT songId FROM sv WHERE rn = 1 AND operationId <> ${DELETE}),
+live_songs AS (SELECT songId FROM sv WHERE rn = 1 AND operationId <> ${DELETE})`
+
+const STATE_SQL = `
+WITH ${ANC},
+${LIVE_SONGS_CTE},
 cv AS (SELECT cv.chartId, cv.operationId,
          ROW_NUMBER() OVER (PARTITION BY cv.chartId ORDER BY a.ancestorSortOrder DESC, cv.operationId DESC) rn
        FROM chartVersion cv JOIN anc a ON a.ancestorId = cv.versionId),
@@ -53,6 +55,14 @@ JOIN rv ON rv.chartId = lc.chartId AND rv.rn = 1
 JOIN chartRating cr ON cr.chartRatingId = rv.chartRatingId
 JOIN mode mo ON mo.modeId = cr.modeId
 JOIN difficulty d ON d.difficultyId = cr.difficultyId`
+
+const LIVE_SONGS_SQL = `WITH ${ANC},
+${LIVE_SONGS_CTE}
+SELECT songId FROM live_songs`
+
+/** The version this one was patched from: its nearest ancestor. */
+const PARENT_SQL =
+  'SELECT ancestorId FROM _derived_versionAncestor WHERE versionId = :v AND ancestorId <> :v ORDER BY ancestorSortOrder DESC LIMIT 1'
 
 const LABELS_SQL = `
 WITH ${ANC},
@@ -145,10 +155,17 @@ export function readPumpout(db, { version, prevVersion }) {
       stepArtist: steps.get(r.chartId)?.join(' & ') ?? null,
     }
   })
-  return { songs: readSongs(db, version, new Set(charts.map((c) => c.songId))), charts }
+  return { songs: readSongs(db, version, new Set(charts.map((c) => c.songId)), liveBefore(db, version)), charts }
 }
 
-function readSongs(db, version, ids) {
+/** Song ids live in the version this one was patched from; null for a version with no ancestor. */
+function liveBefore(db, version) {
+  const parent = all(db, PARENT_SQL, { ':v': version })[0]?.ancestorId
+  if (parent === undefined) return null
+  return new Set(all(db, LIVE_SONGS_SQL, { ':v': parent }).map((r) => r.songId))
+}
+
+function readSongs(db, version, ids, wasLive) {
   const titles = groupBy(all(db, TITLES_SQL), 'songId')
   const artists = groupBy(all(db, ARTISTS_SQL), 'songId', 'name')
   const category = new Map(all(db, CATEGORY_SQL, { ':v': version }).map((r) => [r.songId, r.category]))
@@ -182,6 +199,8 @@ function readSongs(db, version, ids) {
       series,
       bpm: bpm.get(s.songId) ?? null,
       card: card.get(s.songId) ?? null,
+      // playable in this patch but not in the one before it (a revived song counts)
+      isNew: wasLive !== null && !wasLive.has(s.songId),
     })
   }
   return songs
