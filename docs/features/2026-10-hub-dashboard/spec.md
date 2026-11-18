@@ -83,6 +83,9 @@ Plans & decisions: bill-splitter/DEPLOY.md · …
 - `Last worked` → date + machine. `In flight` split on ` · `.
 - **Waiting since:** the first `YYYY-MM-DD` in the `Waiting on me` text; none → the `Last worked` date.
 - `PR #n` and URLs render as links (`PR #n` → that project's repo, from `projects.md` `Link`).
+- *2026-11-18:* notes now open with a `## For you` section (Next, Then, Blocked) and put these
+  fields under `## For Claude`; Hub shows the For you lines first. See
+  [2026-11-hub-for-you/spec.md](../2026-11-hub-for-you/spec.md).
 
 ### `projects.md` — read-only
 

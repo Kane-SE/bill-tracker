@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ExternalLink, Hand, SearchX } from 'lucide-react'
+import { ChevronDown, ExternalLink, Hand, Hourglass, SearchX } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { Button } from '@/shared/ui/button'
@@ -23,7 +23,7 @@ function Section({ title, tone, children }: { title: string; tone?: 'warning'; c
 
 const CARD = 'rounded-2xl border border-border bg-card p-4 text-pretty text-sm'
 
-/** One project's NOW note in full. The dashboard row only shows the headline. */
+/** One project's NOW note. Its For you lines come first and the rest folds away; an older note without them shows in full. */
 export function ProjectDetail() {
   const { name = '' } = useParams()
   const session = useAuthStore((s) => s.session)
@@ -67,24 +67,11 @@ export function ProjectDetail() {
 
   const stale = staleDays(card, today)
   const waiting = card.waitingOnMe ? waitingDays(card, today) : null
+  const forYou = card.forYou
   const worked = [card.lastWorked && `Last worked ${formatDay(card.lastWorked, today)}`, card.machine].filter(Boolean).join(' · ')
 
-  return (
-    <div className="mx-auto max-w-lg px-4 pb-12 lg:max-w-2xl">
-      <PageHeader title="Project" subtitle="Hub" backTo="/hub" />
-      <h2 className="break-words text-xl font-bold text-pretty">{card.project}</h2>
-      {(worked || stale !== null) && (
-        <p className="mt-1 text-sm text-muted-foreground">
-          {worked}
-          {stale !== null && (
-            <>
-              {worked && ' · '}
-              <span className="text-warning">{`${ageLabel(stale)} ago`}</span>
-            </>
-          )}
-        </p>
-      )}
-
+  const fullNote = (
+    <>
       <Section title="Next action">
         <div className={CARD}>
           {card.nextAction ? <Linkified text={card.nextAction} repoLink={repoLink} /> : <span className="italic text-muted-foreground">No next action yet</span>}
@@ -122,6 +109,66 @@ export function ProjectDetail() {
         <Section title="Plans & decisions">
           <div className={`${CARD} break-words text-muted-foreground`}>{card.plans}</div>
         </Section>
+      )}
+    </>
+  )
+
+  return (
+    <div className="mx-auto max-w-lg px-4 pb-12 lg:max-w-2xl">
+      <PageHeader title="Project" subtitle="Hub" backTo="/hub" />
+      <h2 className="break-words text-xl font-bold text-pretty">{card.project}</h2>
+      {(worked || stale !== null) && (
+        <p className="mt-1 text-sm text-muted-foreground">
+          {worked}
+          {stale !== null && (
+            <>
+              {worked && ' · '}
+              <span className="text-warning">{`${ageLabel(stale)} ago`}</span>
+            </>
+          )}
+        </p>
+      )}
+
+      {forYou ? (
+        <>
+          <Section title="For you">
+            <div className={`${CARD} space-y-3`}>
+              <p className={forYou.next ? 'text-base font-semibold' : 'italic text-muted-foreground'}>
+                {forYou.next ? <Linkified text={forYou.next} repoLink={repoLink} /> : 'Nothing on you right now'}
+              </p>
+              {forYou.then.length > 0 && (
+                <div>
+                  <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">Then</p>
+                  <ol className="list-decimal space-y-1 pl-5">
+                    {forYou.then.map((item, i) => (
+                      <li key={i}>
+                        <Linkified text={item} repoLink={repoLink} />
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+              {forYou.blocked && (
+                <p className="flex items-start gap-2 text-muted-foreground">
+                  <Hourglass className="mt-0.5 h-4 w-4 shrink-0" />
+                  <span>
+                    <span className="font-medium text-foreground">Blocked: </span>
+                    {forYou.blocked}
+                  </span>
+                </p>
+              )}
+            </div>
+          </Section>
+          <details className="group mt-6">
+            <summary className="flex h-11 cursor-pointer list-none items-center justify-between rounded-2xl border border-border bg-card px-4 text-sm font-medium hover:bg-foreground/5 [&::-webkit-details-marker]:hidden">
+              Full note
+              <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180 motion-reduce:transition-none" />
+            </summary>
+            {fullNote}
+          </details>
+        </>
+      ) : (
+        fullNote
       )}
 
       <a href={`${githubRepoUrl()}/blob/main/${card.file}`} target="_blank" rel="noreferrer" className="mt-6 inline-flex h-9 items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
