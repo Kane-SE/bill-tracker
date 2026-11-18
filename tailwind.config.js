@@ -33,6 +33,10 @@ export default {
         warning: {
           DEFAULT: 'hsl(var(--warning))',
         },
+        new: {
+          DEFAULT: 'hsl(var(--new))',
+          foreground: 'hsl(var(--new-foreground))',
+        },
         muted: {
           DEFAULT: 'hsl(var(--muted))',
           foreground: 'hsl(var(--muted-foreground))',

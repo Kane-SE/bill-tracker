@@ -46,6 +46,8 @@
     --success: 152 62% 42%;
     --success-foreground: 0 0% 100%;
     --warning: 30 90% 31%;
+    --new: 36 90% 33%;
+    --new-foreground: 0 0% 100%;
     --border: 240 6% 90%;
     --input: 240 6% 90%;
     --ring: 250 95% 68%;
@@ -71,6 +73,8 @@
     --success: 152 55% 48%;
     --success-foreground: 152 60% 8%;
     --warning: 38 92% 60%;
+    --new: 40 92% 58%;
+    --new-foreground: 30 60% 8%;
     --border: 240 10% 20%;
     --input: 240 10% 22%;
     --ring: 250 95% 72%;
@@ -99,6 +103,8 @@
     --success: 140 40% 36%;          /* muted green (added) */
     --success-foreground: 90 40% 96%;
     --warning: 28 80% 30%;
+    --new: 36 90% 33%;
+    --new-foreground: 0 0% 100%;
     --border: 30 34% 78%;            /* CEAB93 */
     --input: 30 34% 78%;             /* CEAB93 */
     --ring: 25 26% 56%;              /* AD8B73 */
@@ -124,6 +130,8 @@
     --success: 140 35% 52%;
     --success-foreground: 140 45% 8%;
     --warning: 36 85% 62%;
+    --new: 40 92% 58%;
+    --new-foreground: 30 60% 8%;
     --border: 25 15% 24%;
     --input: 25 15% 26%;
     --ring: 30 42% 72%;
