@@ -36,6 +36,15 @@ export function parseCsv(text) {
   return rows.filter((r) => !(r.length === 1 && r[0] === ''))
 }
 
+/**
+ * Whether a PIU Scores row carries any skill numbers. A chart piucenter hasn't
+ * analysed yet (a new patch, Steam Link) has a row with every skill column empty:
+ * it gives no skill bars, not five zeros.
+ */
+export function hasSkillData(row) {
+  return Object.keys(row.coverage).length > 0
+}
+
 /** PIU Scores chart export → one record per Single/Double chart. */
 export function readPiuScores(text) {
   const [header, ...body] = parseCsv(text)

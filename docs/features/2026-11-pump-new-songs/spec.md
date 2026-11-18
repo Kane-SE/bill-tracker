@@ -23,12 +23,13 @@ spot them while browsing a level.
 | 7 | The word **NEW** is always shown, never the colour alone — the same rule as the S/D/HD level badges. Screen readers hear "New" with the song title. | my call |
 | 8 | Gold is a new colour token, `--new` (plus `--new-foreground` for the pill text), set in every theme: light, dark, Coffee, Coffee dark, and derived for the custom palette. Targets: border at least 3:1 against the card, pill text at least 4.5:1 on gold. It is never purple, which already means level, selected skill and earned title. | my call |
 | 9 | Data: songs in `charts.json` gain `n: 1` when new (about 30 bytes today). The build report lists the new songs. | my call |
+| 10 | **No skill data, not 0 % bars.** A chart whose PIU Scores row has every skill column empty (piucenter hasn't analysed it yet) gets no `cov`, so its sheet says "No skill data for this chart." instead of five 0 % bars. At v1.02 that is 267 S/D charts: the 50 new ones, the 119 R!SE Vol.1 ones and 98 older ones that already showed zeros. The build's 97 % check keeps counting charts matched to a PIU Scores row, so a new patch isn't blocked until piucenter catches up; the report counts the charts without skill data. Added after review on 2026-11-19. | yours |
 
 ## Not in this change
 
 - A "New" filter, preset or sort. You asked to tell them apart while browsing, not to list them.
 - Marking songs you haven't opened yet ("new to you"). New follows the game's patch, not your history.
-- Any change to the 1.02 data beyond the `n` flag.
+- Any change to the 1.02 data beyond the `n` flag and decision 10.
 
 ## Left to the build
 
@@ -49,6 +50,7 @@ spot them while browsing a level.
 - Grid: Assault TAXI S21 has the gold border and NEW tag; the tile stays 148 px; older tiles unchanged. Checked in dark, light, Coffee and a custom green palette.
 - List: badges line up at the same x on every row; the bar sits left of the badge; with a 50-character title the title truncates and the NEW tag stays whole.
 - Sheet: "New in v1.02.0" on Assault TAXI S21 and on D23 picked from the sibling chips; absent on Athena's Shield.
-- No console errors. 545 tests, `tsc --noEmit` clean, `npm run build` OK.
+- Decision 10: Assault TAXI S21's sheet says "No skill data for this chart." with no bars; Athena's Shield S21 keeps its bars. The rebuild changed only `cov`, removed from exactly the 267 charts that had five zeros; 71 charts keep real all-zero bars (their skill numbers fall outside the five skills).
+- No console errors. 549 tests, `tsc --noEmit` clean, `npm run build` OK.
 
 Not checked: an installed PWA on a phone.

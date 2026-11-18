@@ -86,4 +86,8 @@ describe('committed charts.json', () => {
     expect(ofFresh.length).toBe(50)
     expect(ofFresh.every((c) => c.song.isNew)).toBe(true)
   })
+  it('shows no skill bars, rather than five zeros, for charts PIU Scores has not analysed yet', () => {
+    const fresh = cat.charts.filter((c) => c.song.isNew)
+    expect(fresh.every((c) => c.coverage === undefined && c.skills.length === 0)).toBe(true)
+  })
 })

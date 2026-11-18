@@ -140,7 +140,7 @@ Downloads are cached in `.cache/piu-data/` (git-ignored). The script reads SQLit
   Each threshold is the **highest value that still tags ≥ 90% of that skill's P2 + P1 title charts**. Every chart on a P2 or P1 ladder for that skill is then forced on: e.g. every chart on TWIST S/D, or on P1 TWIST, gets twist. The report prints, per skill: threshold, title-chart hit rate before forcing, and total charts tagged.
   The exact score per skill (sum vs max) gets fixed during tuning. Whichever scores the title charts best wins, and is recorded in `skills.mjs`.
 - **Gimmick list**: the union of the XX Gimmick, P1 [GIMMICK], P2 [GIMMICK] and P2 [SLOW] ladders. Matched by **pumpout chart ID**, not by level, because levels moved: Take Out D23 [SLOW] was D22 before P2. Today that's 22 charts. Wicked Legend D21 is not included.
-- **No skill data**: Steam Link charts and 11 others have no CSV coverage. Their `skills` is empty, and the sheet says so.
+- **No skill data**: a chart with no CSV row, or whose row has every skill column empty (piucenter hasn't analysed it yet: new-patch and Steam Link charts, 267 S/D charts at v1.02), gets no `cov`. Its computed skills are empty, and the sheet says so instead of showing 0 % bars. The 97 % check counts charts matched to a CSV row, not charts with skill numbers, so a new patch isn't blocked while piucenter catches up.
 
 ### charts.json shape
 
@@ -357,7 +357,7 @@ Vitest in the node environment, pure logic only, which is the repo's rule.
 3. Read the report:
    - new, removed and re-rated charts;
    - unmatched charts;
-   - per-skill threshold stats;
+   - per-skill threshold stats, and how many S/D charts have no skill data;
    - title-chart checks;
    - warnings.
 4. If P2 changed a title ladder, update `ladders.json` and cite the source.

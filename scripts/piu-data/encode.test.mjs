@@ -53,6 +53,16 @@ describe('encodeCatalog', () => {
     expect(out.songs[0].n).toBe(1)
     expect('n' in out.songs[1]).toBe(false)
   })
+  it('gives a chart no skill bars when its PIU Scores row has no skill numbers', () => {
+    const out = encodeCatalog({
+      songs, charts, skillsById: new Map(), gimmickFrom: new Map(), titles: [],
+      byChart: new Map([[10, { level: 19, badges: [], coverage: {} }], [20, { level: 29, badges: [], coverage: {} }]]),
+      meta: { game: 'PHOENIX 2', patch: '1.02.0', builtAt: '2026-11-19', sources: [], imgHosts: [] },
+    }).file
+    expect('cov' in out.charts[0]).toBe(false)
+    expect('b' in out.charts[0]).toBe(false)
+    expect(out.charts[1].lv).toBe(29) // the row still supplies a missing level
+  })
   it('passes meta.imgHosts through', () => {
     expect(file.meta.imgHosts).toEqual(['https://a/', 'https://b/'])
   })

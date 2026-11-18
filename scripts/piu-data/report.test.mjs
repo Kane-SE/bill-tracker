@@ -48,6 +48,15 @@ describe('renderReport', () => {
       diff: { added: [], removed: [], rerated: [] },
       stats: [], unmatched: [], warnings: [], errors: [],
     })
+  it('counts S/D charts without skill bars', () => {
+    const r = renderReport({
+      file: { meta: {}, titles: [], songs: [{ t: 'Bee' }],
+        charts: [{ id: 1, s: 0, m: 'S', lv: 3, cov: [0, 10, 0, 0, 0] }, { id: 2, s: 0, m: 'D', lv: 9 }, { id: 3, s: 0, m: 'HDB', lv: 9 }] },
+      diff: { added: [], removed: [], rerated: [] },
+      stats: [], unmatched: [], warnings: [], errors: [],
+    })
+    expect(r).toContain('No skill data (1 S/D charts)')
+  })
   it('lists the new songs', () => {
     expect(report([{ t: 'Bee', n: 1 }, { t: 'Conflict' }])).toContain('New songs (1): Bee')
     expect(report([{ t: 'Bee' }])).toContain('New songs (0): —')
