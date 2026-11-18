@@ -128,6 +128,7 @@ export default function PumpHome() {
         chart={chart}
         siblings={siblings}
         titles={catalog.titles}
+        patch={catalog.meta.patch}
         earned={earned}
         onToggleTitle={toggleTitle}
         onPick={(id) => chartSheet.swap(String(id))}
