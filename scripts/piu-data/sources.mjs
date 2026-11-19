@@ -7,8 +7,8 @@ const PUMPOUT_REPO = 'aaaaaa2493/pumpout-db-updates'
 export const PUMPOUT = {
   name: 'pumpout-db-updates',
   repo: `https://github.com/${PUMPOUT_REPO}`,
-  commit: 'ed314a8216f9c0dfe7cef29a1de5ce84ec4f1e44',
-  file: 'db/pumpout-phoenix-2-1.01.db',
+  commit: '68d8cc356e585244b1dafd73a23b8c3386e6e31f',
+  file: 'db/pumpout-phoenix-2-1.02.db',
   get url() {
     return `https://raw.githubusercontent.com/${PUMPOUT_REPO}/${this.commit}/${this.file}`
   },
@@ -17,9 +17,9 @@ export const PUMPOUT = {
     return ['https://pumpout.anyhowstep.com/img/card/', `https://raw.githubusercontent.com/${PUMPOUT_REPO}/${this.commit}/img/`]
   },
   /** `version.versionId` rows inside the .db */
-  version: 201, // PHOENIX 2 v1.01.0
+  version: 202, // PHOENIX 2 v1.02.0
   prevVersion: 199, // PHOENIX v2.12.0 — for "was D20 in PHOENIX"
-  patch: '1.01.0',
+  patch: '1.02.0',
 }
 
 /** Chart videos: NEVSISTER's uploads, matched to charts by `npm run piu:videos`. */

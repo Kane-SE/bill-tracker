@@ -3,6 +3,7 @@ import type { Chart, SkillId } from '@/apps/pump/data/types'
 import { chartLine2 } from '@/apps/pump/lib/labels'
 import { rowSkills } from '@/apps/pump/lib/order'
 import { LevelBadge } from '@/apps/pump/components/LevelBadge'
+import { NewPill } from '@/apps/pump/components/NewPill'
 import { SongArt } from '@/apps/pump/components/SongArt'
 import { SkillTag } from '@/apps/pump/components/SkillTag'
 import { cn } from '@/shared/lib/utils'
@@ -47,15 +48,19 @@ export function ChartRow({ chart, selectedSkills, earned, onOpen }: ChartRowProp
     <button
       type="button"
       onClick={() => onOpen(chart.id)}
-      className="relative flex h-16 w-full items-center gap-3 overflow-hidden border-b border-border text-left active:bg-secondary/60"
+      className="relative flex h-16 w-full items-center gap-3 overflow-hidden border-b border-border pl-2.5 text-left active:bg-secondary/60"
     >
       <span aria-hidden className="absolute inset-y-0 right-0 w-3/5">
         <SongArt song={chart.song} fallback={null} className="h-full w-full rounded-none ring-0" />
         <span className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-background/10" />
       </span>
+      {chart.song.isNew && <span aria-hidden className="absolute inset-y-0 left-0 w-[3px] bg-new" />}
       <LevelBadge mode={chart.mode} level={chart.level} className="relative" />
       <span className="relative min-w-0 flex-1">
-        <span className="block truncate text-sm font-semibold">{chart.song.title}</span>
+        <span className="flex min-w-0 items-center gap-1.5">
+          <span className="truncate text-sm font-semibold">{chart.song.title}</span>
+          {chart.song.isNew && <NewPill />}
+        </span>
         <span className="block truncate text-xs text-muted-foreground">{chartLine2(chart)}</span>
       </span>
       <RowIcons chart={chart} selectedSkills={selectedSkills} earned={earned} className="relative rounded-md bg-background/85 px-1" />

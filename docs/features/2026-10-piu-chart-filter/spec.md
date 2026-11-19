@@ -21,7 +21,7 @@ A second tab tracks the official skill titles. It works offline.
 | # | Decision |
 |---|---|
 | 1 | Purpose: **practise a skill at my level** and **chase the official skill titles**. No random pick and no personal to-play or cleared lists in v1. |
-| 2 | **PHOENIX 2 only** (v1.01.0 today). No version switch. Levels are P2 levels. |
+| 2 | **PHOENIX 2 only** (v1.02.0 today). No version switch. Levels are P2 levels. |
 | 3 | **Every song available in P2**, including pre-FIESTA songs. A **Version** filter narrows by series. |
 | 4 | Single and Double are in. **Steam Link content** (Half-Double mode, 790 charts, and the 10 RISE songs, 87 charts) is in but **hidden by default**. **Premium-mode charts** (172) are in, with an icon. **Co-op and UCS are out.** |
 | 5 | **Half** is a skill: Double charts that stay on the middle panels. It is not the Half-Double mode. |
@@ -66,14 +66,14 @@ build time (dev machine)                                     runtime (phone, off
 scripts/piu-data/
   build.mjs                 entry: fetch → join → map → validate → write charts.json, print report; exits non-zero if a check fails
   sources.mjs               pinned inputs: pumpout raw URL at a commit SHA; PIU Scores CSV URL + column list
-  pumpout.mjs               sql.js over the .db → P2 v1.01 songs, charts, levels, prior levels, labels, step artists
+  pumpout.mjs               sql.js over the .db → P2 songs, charts, levels, prior levels, labels, step artists, songs new in the patch
   piuscores.mjs (+test)     CSV parse (quoted fields with commas, BOM) → per chart: type, channel, debut, coverage, badges
   join.mjs (+test)          pumpout ↔ CSV on normalised title + cut + mode + level; ALIASES table; returns matched + unmatched
   skills.mjs (+test)        coverage → half/run/twist/bracket/drill with thresholds; title charts forced on
   titles.mjs (+test)        P2 ladders (9 × 10) and the gimmick list, keyed by pumpout chart ID
   ladders.json              hand-copied, cited title ladders (P2's 9 tracks; P1's RUN/TWIST/BRACKET/HALF/DRILL/GIMMICK;
                             XX Gimmick) — the only hand-kept data
-  report.mjs                counts; unmatched; new/removed/re-rated vs the committed charts.json; threshold stats; warnings
+  report.mjs                counts; unmatched; new/removed/re-rated vs the committed charts.json; new songs; threshold stats; warnings
   README.md                 how to refresh after a patch
 
 src/apps/pump/
@@ -112,7 +112,7 @@ Modified:
 
 | Input | Pinned how | Gives |
 |---|---|---|
-| `aaaaaa2493/pumpout-db-updates` `db/pumpout-phoenix-2-1.01.db` | raw.githubusercontent URL at commit `ed314a8216f9c0dfe7cef29a1de5ce84ec4f1e44` | songs, charts and their P2 levels, the chart's level in PHOENIX v2.12.0, mode (S/D/HDB/Co-Op), labels (PREMIUM MODE EXCLUSIVE, STEAM LINK EXCLUSIVE, UCS), step artists, BPM range, Korean titles where present |
+| `aaaaaa2493/pumpout-db-updates` `db/pumpout-phoenix-2-1.02.db` | raw.githubusercontent URL at commit `68d8cc356e585244b1dafd73a23b8c3386e6e31f` | songs, charts and their P2 levels, the chart's level in PHOENIX v2.12.0, mode (S/D/HDB/Co-Op), labels (PREMIUM MODE EXCLUSIVE, STEAM LINK EXCLUSIVE, UCS), step artists, BPM range, Korean titles where present |
 | PIU Scores `Charts/Export.csv?mix=Phoenix2&Columns=ChartId,Song,Type,Level,SongType,Channel,DebutMix,StepArtist,Badges,SkillEmphasis` | live endpoint; each run saves `.cache/piu-data/piuscores-YYYY-MM-DD.csv` | song type, channel, debut mix, top-3 badges, 29 `pc:badge_fraction:*` coverage columns |
 | `scripts/piu-data/ladders.json` | in the repo; each entry cites its source | P2's 9 ladders (Titles tab, forced skills); P1's 6 ladders (threshold tuning, forced skills); XX and P1 GIMMICK (gimmick list) |
 
@@ -120,7 +120,7 @@ Downloads are cached in `.cache/piu-data/` (git-ignored). The script reads SQLit
 
 ### Rules
 
-- **Included**: P2 v1.01.0 charts with mode S, D or HDB. **Excluded**: Co-Op, and anything labelled UCS.
+- **Included**: P2 v1.02.0 charts with mode S, D or HDB. **Excluded**: Co-Op, and anything labelled UCS.
 - **Level**: from pumpout. If pumpout has none, the CSV level is used and the report warns: today that's 1948's D chart, D29 per PIU Scores. Known disagreement kept as a warning: U Got Me Rocking D6 (pumpout) vs D5 (observed on machines).
 - **prevLevel**: the chart's PHOENIX v2.12.0 level, only when it differs.
 - **Flags**: `PREMIUM` when labelled PREMIUM MODE EXCLUSIVE. `STEAM_LINK` when labelled STEAM LINK EXCLUSIVE; that covers HDB mode and the RISE songs.
@@ -140,7 +140,7 @@ Downloads are cached in `.cache/piu-data/` (git-ignored). The script reads SQLit
   Each threshold is the **highest value that still tags ≥ 90% of that skill's P2 + P1 title charts**. Every chart on a P2 or P1 ladder for that skill is then forced on: e.g. every chart on TWIST S/D, or on P1 TWIST, gets twist. The report prints, per skill: threshold, title-chart hit rate before forcing, and total charts tagged.
   The exact score per skill (sum vs max) gets fixed during tuning. Whichever scores the title charts best wins, and is recorded in `skills.mjs`.
 - **Gimmick list**: the union of the XX Gimmick, P1 [GIMMICK], P2 [GIMMICK] and P2 [SLOW] ladders. Matched by **pumpout chart ID**, not by level, because levels moved: Take Out D23 [SLOW] was D22 before P2. Today that's 22 charts. Wicked Legend D21 is not included.
-- **No skill data**: Steam Link charts and 11 others have no CSV coverage. Their `skills` is empty, and the sheet says so.
+- **No skill data**: a chart with no CSV row, or whose row has every skill column empty (piucenter hasn't analysed it yet: new-patch and Steam Link charts, 267 S/D charts at v1.02), gets no `cov`. Its computed skills are empty, and the sheet says so instead of showing 0 % bars. The 97 % check counts charts matched to a CSV row, not charts with skill numbers, so a new patch isn't blocked while piucenter catches up.
 
 ### charts.json shape
 
@@ -148,11 +148,12 @@ Compact on purpose: the budget is **≤ 600 KB raw**, which the build enforces. 
 
 ```ts
 {
-  meta: { game: 'PHOENIX 2', patch: '1.01.0', builtAt: string,
+  meta: { game: 'PHOENIX 2', patch: '1.02.0', builtAt: string,
           sources: { name: string; url: string; ref: string }[] },
   songs: { title: string; titleKo?: string; artist: string;
            type: 'ARCADE' | 'SHORTCUT' | 'REMIX' | 'FULLSONG';
-           channel?: string; series: SeriesId; bpm: [number, number] }[],
+           channel?: string; series: SeriesId; bpm: [number, number];
+           n?: 1 /* new in this patch: NEW mark, see 2026-11-pump-new-songs */ }[],
   charts: { id: number;            // pumpout chart ID — stable across rebuilds; used in URLs
             s: number;             // index into songs
             m: 'S' | 'D' | 'HDB'; lv: number; prev?: number;
@@ -303,7 +304,7 @@ It opens with `c=<id>` pushed. Back or swiping down closes it, and the list hasn
 ### About dialog
 
 Shows:
-- the data version from `meta` ("PHOENIX 2 v1.01.0 · built 14 Oct 2026");
+- the data version from `meta` ("PHOENIX 2 v1.02.0 · built 19 Nov 2026");
 - the sources with links and credits: Pump Out / pumpout-db-updates (Haru-kaze, AnyhowStep, aaaaaa2493), PIU Scores (DrMurloc), piucenter.com (skill analysis, maxwshen), and the title lists;
 - "Skill tags are computed from piucenter's step analysis; gimmick tags come from official title lists.";
 - "Not affiliated with Andamiro."
@@ -356,7 +357,7 @@ Vitest in the node environment, pure logic only, which is the repo's rule.
 3. Read the report:
    - new, removed and re-rated charts;
    - unmatched charts;
-   - per-skill threshold stats;
+   - per-skill threshold stats, and how many S/D charts have no skill data;
    - title-chart checks;
    - warnings.
 4. If P2 changed a title ladder, update `ladders.json` and cite the source.

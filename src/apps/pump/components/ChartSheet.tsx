@@ -2,7 +2,7 @@ import { Fragment, useRef } from 'react'
 import { Play, Trophy } from 'lucide-react'
 import { COMPUTED_SKILLS, type Chart, type ComputedSkill, type Title } from '@/apps/pump/data/types'
 import { useChartVideo } from '@/apps/pump/hooks/useChartVideo'
-import { chartFacts, MODE_SHORT, titleName } from '@/apps/pump/lib/labels'
+import { chartFacts, MODE_SHORT, newInLabel, titleName } from '@/apps/pump/lib/labels'
 import { videoCaption, videoUrl } from '@/apps/pump/lib/video'
 import { EarnedToggle } from '@/apps/pump/components/EarnedToggle'
 import { LevelBadge } from '@/apps/pump/components/LevelBadge'
@@ -28,6 +28,8 @@ interface ChartSheetProps {
   /** every chart of the same song, this one included (songCharts) */
   siblings: Chart[]
   titles: Title[]
+  /** the data's patch (meta.patch), for "New in v1.02.0" */
+  patch: string
   earned: ReadonlySet<string>
   onToggleTitle(id: string): void
   /** show another chart of the same song in this sheet */
@@ -36,7 +38,7 @@ interface ChartSheetProps {
 }
 
 /** One chart's details, over the list (which keeps its scroll position). */
-export function ChartSheet({ chart, siblings, titles, earned, onToggleTitle, onPick, onClose }: ChartSheetProps) {
+export function ChartSheet({ chart, siblings, titles, patch, earned, onToggleTitle, onPick, onClose }: ChartSheetProps) {
   // Keep the last chart on screen while the sheet animates closed.
   const last = useRef<Chart | null>(null)
   if (chart) last.current = chart
@@ -102,6 +104,7 @@ export function ChartSheet({ chart, siblings, titles, earned, onToggleTitle, onP
             </div>
             <p className="text-sm">{chartFacts(c)}</p>
             {c.stepArtist && <p className="text-sm text-muted-foreground">Step artist: {c.stepArtist}</p>}
+            {c.song.isNew && <p className="text-sm font-semibold">{newInLabel(patch)}</p>}
             {c.prevLevel !== undefined && (
               <p className="text-sm text-muted-foreground">
                 Was {MODE_SHORT[c.mode]}

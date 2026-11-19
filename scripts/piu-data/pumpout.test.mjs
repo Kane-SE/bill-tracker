@@ -65,12 +65,18 @@ INSERT INTO songCard VALUES (1,10,'/img/card/B28.png',1),(2,10,'/img/card/20.png
 INSERT INTO songCardVersion VALUES (1,1,1),(2,1,1),(3,2,1),(3,3,2),(4,2,1),(5,2,1),(5,3,2);
 `
 
+let SQL
+let db
 let read
+const makeDb = (extra = '') => {
+  const d = new SQL.Database()
+  d.run(DDL)
+  d.run(DATA + extra)
+  return d
+}
 beforeAll(async () => {
-  const SQL = await initSqlJs()
-  const db = new SQL.Database()
-  db.run(DDL)
-  db.run(DATA)
+  SQL = await initSqlJs()
+  db = makeDb()
   read = readPumpout(db, { version: 3, prevVersion: 2 })
 })
 
@@ -106,6 +112,39 @@ describe('readPumpout', () => {
   })
   it('dates a song that only ever arrived by CROSS from its first appearance', () => {
     expect(read.songs.get(13).series).toBe('PHOENIX')
+  })
+})
+
+describe('new songs', () => {
+  it('marks a song new when it is live in the version but not in the one before it', () => {
+    expect(read.songs.get(12).isNew).toBe(true)
+    expect(read.songs.get(10).isNew).toBe(false)
+    expect(read.songs.get(13).isNew).toBe(false)
+  })
+  it('takes the nearest ancestor as the version before', () => {
+    const v2 = readPumpout(db, { version: 2, prevVersion: 1 })
+    expect(v2.songs.get(13).isNew).toBe(true)
+    expect(v2.songs.get(10).isNew).toBe(false)
+  })
+  it('marks nothing new in a version with no ancestor', () => {
+    const v1 = readPumpout(db, { version: 1, prevVersion: 1 })
+    expect(v1.songs.size).toBeGreaterThan(0)
+    expect([...v1.songs.values()].every((s) => s.isNew === false)).toBe(true)
+  })
+  it('marks a song revived in this version as new', () => {
+    // song 14: inserted at v1, deleted at v2, revived (op 5) at v3; one live S12 chart
+    const revived = readPumpout(
+      makeDb(`
+        INSERT INTO song VALUES (14,2,'Back Again');
+        INSERT INTO songVersion VALUES (14,1,1),(14,2,2),(14,3,5);
+        INSERT INTO chart VALUES (109,14);
+        INSERT INTO chartVersion VALUES (109,1,1);
+        INSERT INTO chartRating VALUES (11,109,1,12);
+        INSERT INTO chartRatingVersion VALUES (11,109,1);
+      `),
+      { version: 3, prevVersion: 2 },
+    )
+    expect(revived.songs.get(14).isNew).toBe(true)
   })
 })
 

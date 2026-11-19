@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseCsv, readPiuScores } from './piuscores.mjs'
+import { hasSkillData, parseCsv, readPiuScores } from './piuscores.mjs'
 
 const HEADER =
   'ChartId,Song,Type,Level,SongType,Badges,pc:badge_fraction:run,pc:badge_fraction:twist_90,pc:badge_fraction:mid6_doubles'
@@ -51,5 +51,15 @@ describe('readPiuScores', () => {
   })
   it('refuses an export without SkillEmphasis coverage', () => {
     expect(() => readPiuScores('Song,Type,Level,SongType,Badges\nx,S,2,Arcade,')).toThrow(/coverage/)
+  })
+})
+
+describe('hasSkillData', () => {
+  it('is false for a row whose skill columns are all empty (not analysed yet)', () => {
+    const [blank, analysed] = readPiuScores(
+      [HEADER, 'g1,NEMONEMO,S,21,Arcade,,,,', 'g2,Conflict,D,25,Arcade,Runs,0.5,,'].join('\n'),
+    )
+    expect(hasSkillData(blank)).toBe(false)
+    expect(hasSkillData(analysed)).toBe(true)
   })
 })

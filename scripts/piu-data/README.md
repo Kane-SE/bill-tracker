@@ -15,11 +15,12 @@ Inputs (`sources.mjs`):
    ```
 2. Run `npm run piu:data` and read the report:
    - new, removed and re-rated charts;
+   - new songs: the ones the app marks NEW. The build finds them by comparing with the version the patch came from, so there is nothing to set; the previous patch's songs lose the mark;
    - unmatched PIU Scores rows;
-   - per-skill threshold stats;
+   - per-skill threshold stats, and how many S/D charts have no skill data yet (their sheets say so instead of 0 % bars);
    - warnings.
 3. If the patch notes change a title ladder, update `ladders.json` with the new pumpout chart IDs and cite the source.
-4. Run `npm test`. The data tests check the committed file.
+4. Run `npm test`. The data tests check the committed file; update the new-songs test in `src/apps/pump/data/catalog.test.ts` to the patch's new songs.
 5. Commit `charts.json` (plus `sources.mjs` and `ladders.json`) on a branch and open a PR.
 
 If any check fails, the build stops and leaves the committed `charts.json` as it was.
