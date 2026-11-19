@@ -5,7 +5,7 @@ import { hasFilterParams, mergeLiveFilters, paramsAfterClose, parseFilters, pars
 const p = (s: string) => new URLSearchParams(s)
 const full: Filters = {
   modes: ['S', 'D'], level: [18, 20], skills: ['twist', 'bracket'], skillsAll: true, types: ['SHORTCUT'],
-  series: ['FIESTA~FIESTA 2', 'XX'], titleOnly: true, steamLink: true, hidePremium: true, q: 'vook',
+  series: ['FIESTA~FIESTA 2', 'XX'], titleOnly: true, steamLink: true, hidePremium: true, q: 'vook', sort: 'most',
 }
 
 describe('serializeFilters / parseFilters', () => {
@@ -63,5 +63,24 @@ describe('params helpers', () => {
   })
   it('closing a linked chart or About sheet drops only the sheet params', () => {
     expect(Object.fromEntries(withoutSheets(p('m=D&lv=21&q=love&c=206&a=1&f=1')))).toEqual({ m: 'D', lv: '21', q: 'love' })
+  })
+})
+
+describe('so (sort order)', () => {
+  it('round-trips least and az, and omits most', () => {
+    expect(parseFilters(p('sk=run&so=least')).sort).toBe('least')
+    expect(parseFilters(p('sk=run&so=az')).sort).toBe('az')
+    expect(serializeFilters({ ...defaultFilters, skills: ['run'], sort: 'least' })).toBe('sk=run&so=least')
+    expect(serializeFilters({ ...defaultFilters, skills: ['run'], sort: 'az', q: 'bee' })).toBe('sk=run&so=az&q=bee')
+    expect(serializeFilters({ ...defaultFilters, skills: ['run'], sort: 'most' })).toBe('sk=run')
+  })
+  it('reads garbage or a missing so as most', () => {
+    expect(parseFilters(p('sk=run&so=banana')).sort).toBe('most')
+    expect(parseFilters(p('sk=run')).sort).toBe('most')
+  })
+  it('is restored with the last filters and replaced by withFilters', () => {
+    expect(mergeLiveFilters(p(''), 'sk=run&so=least').get('so')).toBe('least')
+    expect(withFilters(p('so=az&tab=titles'), { ...defaultFilters, sort: 'least' }).get('so')).toBe('least')
+    expect(withFilters(p('so=az'), defaultFilters).has('so')).toBe(false)
   })
 })

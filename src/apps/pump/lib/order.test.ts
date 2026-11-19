@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { makeChart, makeSong } from './__fixtures__/charts'
-import { activeHeader, rowIndexOf, rowSkills, songCharts, sortCharts, toGridRows, toRows } from './order'
+import { activeHeader, rankCharts, rowIndexOf, rowSkills, songCharts, sortCharts, toGridRows, toRows } from './order'
 
 const a = makeSong({ title: 'apple' })
 const b = makeSong({ title: 'Banana' })
@@ -14,6 +14,32 @@ describe('sortCharts', () => {
       makeChart({ id: 4, song: b, level: 19, mode: 'D' }),
     ]
     expect(sortCharts(cs).map((c) => c.id)).toEqual([4, 3, 2, 1])
+  })
+})
+
+describe('rankCharts', () => {
+  const cov = (run: number) => ({ half: 0, run, twist: 0, bracket: 0, drill: 0 })
+  const sorted = sortCharts([
+    makeChart({ id: 1, song: makeSong({ title: 'A' }), level: 18, coverage: cov(33) }),
+    makeChart({ id: 2, song: makeSong({ title: 'B' }), level: 18, coverage: cov(67) }),
+    makeChart({ id: 3, song: makeSong({ title: 'C' }), level: 18, coverage: cov(33) }),
+    makeChart({ id: 4, song: makeSong({ title: 'D' }), level: 18 }),
+    makeChart({ id: 5, song: makeSong({ title: 'E' }), level: 19, coverage: cov(90) }),
+  ])
+  const ids = (cs: readonly { id: number }[]) => cs.map((c) => c.id)
+  it('ranks most first inside each level, ties in title order, no-% last', () => {
+    expect(ids(rankCharts(sorted, 'run', 'most'))).toEqual([2, 1, 3, 4, 5])
+  })
+  it('ranks least first without lifting no-% charts to the top', () => {
+    expect(ids(rankCharts(sorted, 'run', 'least'))).toEqual([1, 3, 2, 4, 5])
+  })
+  it('returns the input itself for A-Z', () => {
+    expect(rankCharts(sorted, 'run', 'az')).toBe(sorted)
+  })
+  it('does not mutate the input', () => {
+    const before = ids(sorted)
+    rankCharts(sorted, 'run', 'most')
+    expect(ids(sorted)).toEqual(before)
   })
 })
 

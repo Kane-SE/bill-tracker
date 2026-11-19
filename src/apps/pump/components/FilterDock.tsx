@@ -1,8 +1,8 @@
 import { Fragment, useEffect, useState } from 'react'
-import { Search, SlidersHorizontal, X } from 'lucide-react'
+import { ArrowDownAZ, ArrowDownWideNarrow, ArrowUpNarrowWide, Search, SlidersHorizontal, X } from 'lucide-react'
 import type { Mode } from '@/apps/pump/data/types'
-import { defaultFilters, toggleValue, type Filters } from '@/apps/pump/lib/filters'
-import { levelLabel, MODE_SHORT } from '@/apps/pump/lib/labels'
+import { defaultFilters, rankSkill, toggleValue, type Filters } from '@/apps/pump/lib/filters'
+import { levelLabel, MODE_SHORT, nextSort, sortAriaLabel, sortLabel } from '@/apps/pump/lib/labels'
 import { useKeyboardInset } from '@/apps/pump/hooks/useKeyboardInset'
 import { Chip } from '@/apps/pump/components/Chip'
 import { BottomBar } from '@/shared/components/BottomBar'
@@ -22,6 +22,8 @@ export function FilterDock({ filters, activeCount, onChange, onOpenFilters }: Fi
   const [text, setText] = useState(filters.q)
   useEffect(() => setText(filters.q), [filters.q])
   const modes: Mode[] = filters.steamLink ? ['S', 'D', 'HDB'] : ['S', 'D']
+  const ranked = rankSkill(filters)
+  const SortIcon = { most: ArrowDownWideNarrow, least: ArrowUpNarrowWide, az: ArrowDownAZ }[filters.sort]
   const anyActive = activeCount > 0 || filters.q.trim() !== ''
 
   return (
@@ -54,6 +56,12 @@ export function FilterDock({ filters, activeCount, onChange, onOpenFilters }: Fi
             </Chip>
           </Fragment>
         ))}
+        {ranked && (
+          <Chip label={sortAriaLabel(filters.sort, ranked)} onClick={() => onChange({ ...filters, sort: nextSort(filters.sort) })}>
+            <SortIcon className="h-3.5 w-3.5" aria-hidden />
+            {sortLabel(filters.sort, ranked)}
+          </Chip>
+        )}
         {anyActive && <Chip onClick={() => onChange({ ...defaultFilters })}>Clear</Chip>}
       </div>
       <div className="mt-2 flex gap-2">

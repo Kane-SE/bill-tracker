@@ -1,7 +1,7 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef } from 'react'
 import { getCatalog } from '@/apps/pump/data/catalog'
-import { applyFilters, defaultFilters, facetCounts, removalSuggestions } from '@/apps/pump/lib/filters'
-import { songCharts, sortCharts, toRows } from '@/apps/pump/lib/order'
+import { applyFilters, defaultFilters, facetCounts, rankSkill, removalSuggestions } from '@/apps/pump/lib/filters'
+import { rankCharts, songCharts, sortCharts, toRows } from '@/apps/pump/lib/order'
 import { activeFacetCount, summarize } from '@/apps/pump/lib/summary'
 import { earnedCount, trackViews } from '@/apps/pump/lib/titles'
 import { parseFilters, serializeFilters } from '@/apps/pump/lib/url-state'
@@ -37,6 +37,9 @@ export default function PumpHome() {
   const deferred = useDeferredValue(filters)
   const results = useMemo(() => applyFilters(sorted, deferred), [sorted, deferred])
 
+  const ranked = rankSkill(deferred)
+  const ordered = useMemo(() => (ranked ? rankCharts(results, ranked, deferred.sort) : results), [results, ranked, deferred.sort])
+
   // New filters show a new list: start it from the top. Opening or closing a
   // sheet leaves the filters (and so the scroll position) alone.
   const listKey = serializeFilters(deferred)
@@ -47,7 +50,7 @@ export default function PumpHome() {
     window.scrollTo({ top: 0 })
   }, [listKey])
 
-  const rows = useMemo(() => toRows(results), [results])
+  const rows = useMemo(() => toRows(ordered), [ordered])
   const songCount = useMemo(() => new Set(results.map((c) => c.song)).size, [results])
   const suggestions = useMemo(() => (results.length === 0 ? removalSuggestions(sorted, deferred) : []), [results, sorted, deferred])
 
@@ -92,7 +95,7 @@ export default function PumpHome() {
       {tab === 'charts' ? (
         <>
           {results.length > 0 ? (
-            <ChartList rows={rows} view={view} selectedSkills={deferred.skills} earned={earned} onOpen={onOpen} />
+            <ChartList rows={rows} view={view} selectedSkills={deferred.skills} earned={earned} rankedSkill={ranked} onOpen={onOpen} />
           ) : (
             <EmptyResults suggestions={suggestions} onApply={setFilters} onClear={() => setFilters({ ...defaultFilters })} />
           )}

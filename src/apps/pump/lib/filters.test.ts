@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { makeChart, makeSong } from './__fixtures__/charts'
-import { applyFilters, defaultFilters, facetCounts, removalSuggestions, toggleValue, withSteamLink, type Filters } from './filters'
+import { applyFilters, defaultFilters, facetCounts, rankSkill, removalSuggestions, toggleValue, withSteamLink, type Filters } from './filters'
 
 const bee = makeSong({ title: 'Bee', artist: 'BanYa', series: 'NX~NXA' })
 const conflict = makeSong({ title: 'Conflict', artist: 'Siromaru + Cranky', series: 'XX', type: 'ARCADE' })
@@ -70,5 +70,17 @@ describe('helpers', () => {
   it('drops the HD mode when Steam Link is turned off', () => {
     expect(withSteamLink(f({ steamLink: true, modes: ['D', 'HDB'] }), false)).toMatchObject({ steamLink: false, modes: ['D'] })
     expect(withSteamLink(f({ modes: ['D'] }), true)).toMatchObject({ steamLink: true, modes: ['D'] })
+  })
+})
+
+describe('rankSkill', () => {
+  it('returns the one selected computed skill', () => {
+    expect(rankSkill(f({ skills: ['run'] }))).toBe('run')
+    expect(rankSkill(f({ skills: ['run'], skillsAll: true }))).toBe('run')
+  })
+  it('is null for gimmick, two skills or none', () => {
+    expect(rankSkill(f({ skills: ['gimmick'] }))).toBeNull()
+    expect(rankSkill(f({ skills: ['run', 'twist'] }))).toBeNull()
+    expect(rankSkill(f({ skills: [] }))).toBeNull()
   })
 })
