@@ -1,5 +1,6 @@
 import type { Chart, ComputedSkill, SkillId } from '@/apps/pump/data/types'
 import { LevelBadge } from '@/apps/pump/components/LevelBadge'
+import { NewPill } from '@/apps/pump/components/NewPill'
 import { RowIcons } from '@/apps/pump/components/ChartRow'
 import { SongArt } from '@/apps/pump/components/SongArt'
 import { cn } from '@/shared/lib/utils'
@@ -22,10 +23,15 @@ export function ChartTile({ chart, selectedSkills, earned, rankedSkill, onOpen }
     <button
       type="button"
       onClick={() => onOpen(chart.id)}
-      className="flex min-w-0 flex-col overflow-hidden rounded-lg border border-border bg-card text-left active:bg-secondary/60"
+      className={cn(
+        'flex min-w-0 flex-col overflow-hidden rounded-lg border bg-card text-left active:bg-secondary/60',
+        // new in this patch: gold, and the ring adds a second pixel without changing the tile's size
+        chart.song.isNew ? 'border-new ring-1 ring-new' : 'border-border',
+      )}
     >
       <span className="relative">
         <SongArt song={chart.song} className="h-[96px] w-full rounded-none ring-0" />
+        {chart.song.isNew && <NewPill className="absolute right-1 top-1" />}
         <LevelBadge mode={chart.mode} level={chart.level} className={cn('absolute bottom-1 left-1', chart.mode !== 'D' && 'bg-background/85')} />
       </span>
       <span className="min-w-0 px-2 py-1">

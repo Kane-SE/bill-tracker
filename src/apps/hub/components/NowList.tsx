@@ -36,19 +36,35 @@ export function NowList({ cards, today, error }: Props) {
 
 function NowRow({ card, today }: { card: WipCard; today: Date }) {
   const stale = staleDays(card, today)
-  const waiting = card.waitingOnMe ? (waitingDays(card, today) ?? 0) : null
+  const forYou = card.forYou
+  // A note with For you lines speaks for itself; the "waiting" age only reads the long Waiting on me text.
+  const waiting = !forYou && card.waitingOnMe ? (waitingDays(card, today) ?? 0) : null
+  const needsYou = forYou ? forYou.next !== null : waiting !== null
+  const headline = forYou ? forYou.next : (card.waitingOnMe ?? card.nextAction)
   const worked = [card.machine, card.lastWorked && formatDay(card.lastWorked, today)].filter(Boolean).join(' · ')
   return (
     <li>
       <Link to={projectPath(card.project)} className="flex items-start gap-3 px-4 py-3 hover:bg-foreground/5">
-        <span className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-lg', waiting !== null ? 'bg-warning/15 text-warning' : 'bg-muted text-muted-foreground')}>
-          {waiting !== null ? <Hand className="h-4 w-4" /> : <Folder className="h-4 w-4" />}
+        <span className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-lg', needsYou ? 'bg-warning/15 text-warning' : 'bg-muted text-muted-foreground')}>
+          {needsYou ? <Hand className="h-4 w-4" /> : <Folder className="h-4 w-4" />}
         </span>
         <span className="min-w-0 flex-1">
           <span className="block break-words text-xs text-muted-foreground">{card.project}</span>
-          <span className={cn('line-clamp-2 text-pretty text-sm font-medium', !card.waitingOnMe && !card.nextAction && 'font-normal italic text-muted-foreground')}>
-            {card.waitingOnMe ?? card.nextAction ?? 'No next action yet'}
+          <span className={cn('line-clamp-2 text-pretty text-sm font-medium', !headline && 'font-normal italic text-muted-foreground')}>
+            {headline ?? 'No next action yet'}
           </span>
+          {forYou && forYou.then.length > 0 && (
+            <span className="mt-0.5 line-clamp-2 text-pretty text-xs text-muted-foreground">
+              <span className="font-medium text-foreground/70">Then </span>
+              {forYou.then.join(' · ')}
+            </span>
+          )}
+          {forYou?.blocked && (
+            <span className="mt-0.5 line-clamp-2 text-pretty text-xs text-muted-foreground">
+              <span className="font-medium text-foreground/70">Blocked </span>
+              {forYou.blocked}
+            </span>
+          )}
           <span className="mt-0.5 block text-xs text-muted-foreground">
             {waiting !== null && (
               <>

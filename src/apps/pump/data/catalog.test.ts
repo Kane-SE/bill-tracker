@@ -33,6 +33,12 @@ describe('decodeCatalog', () => {
     expect(cat.charts.length).toBe(2)
     expect(decodeCatalog({ ...file, charts: [{ id: 99, s: 1, m: 'S', lv: 5, sk: 0 }] }).byId.get(99)!.song.image).toBeUndefined()
   })
+  it('decodes n: 1 into Song.isNew and rejects any other n', () => {
+    expect(cat.byId.get(10)!.song.isNew).toBe(false)
+    const fresh = chartsFileSchema.parse({ ...file, songs: [{ ...file.songs[0], n: 1 }, file.songs[1]] })
+    expect(decodeCatalog(fresh).byId.get(10)!.song.isNew).toBe(true)
+    expect(chartsFileSchema.safeParse({ ...file, songs: [{ ...file.songs[0], n: 2 }] }).success).toBe(false)
+  })
   it('flags Steam Link charts and leaves them without skill data', () => {
     expect(cat.byId.get(11)).toMatchObject({ steamLink: true, premium: false, skills: [], badges: [], coverage: undefined })
   })
@@ -72,5 +78,16 @@ describe('committed charts.json', () => {
   })
   it('loads the same data through getCatalog', () => {
     expect(getCatalog().charts).toHaveLength(file.charts.length)
+  })
+  it('marks the six PHOENIX 2 v1.02.0 songs new, with every chart of each', () => {
+    const fresh = [...new Set(cat.charts.filter((c) => c.song.isNew).map((c) => c.song.title))].sort()
+    expect(fresh).toEqual(['Assault TAXI', 'Falling Stars', 'Mephitz', 'NEMONEMO', 'PHYSALIS', 'Until Defined'])
+    const ofFresh = cat.charts.filter((c) => fresh.includes(c.song.title))
+    expect(ofFresh.length).toBe(50)
+    expect(ofFresh.every((c) => c.song.isNew)).toBe(true)
+  })
+  it('shows no skill bars, rather than five zeros, for charts PIU Scores has not analysed yet', () => {
+    const fresh = cat.charts.filter((c) => c.song.isNew)
+    expect(fresh.every((c) => c.coverage === undefined && c.skills.length === 0)).toBe(true)
   })
 })

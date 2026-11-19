@@ -14,6 +14,7 @@ export function decodeCatalog(file: ChartsFile): Catalog {
     series: s.se,
     bpm: s.bpm,
     image: s.i ? file.meta.imgHosts[s.i[0]] + s.i[1] : undefined,
+    isNew: s.n === 1,
     search: fold([s.t, s.k ?? '', s.a].join(' ')),
   }))
   const titleIds = new Map<number, string[]>()

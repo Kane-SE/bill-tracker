@@ -20,6 +20,20 @@ export type Series = (typeof SERIES)[number]
 export const TRACKS = ['TWIST S', 'TWIST D', 'RUN S', 'RUN D', 'DRILL', 'GIMMICK', 'SLOW', 'HALF', 'BRACKET'] as const
 export type Track = (typeof TRACKS)[number]
 
+/** Mixes a chart video can come from; videos.json stores one as its index here. */
+export const VIDEO_MIXES = ['PHOENIX 2', 'PHOENIX', 'RISE', 'XX'] as const
+export type VideoMix = (typeof VIDEO_MIXES)[number]
+
+/** A NEVSISTER YouTube video of one chart (videos.json). */
+export interface ChartVideo {
+  /** YouTube video id */
+  id: string
+  /** the mix it was filmed in; XX is older footage of a chart PHOENIX kept */
+  mix: VideoMix
+  /** this chart's half of a two-singles video (lower level on the left) */
+  side?: 'left' | 'right'
+}
+
 export interface Song {
   title: string
   titleKo?: string
@@ -30,6 +44,8 @@ export interface Song {
   bpm?: [number, number]
   /** full URL of the song jacket art */
   image?: string
+  /** first playable in this data's patch (meta.patch); shown with a NEW mark */
+  isNew: boolean
   /** fold(title + titleKo + artist), for search */
   search: string
 }

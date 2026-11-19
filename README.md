@@ -14,16 +14,22 @@ apps get added.
 A second mini-app: your NOW notes, ideas and projects from the private `personal-hub` repo, with
 "New idea", "Add note" and "Move stage" saved back as commits. Sign-in uses a GitHub App and one
 Vercel function (`api/github/token.ts`). Setup: [docs/hub-setup.md](docs/hub-setup.md).
-Design: [docs/features/2026-10-hub-dashboard/spec.md](docs/features/2026-10-hub-dashboard/spec.md).
+Design: [docs/features/2026-10-hub-dashboard/spec.md](docs/features/2026-10-hub-dashboard/spec.md);
+each note's short "For you" lines come first: [docs/features/2026-11-hub-for-you/spec.md](docs/features/2026-11-hub-for-you/spec.md).
 
 ## Pump
 
 A third mini-app: every PHOENIX 2 Pump It Up chart, filtered one-handed at the arcade by mode,
 level range, skills (half, run, twist, bracket, drill, gimmick), song type, version and search, plus
 the nine skill-title tracks with earned ticks. Works offline; the chart data is bundled.
+A chart's sheet links to NEVSISTER's YouTube video of that chart (98 % of singles, 99 % of doubles).
+Songs added in the latest patch get a gold border and a NEW tag until the next data update.
 Data: `npm run piu:data` rebuilds `src/apps/pump/data/charts.json` from pumpout-db-updates and the
-PIU Scores export ([scripts/piu-data/README.md](scripts/piu-data/README.md)).
-Design: [docs/features/2026-10-piu-chart-filter/spec.md](docs/features/2026-10-piu-chart-filter/spec.md).
+PIU Scores export, then `npm run piu:videos` rebuilds `src/apps/pump/data/videos.json`
+([scripts/piu-data/README.md](scripts/piu-data/README.md)).
+Design: [docs/features/2026-10-piu-chart-filter/spec.md](docs/features/2026-10-piu-chart-filter/spec.md);
+videos: [docs/features/2026-11-pump-chart-videos/spec.md](docs/features/2026-11-pump-chart-videos/spec.md);
+NEW mark: [docs/features/2026-11-pump-new-songs/spec.md](docs/features/2026-11-pump-new-songs/spec.md).
 
 ## Features
 
@@ -52,6 +58,15 @@ Design: [docs/features/2026-10-piu-chart-filter/spec.md](docs/features/2026-10-p
   [spec](docs/features/2026-09-per-line-payments/spec.md)).
 - **Mark a Nomnom done** — settled Nomnoms move to an Archive (still viewable /
   restorable).
+- **Copy for Excel** — a button on Home's "Current balances" card asks **who
+  you are** (remembered on this device) and copies who owes you, as
+  tab-separated text that pastes straight into Excel: a *Who owes me · Total*
+  table, a blank row, then one row per unpaid Nomnom (*Who owes me · Date ·
+  Nomnom · Amount*). Same numbers as Home's balances; plain integers and
+  `YYYY-MM-DD` dates so Excel reads them in any locale (see
+  [spec](docs/features/2026-11-split-excel-copy/spec.md)).
+- **Bill photos** — attach a photo of the bill to a Nomnom and tag its lines to
+  people. Photos stay on this device and are not included in backups.
 - **Backup** — export/import all app data *and* your appearance settings as one
   JSON file (backup v2, see below) to move between devices.
 - **Installable PWA** — add to home screen; works offline; light & dark themes,
@@ -176,13 +191,14 @@ src/
     ui/                     shadcn primitives (button, input, dialog, select, …)
     components/             PageHeader, HeaderIconLink, EmptyState, ConfirmDialog,
                              MoneyInput, Combobox
-    lib/                    utils.ts, theme.ts, palette.ts (color derivation), file.ts
+    lib/                    utils.ts, theme.ts, palette.ts (color derivation), file.ts, clipboard.ts
   apps/split/
     types.ts                Night, Item, schemas
     routes.tsx               <Route> subtree mounted under /split
     store/useSplitStore.ts   nights, knownNames, promotedNames (Zustand + persist)
-    lib/                     calc.ts (pure debt math), format.ts, names.ts
-    components/              BalanceList, DebtLineList, NightCard, ItemRow, ItemDialog, ParticipantEditor
+    store/useMe.ts           "who you are" for Copy for Excel (persisted, this device only)
+    lib/                     calc.ts (pure debt math), excel.ts (Copy for Excel sheet), format.ts, names.ts
+    components/              BalanceList, DebtLineList, NightCard, ItemRow, ItemDialog, ParticipantEditor, ExcelCopySheet
     pages/                   SplitHome, NewNomnom, NightDetail, Archive, SplitNames
 ```
 
@@ -202,7 +218,8 @@ src/
 Everything is stored locally under the `bill-splitter-store` key in
 `localStorage` (unchanged since before the launcher refactor, so existing data
 survives). Clearing browser data erases it — use **Settings → Backup → Export**
-to keep a copy.
+to keep a copy. The name you pick in Copy for Excel lives under `split-me` and
+is not part of backups.
 
 ### Backup v2
 

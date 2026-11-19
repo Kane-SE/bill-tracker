@@ -40,6 +40,11 @@ export function titleName(t: { track: string; lv: number }): string {
   return `${t.track} Lv.${t.lv}`
 }
 
+/** Chart sheet line for a song new in the data's patch: "New in v1.02.0". */
+export function newInLabel(patch: string): string {
+  return `New in v${patch}`
+}
+
 /** "1 chart", "4,448 charts". */
 export function countLabel(n: number, noun: string): string {
   return `${n.toLocaleString('en')} ${noun}${n === 1 ? '' : 's'}`

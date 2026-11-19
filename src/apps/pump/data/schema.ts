@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { MODES, SERIES, SONG_TYPES, TRACKS } from '@/apps/pump/data/types'
+import { MODES, SERIES, SONG_TYPES, TRACKS, VIDEO_MIXES } from '@/apps/pump/data/types'
 
 /**
  * The compact charts.json written by scripts/piu-data/build.mjs. Short keys
@@ -25,6 +25,7 @@ export const chartsFileSchema = z.object({
       se: z.enum(SERIES), // series (debut group)
       bpm: z.tuple([z.number(), z.number()]).optional(),
       i: z.tuple([z.number().int().nonnegative(), z.string()]).optional(), // song art: [host index, file]
+      n: z.literal(1).optional(), // new in this patch
     }),
   ),
   charts: z.array(
@@ -48,3 +49,21 @@ export const chartsFileSchema = z.object({
 })
 
 export type ChartsFile = z.infer<typeof chartsFileSchema>
+
+const youtubeId = z.string().regex(/^[\w-]{11}$/)
+const mixIndex = z.number().int().min(0).max(VIDEO_MIXES.length - 1)
+
+/**
+ * The videos.json written by scripts/piu-data/videos.mjs: chart id →
+ * [YouTube id, index into `mixes`] plus 'L' or 'R' for a two-singles video.
+ */
+export const videosFileSchema = z.object({
+  meta: z.object({ builtAt: z.string(), channel: z.string(), url: z.string(), listed: z.number().int().nonnegative() }),
+  mixes: z.tuple([z.literal(VIDEO_MIXES[0]), z.literal(VIDEO_MIXES[1]), z.literal(VIDEO_MIXES[2]), z.literal(VIDEO_MIXES[3])]),
+  v: z.record(
+    z.string().regex(/^\d+$/),
+    z.union([z.tuple([youtubeId, mixIndex]), z.tuple([youtubeId, mixIndex, z.enum(['L', 'R'])])]),
+  ),
+})
+
+export type VideosFile = z.infer<typeof videosFileSchema>

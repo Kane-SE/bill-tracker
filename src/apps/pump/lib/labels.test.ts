@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Chart } from '@/apps/pump/data/types'
-import { chartFacts, chartLine2, countLabel, levelLabel, modesLabel, nextSort, songInitials, sortAriaLabel, sortLabel, titleName } from './labels'
+import { chartFacts, chartLine2, countLabel, levelLabel, modesLabel, newInLabel, nextSort, songInitials, sortAriaLabel, sortLabel, titleName } from './labels'
 
 const chart = {
   song: { title: 'Gargoyle', artist: 'SHK', type: 'FULLSONG', channel: 'ORIGINAL', series: 'XX', bpm: [150, 150], search: '' },
@@ -56,5 +56,11 @@ describe('sort labels', () => {
     expect(sortAriaLabel('most', 'run')).toBe('Order: most run first. Tap for least first')
     expect(sortAriaLabel('least', 'twist')).toBe('Order: least twist first. Tap for A to Z')
     expect(sortAriaLabel('az', 'run')).toBe('Order: A to Z. Tap for most run first')
+  })
+})
+
+describe('newInLabel', () => {
+  it('names the patch a new song arrived in', () => {
+    expect(newInLabel('1.02.0')).toBe('New in v1.02.0')
   })
 })

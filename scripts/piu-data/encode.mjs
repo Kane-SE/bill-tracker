@@ -1,4 +1,5 @@
 import { COMPUTED_SKILLS, SKILLS, skillScore } from './skills.mjs'
+import { hasSkillData } from './piuscores.mjs'
 
 const MODE_SHORT = { S: 'S', D: 'D', HDB: 'HD' }
 
@@ -22,7 +23,7 @@ export function encodeCatalog({ songs, charts, byChart, skillsById, gimmickFrom,
     const out = { id: c.id, s: songIndex.get(c.songId), m: c.mode, lv }
     if (c.prevLevel != null) out.p = c.prevLevel
     out.sk = SKILLS.reduce((mask, s, i) => (skills.has(s) ? mask | (1 << i) : mask), 0)
-    if (row) {
+    if (row && hasSkillData(row)) {
       out.cov = COMPUTED_SKILLS.map((s) => Math.round(skillScore(row.coverage, s) * 100))
       if (row.badges.length) out.b = row.badges.map((b) => badgeNames.indexOf(b))
     }
@@ -45,6 +46,7 @@ export function encodeCatalog({ songs, charts, byChart, skillsById, gimmickFrom,
     if (s.bpm) out.bpm = s.bpm
     if (s.card) out.i = [s.card.host, s.card.file]
     else warnings.push(`no song art: ${s.title}`)
+    if (s.isNew) out.n = 1
     return out
   })
 

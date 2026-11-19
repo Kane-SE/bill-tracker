@@ -1,7 +1,9 @@
-import { useRef } from 'react'
-import { Trophy } from 'lucide-react'
+import { Fragment, useRef } from 'react'
+import { Play, Trophy } from 'lucide-react'
 import { COMPUTED_SKILLS, type Chart, type ComputedSkill, type Title } from '@/apps/pump/data/types'
-import { chartFacts, MODE_SHORT, titleName } from '@/apps/pump/lib/labels'
+import { useChartVideo } from '@/apps/pump/hooks/useChartVideo'
+import { chartFacts, MODE_SHORT, newInLabel, titleName } from '@/apps/pump/lib/labels'
+import { videoCaption, videoUrl } from '@/apps/pump/lib/video'
 import { EarnedToggle } from '@/apps/pump/components/EarnedToggle'
 import { LevelBadge } from '@/apps/pump/components/LevelBadge'
 import { SheetGrabber } from '@/apps/pump/components/SheetGrabber'
@@ -26,6 +28,8 @@ interface ChartSheetProps {
   /** every chart of the same song, this one included (songCharts) */
   siblings: Chart[]
   titles: Title[]
+  /** the data's patch (meta.patch), for "New in v1.02.0" */
+  patch: string
   earned: ReadonlySet<string>
   onToggleTitle(id: string): void
   /** show another chart of the same song in this sheet */
@@ -34,13 +38,14 @@ interface ChartSheetProps {
 }
 
 /** One chart's details, over the list (which keeps its scroll position). */
-export function ChartSheet({ chart, siblings, titles, earned, onToggleTitle, onPick, onClose }: ChartSheetProps) {
+export function ChartSheet({ chart, siblings, titles, patch, earned, onToggleTitle, onPick, onClose }: ChartSheetProps) {
   // Keep the last chart on screen while the sheet animates closed.
   const last = useRef<Chart | null>(null)
   if (chart) last.current = chart
   const c = chart ?? last.current
   const titleRef = useRef<HTMLHeadingElement>(null)
   const unlocks = c ? titles.filter((t) => c.titleIds.includes(t.id)) : []
+  const video = useChartVideo(c?.id)
 
   return (
     <Dialog open={chart !== null} onOpenChange={(o) => !o && onClose()}>
@@ -54,7 +59,39 @@ export function ChartSheet({ chart, siblings, titles, earned, onToggleTitle, onP
         <SheetGrabber onDismiss={onClose} />
         {c && (
           <>
-            <SongArt key={c.song.title} song={c.song} eager className="aspect-video max-h-[28vh] w-full rounded-lg" />
+            {/* The art keeps its place in the tree whether or not there's a video, so
+                the image isn't remounted when the videos load or a sibling has none. */}
+            <div className="relative">
+              <SongArt key={c.song.title} song={c.song} eager className="aspect-video max-h-[28vh] w-full rounded-lg" />
+              {video && (
+                // a second tap target for the caption link below, so it's hidden from screen readers
+                <a
+                  href={videoUrl(video)}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-hidden
+                  tabIndex={-1}
+                  className="absolute inset-0 grid place-items-center rounded-lg"
+                >
+                  <span className="grid h-12 w-12 place-items-center rounded-full bg-black/60 text-white">
+                    <Play className="ml-0.5 h-6 w-6 fill-current" />
+                  </span>
+                </a>
+              )}
+            </div>
+            {video && (
+              <a href={videoUrl(video)} target="_blank" rel="noreferrer" className="-mt-1.5 text-sm text-primary">
+                {/* wrap between parts only, so "left side" never splits */}
+                {videoCaption(c, video)
+                  .split(' · ')
+                  .map((part, i) => (
+                    <Fragment key={part}>
+                      {i > 0 && ' · '}
+                      <span className="whitespace-nowrap">{part}</span>
+                    </Fragment>
+                  ))}
+              </a>
+            )}
             <div className="flex items-center gap-3 pr-10">
               <LevelBadge mode={c.mode} level={c.level} />
               <div className="min-w-0">
@@ -67,6 +104,7 @@ export function ChartSheet({ chart, siblings, titles, earned, onToggleTitle, onP
             </div>
             <p className="text-sm">{chartFacts(c)}</p>
             {c.stepArtist && <p className="text-sm text-muted-foreground">Step artist: {c.stepArtist}</p>}
+            {c.song.isNew && <p className="text-sm font-semibold">{newInLabel(patch)}</p>}
             {c.prevLevel !== undefined && (
               <p className="text-sm text-muted-foreground">
                 Was {MODE_SHORT[c.mode]}

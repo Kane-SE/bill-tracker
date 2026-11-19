@@ -44,6 +44,73 @@ describe('line payments', () => {
   })
 })
 
+describe('photoId', () => {
+  it('updateItem keeps photoId when the patch has none', () => {
+    const id = useSplitStore.getState().addNight()
+    const shares = [{ name: 'Huy', amount: 180000 }]
+    useSplitStore.getState().addItem(id, { label: 'Bò', payer: 'Huy', amount: 180000, shares, photoId: 'ph1' })
+    const itemId = useSplitStore.getState().nights.find((x) => x.id === id)!.items[0].id
+    useSplitStore.getState().updateItem(id, itemId, { label: 'Bò Mỹ', payer: 'Huy', amount: 180000, shares })
+    const item = useSplitStore.getState().nights.find((x) => x.id === id)!.items[0]
+    expect(item.photoId).toBe('ph1')
+    expect(item.label).toBe('Bò Mỹ')
+  })
+})
+
+describe('bill photo actions', () => {
+  const line = (label: string, photoId?: string) => ({
+    label, payer: 'Minh', amount: 100000, shares: [{ name: 'Minh', amount: 100000 }], photoId,
+  })
+  const itemsOf = (id: string) => useSplitStore.getState().nights.find((x) => x.id === id)!.items
+
+  it('adds every line', () => {
+    const id = useSplitStore.getState().addNight({ participants: ['Minh'] })
+    useSplitStore.getState().addItemsFromPhoto(id, [line('Bò', 'ph1'), line('Gà', 'ph1')], [])
+    const items = itemsOf(id)
+    expect(items.map((i) => i.label)).toEqual(['Bò', 'Gà'])
+    expect(items[0].id).not.toBe(items[1].id)
+    expect(items.every((i) => i.photoId === 'ph1')).toBe(true)
+  })
+
+  it('dedupes case-insensitively', () => {
+    const id = useSplitStore.getState().addNight({ participants: ['Minh', 'Lan'] })
+    useSplitStore.getState().addItemsFromPhoto(id, [line('Bò', 'ph1')], ['lan', 'Thảo'])
+    const n = useSplitStore.getState().nights.find((x) => x.id === id)!
+    expect(n.participants).toEqual(['Minh', 'Lan', 'Thảo'])
+    expect(useSplitStore.getState().knownNames).toContain('Thảo')
+  })
+
+  it('adds one participant for names differing only in case', () => {
+    const id = useSplitStore.getState().addNight({ participants: ['Minh'] })
+    useSplitStore.getState().addItemsFromPhoto(id, [line('Bò', 'ph1')], ['Thảo', 'thảo'])
+    const n = useSplitStore.getState().nights.find((x) => x.id === id)!
+    expect(n.participants).toEqual(['Minh', 'Thảo'])
+    expect(useSplitStore.getState().knownNames).toEqual(['Thảo'])
+  })
+
+  it('does not add a known name for a name that matched an existing participant', () => {
+    const id = useSplitStore.getState().addNight({ participants: ['Minh', 'Lan'] })
+    useSplitStore.getState().addItemsFromPhoto(id, [line('Bò', 'ph1')], ['lan'])
+    expect(useSplitStore.getState().knownNames).not.toContain('lan')
+  })
+
+  it('does nothing, including knownNames, for an unknown night', () => {
+    const before = useSplitStore.getState().knownNames
+    useSplitStore.getState().addItemsFromPhoto('nope', [line('Bò', 'ph1')], ['Thảo'])
+    expect(useSplitStore.getState().knownNames).toEqual(before)
+    expect(useSplitStore.getState().knownNames).not.toContain('Thảo')
+  })
+
+  it('deleteItemsByPhoto removes only that photo\'s lines and returns the count', () => {
+    const id = useSplitStore.getState().addNight({ participants: ['Minh'] })
+    useSplitStore.getState().addItemsFromPhoto(
+      id, [line('a', 'ph1'), line('b', 'ph1'), line('c', 'ph2'), line('hand')], [])
+    expect(useSplitStore.getState().deleteItemsByPhoto(id, 'ph1')).toBe(2)
+    expect(itemsOf(id).map((i) => i.label)).toEqual(['c', 'hand'])
+    expect(useSplitStore.getState().deleteItemsByPhoto(id, 'ph1')).toBe(0)
+  })
+})
+
 function fixtureNights(): Night[] {
   return [
     {

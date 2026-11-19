@@ -31,6 +31,14 @@ interface AppState {
   addItem(nightId: string, item: Omit<Item, 'id'>): void
   updateItem(nightId: string, itemId: string, patch: Partial<Omit<Item, 'id'>>): void
   deleteItem(nightId: string, itemId: string): void
+  /**
+   * Bill photo "Done": add every tagged line to the Nomnom in one write, plus
+   * names added while tagging (skipped when they match a participant ignoring
+   * case; the existing spelling wins). New names also join knownNames.
+   */
+  addItemsFromPhoto(nightId: string, items: Omit<Item, 'id'>[], newNames: string[]): void
+  /** Remove every line that came from one bill photo; returns how many were removed. */
+  deleteItemsByPhoto(nightId: string, photoId: string): number
 
   // ---- payments (one per from->to pair) ----------------------------------
   markLinePaid(nightId: string, from: string, to: string, amount: number): void
@@ -132,6 +140,40 @@ export const useSplitStore = create<AppState>()(
             items: n.items.filter((it) => it.id !== itemId),
           })),
         }))
+      },
+
+      addItemsFromPhoto(nightId, items, newNames) {
+        const night = get().nights.find((n) => n.id === nightId)
+        if (!night) return
+        // Only names that really join the Nomnom become known names.
+        const participants = [...night.participants]
+        const added: string[] = []
+        for (const raw of newNames) {
+          const name = raw.trim()
+          if (name && !participants.some((p) => p.toLowerCase() === name.toLowerCase())) {
+            participants.push(name)
+            added.push(name)
+          }
+        }
+        const newItems = items.map((it) => ({ ...it, id: uid() }))
+        set((s) => ({
+          nights: mapNight(s.nights, nightId, (n) => ({ ...n, participants, items: [...n.items, ...newItems] })),
+        }))
+        added.forEach((name) => get().addKnownName(name))
+        get().promoteFrequentNames()
+      },
+
+      deleteItemsByPhoto(nightId, photoId) {
+        const night = get().nights.find((n) => n.id === nightId)
+        const count = night ? night.items.filter((it) => it.photoId === photoId).length : 0
+        if (count === 0) return 0
+        set((s) => ({
+          nights: mapNight(s.nights, nightId, (n) => ({
+            ...n,
+            items: n.items.filter((it) => it.photoId !== photoId),
+          })),
+        }))
+        return count
       },
 
       markLinePaid(nightId, from, to, amount) {
