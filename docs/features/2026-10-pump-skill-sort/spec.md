@@ -1,6 +1,6 @@
 # Pump skill sort — Design
 
-**Date:** 2026-11-02 · **Status:** decisions answered 2026-10-31 (grilling, Q1–Q13), built 2026-11-02 (not pushed or merged)
+**Date:** 2026-11-02 · **Status:** decisions answered 2026-10-31 (grilling, Q1–Q13), built 2026-11-02, layout fixes 2026-11-11, brought up to date with `main` (PHOENIX 2 v1.02 and the NEW mark) and verified 2026-11-19
 **Builds on:** [`../2026-10-piu-chart-filter/spec.md`](../2026-10-piu-chart-filter/spec.md) (Pump v1: filters, URL state, list order) · [`../2026-10-pump-song-art/spec.md`](../2026-10-pump-song-art/spec.md) (grid and list views)
 
 ## Problem
@@ -20,7 +20,7 @@ Filtering D18 + run shows the 93 run-tagged D18 charts, sorted by title. To pick
 | 7 | **The order is filter state**: it lives in the URL and comes back with the last filters. |
 | 8 | **The control is a chip in the bottom dock**, right after the skill chip. Each tap moves to the next order. |
 | 9 | **Grid view shows the % too.** Correction to the grilling answer: grid tiles already show skill tags below the art (song-art spec, decision 2), so the tile's tag reads "run 67%" exactly like the list row, and no separate badge is added. Built with the fallback: at 360 px "bracket 100%", a second tag and a trophy measured about 162 px of icons in a 142 px tile, so while ranking the tile shows only the selected tag (`max = 1`). |
-| 10 | **Charts with no %** (Steam Link and 11 others with no coverage data; they can still be tagged through an official title list) go to the end of their level in both directions and show no %. |
+| 10 | **Charts with no %** go to the end of their level in both directions and show no %. When this was decided, Steam Link and 11 other charts had no coverage data but could still be tagged through an official title list. Since the v1.02 data (PR #12), no chart with a skill tag lacks a %: the 267 charts piucenter hasn't analysed have no skill tags, so no skill filter shows them. The rule stays for future data and is unit-tested. |
 | 11 | **The chosen direction carries over** when the skill changes (run → twist, or removed and another added). Most first is only the starting value. |
 | 12 | **Titles tab unchanged.** Ranking by more than one skill is out of scope. |
 
@@ -116,10 +116,25 @@ Browser checks (dev server, 390 px and 360 px, light and dark):
 5. Gimmick alone → no chip.
 6. Reload, and close and reopen Pump → same order; Clear → most first.
 
-## Docs to update when this ships
+## Verified (2026-11-19, after merging `main` with the v1.02 data)
 
-- Pump v1 spec, the list-order line (§ List: "Order: level ascending, then title"): add "or by the selected skill's %, see the skill-sort spec".
-- The explainer "Nook Split, Explained" (https://claude.ai/artifact/TmrnZ3PofbjKp8Ped4ZFs4): the sort chip in its Pump content.
+- 561 tests pass (the 12 skill-sort tests among them); `tsc --noEmit` and the build are clean.
+- Browser checks 1–6 above at 360 px in dark, grid and list, against the v1.02 data:
+  - D18 + run ranks Winter 83 %, DUEL 80 %, Final Audition 3 75 % first and ends at Turkey March 14 %. Least first starts at 14 %; A–Z keeps the %.
+  - Each tap moves the list to the top and updates `so` in the URL.
+  - Lv 17–19 + run: Lv 18 restarts at 83 % under its own header.
+  - run + twist and gimmick alone: no chip and no % tags.
+  - A twist link with `so=least` opens on "Least twist".
+- The chosen order is saved when you tap the chip and comes back when Pump reopens. A link you open doesn't overwrite the saved filters (v1 behaviour). Clear goes back to most first.
+- List view at 360 px: "bracket 100%" plus a second tag fits beside the title without horizontal scroll. At 390 px the "Most bracket" chip runs past the dock's right edge, which already scrolls sideways (Clear is off-screen there too).
+- No v1.02 chart is new and skill-tagged at once, so a row never shows both the NEW pill and a % tag yet. When it does, the title truncates first.
+- Not yet checked on a real phone.
+
+## Docs updated
+
+- Pump v1 spec, the list-order line: ranking by the selected skill's %, pointing here.
+- `README.md`, the Pump section.
+- The explainer "Nook Split, Explained" (https://claude.ai/artifact/TmrnZ3PofbjKp8Ped4ZFs4): the sort chip, with screenshots.
 
 ## Out of scope
 

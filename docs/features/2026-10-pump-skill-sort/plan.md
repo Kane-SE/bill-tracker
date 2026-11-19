@@ -1,5 +1,7 @@
 # Pump skill sort Implementation Plan
 
+> **Status (2026-11-19):** built 2026-11-02 to 11-11 in commits `e3b1b87`…`43ea264`, so the boxes below were never ticked. What was verified is in [spec.md › Verified](spec.md#verified-2026-11-19-after-merging-main-with-the-v102-data).
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** When exactly one computed skill is filtered, rank each level's charts by that skill's coverage % (most first by default, least first, or A–Z), switched from a chip in the bottom dock, with the % shown on the selected skill's tag.
