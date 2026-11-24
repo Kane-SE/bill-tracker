@@ -117,6 +117,17 @@ describe('redistribute (per-person locking)', () => {
 })
 
 describe('computeBalances', () => {
+  it('keeps a name with a space whole (no phantom pair row)', () => {
+    const nights = [
+      night('a', [item({ payer: 'Cang', amount: 100, shares: [{ name: 'Dung Nguyen', amount: 100 }] })]),
+      night('b', [item({ payer: 'Cang', amount: 40, shares: [{ name: 'Dung', amount: 40 }] })]),
+    ]
+    expect(computeBalances(nights)).toEqual([
+      { from: 'Dung Nguyen', to: 'Cang', amount: 100 },
+      { from: 'Dung', to: 'Cang', amount: 40 },
+    ])
+  })
+
   it('the payer owes nothing; others owe the payer their share', () => {
     const n = night('n1', [
       item({

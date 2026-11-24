@@ -2,6 +2,7 @@ import * as React from 'react'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { X } from 'lucide-react'
 import { cn } from '@/shared/lib/utils'
+import { useKeyboardInset } from '@/shared/hooks/useKeyboardInset'
 
 const Dialog = DialogPrimitive.Root
 const DialogTrigger = DialogPrimitive.Trigger
@@ -26,7 +27,11 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => (
+>(({ className, children, style, ...props }, ref) => {
+  // A bottom sheet sits on the screen's bottom edge; lift and shorten it so the
+  // on-screen keyboard never covers its buttons (Nook bug, 2026-10-19).
+  const inset = useKeyboardInset()
+  return (
   <DialogPortal>
     <DialogOverlay />
     <DialogPrimitive.Content
@@ -35,6 +40,7 @@ const DialogContent = React.forwardRef<
         'fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[92vh] w-full max-w-lg flex-col gap-4 overflow-y-auto rounded-t-2xl border border-border bg-card p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 sm:rounded-2xl sm:pb-5 motion-reduce:data-[state=open]:animate-none motion-reduce:data-[state=closed]:animate-none',
         className,
       )}
+      style={inset > 0 ? { ...style, bottom: inset, maxHeight: `calc(92vh - ${inset}px)` } : style}
       {...props}
     >
       {children}
@@ -44,7 +50,8 @@ const DialogContent = React.forwardRef<
       </DialogPrimitive.Close>
     </DialogPrimitive.Content>
   </DialogPortal>
-))
+  )
+})
 DialogContent.displayName = DialogPrimitive.Content.displayName
 
 function DialogHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
@@ -53,7 +60,14 @@ function DialogHeader({ className, ...props }: React.HTMLAttributes<HTMLDivEleme
 
 function DialogFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn('flex flex-col-reverse gap-2 sm:flex-row sm:justify-end', className)} {...props} />
+    // Sticky, so a long sheet (or one squeezed by the keyboard) keeps its buttons in view.
+    <div
+      className={cn(
+        'sticky bottom-0 -mx-5 flex flex-col-reverse gap-2 border-t border-border bg-card px-5 pt-3 sm:flex-row sm:justify-end',
+        className,
+      )}
+      {...props}
+    />
   )
 }
 

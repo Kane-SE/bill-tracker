@@ -57,11 +57,11 @@ export function PairSheet({ debt, nights, onOpenChange, onResolve }: PairSheetPr
                       </span>
                       <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                         {e.lineFrom} <ArrowRight className="h-3 w-3" /> {e.lineTo}
-                        {e.lineFrom !== debt.from && ' · other way'}
+                        {e.contribution < 0 && ' · takes off'}
                       </span>
                     </span>
                     <span className={cn('shrink-0 font-semibold tabular-nums', e.contribution > 0 ? 'text-destructive' : 'text-success')}>
-                      {e.contribution > 0 ? '+' : '−'}
+                      {e.contribution > 0 && '+'}
                       {formatMoney(Math.abs(e.contribution))}
                     </span>
                     <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -69,10 +69,6 @@ export function PairSheet({ debt, nights, onOpenChange, onResolve }: PairSheetPr
                 </li>
               ))}
             </ul>
-
-            {breakdown.settledCount > 0 && (
-              <p className="text-xs text-muted-foreground">+{breakdown.settledCount} already paid</p>
-            )}
 
             <div className="flex justify-between border-t border-dashed border-border pt-3 font-semibold">
               <span>Net</span>
