@@ -59,6 +59,9 @@ skill sort: [docs/features/2026-10-pump-skill-sort/spec.md](docs/features/2026-1
   as "takes off".
 - **Nomnoms by month** — Home's Active Nomnoms sit under month headers
   ("November 2026 · 4"); the newest month is open, older ones fold until tapped.
+- **Buttons above the phone keyboard** — fixed bottom bars (`BottomBar`) and bottom
+  sheets (`DialogContent`) lift by the keyboard's height (`shared/hooks/useKeyboardInset.ts`,
+  read from `visualViewport`), and a sheet's `DialogFooter` sticks to its bottom edge.
 - **Tick debts off one by one** — each "B owes A" line in a Nomnom has its own
   Paid check. A tick records the amount paid (`night.payments`), so if an item
   is edited later the line reopens showing only what's left. Home balances only

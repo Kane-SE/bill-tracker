@@ -3,7 +3,6 @@ import { ArrowDownAZ, ArrowDownWideNarrow, ArrowUpNarrowWide, Search, SlidersHor
 import type { Mode } from '@/apps/pump/data/types'
 import { defaultFilters, rankSkill, toggleValue, type Filters } from '@/apps/pump/lib/filters'
 import { levelLabel, MODE_SHORT, nextSort, sortAriaLabel, sortLabel } from '@/apps/pump/lib/labels'
-import { useKeyboardInset } from '@/apps/pump/hooks/useKeyboardInset'
 import { Chip } from '@/apps/pump/components/Chip'
 import { BottomBar } from '@/shared/components/BottomBar'
 import { Button } from '@/shared/ui/button'
@@ -17,7 +16,6 @@ interface FilterDockProps {
 
 /** Thumb-zone bar: promoted chips (mode, level, selected skills, Clear), search, Filters (n). */
 export function FilterDock({ filters, activeCount, onChange, onOpenFilters }: FilterDockProps) {
-  const inset = useKeyboardInset()
   // Local text so typing never waits on the URL; external changes (Clear, presets) sync back in.
   const [text, setText] = useState(filters.q)
   useEffect(() => setText(filters.q), [filters.q])
@@ -27,7 +25,7 @@ export function FilterDock({ filters, activeCount, onChange, onOpenFilters }: Fi
   const anyActive = activeCount > 0 || filters.q.trim() !== ''
 
   return (
-    <BottomBar style={inset > 0 ? { transform: `translateY(-${inset}px)` } : undefined}>
+    <BottomBar>
       <div className="-mx-4 flex gap-2 overflow-x-auto px-4 py-1 [scrollbar-width:none]">
         {modes.map((m) => (
           <Chip key={m} pressed={filters.modes.includes(m)} onClick={() => onChange({ ...filters, modes: toggleValue(filters.modes, m) })}>
