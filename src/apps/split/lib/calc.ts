@@ -6,9 +6,12 @@ import { formatDate } from '@/apps/split/lib/format'
  * can be unit-tested in isolation.
  */
 
+/** Joins a pair key. A control character, since names may hold spaces ("Dung Nguyen"). */
+const SEP = '\u0000'
+
 /** Key for an unordered pair of names, plus whether we flipped the order. */
 function pairKey(a: string, b: string): { key: string; flipped: boolean } {
-  return a <= b ? { key: `${a} ${b}`, flipped: false } : { key: `${b} ${a}`, flipped: true }
+  return a <= b ? { key: `${a}${SEP}${b}`, flipped: false } : { key: `${b}${SEP}${a}`, flipped: true }
 }
 
 /**
@@ -60,7 +63,7 @@ function toDebts(net: Map<string, number>): Debt[] {
   const debts: Debt[] = []
   for (const [key, value] of net) {
     if (Math.round(value) === 0) continue
-    const [a, b] = key.split(' ')
+    const [a, b] = key.split(SEP)
     // value > 0: a owes b; value < 0: b owes a
     if (value > 0) debts.push({ from: a, to: b, amount: Math.round(value) })
     else debts.push({ from: b, to: a, amount: Math.round(-value) })

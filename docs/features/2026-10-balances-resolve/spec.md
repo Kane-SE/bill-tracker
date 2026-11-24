@@ -23,7 +23,7 @@ default, and "Mark Nomnom as done" is too long.
 
 | # | Decision |
 |---|---|
-| 1 | Tapping a home row opens a **bottom sheet** with the pair's per-Nomnom breakdown. It lists only Nomnoms that **contribute** to the number, plus a "+N already paid" note. Each entry links to its Nomnom. The row subtitle "from N Nomnom(s)" counts the contributing ones. |
+| 1 | Tapping a home row opens a **bottom sheet** with the pair's per-Nomnom breakdown. It lists only Nomnoms that **contribute** to the number (the "+N already paid" note was dropped 2026-11-24). Each entry links to its Nomnom. The row subtitle "from N Nomnom(s)" counts the contributing ones. |
 | 2 | **Resolve** works on **one pair**. It settles every line between the two people, in **both directions**, in every active Nomnom. |
 | 3 | Resolve is confirmed in a modal that lists **every change**: lines ticked, payments **adjusted** (over-payments trimmed) or **removed** (no matching line), and Nomnoms that will be **archived automatically**. |
 | 4 | After Resolve, a toast offers **Undo** for **8 s**. It's dismissed as soon as you leave the home screen. |
@@ -164,11 +164,12 @@ It's in memory, so it survives navigation and resets on app restart.
 ### `PairSheet` (new, `apps/split/components/PairSheet.tsx`)
 
 - Header "Minh → Lan" and "Minh owes Lan 70.000 ₫ across 2 Nomnoms".
-- One row per entry: title · date, `lineFrom → lineTo`, and the signed contribution
-  (+ in the owe color, − in the paid color). Tapping a row closes the sheet and
-  navigates to `/split/night/:id`.
-- "+N already paid" note when `settledCount > 0`, then the net line, then a
-  **Resolve Minh → Lan** button (success).
+- One row per entry: title · date, `lineFrom → lineTo`, and the contribution: a
+  positive one as "+X" in the owe color; a negative one as "X" (no minus) in the paid
+  color, with "· takes off" after the direction (changed 2026-11-24, was "−X · other way").
+  Tapping a row closes the sheet and navigates to `/split/night/:id`.
+- The net line, then a **Resolve Minh → Lan** button (success). The "+N already paid"
+  note was removed on 2026-11-24 (`settledCount` is still computed, not shown).
 
 ### Resolve confirmation
 
@@ -236,5 +237,17 @@ It's in memory, so it survives navigation and resets on app restart.
 - Desktop layout (its own brainstorm).
 - Resolving everything one person owes; partial-amount resolve.
 - Case-insensitive name matching (it would mean changing the debt math).
+
+## Fixes after launch
+
+- **2026-11-24, names with spaces.** `calc.ts` joined a pair key with a space and split
+  it back on spaces, so "Dung Nguyen" with "Cang" came out as a phantom "Dung ↔ Cang"
+  row. The sheet and Resolve look up exact names, so that row showed "from 0 Nomnoms"
+  and Resolve could not clear it. The key now joins with `\u0000`; test "keeps a name
+  with a space whole" in `calc.test.ts`. Data needs no migration: names were always
+  stored whole.
+- **2026-11-24, home list by month.** Active Nomnoms are grouped under month headers
+  (`lib/months.ts` `groupByMonth`, `components/NightMonthList.tsx`): newest month open,
+  older months folded, tap to toggle (not remembered).
 - Pairs that net to 0 overall but still have open lines in individual Nomnoms (they
   don't appear on home, same as today).

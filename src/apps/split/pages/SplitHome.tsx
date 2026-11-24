@@ -4,7 +4,7 @@ import { Archive, FileSpreadsheet, Moon, Plus, Settings, UsersRound, Wallet } fr
 import { PageHeader } from '@/shared/components/PageHeader'
 import { BottomBar } from '@/shared/components/BottomBar'
 import { BalanceList } from '@/apps/split/components/BalanceList'
-import { NightCard } from '@/apps/split/components/NightCard'
+import { NightMonthList } from '@/apps/split/components/NightMonthList'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { Button } from '@/shared/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
@@ -173,11 +173,7 @@ export function SplitHome() {
       ) : shownNights.length === 0 ? (
         <p className="text-sm text-muted-foreground">No active Nomnoms with {person}.</p>
       ) : (
-        <div className="space-y-3">
-          {shownNights.map((night) => (
-            <NightCard key={night.id} night={night} />
-          ))}
-        </div>
+        <NightMonthList nights={shownNights} />
       )}
 
       <PairSheet

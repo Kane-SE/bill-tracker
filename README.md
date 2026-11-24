@@ -53,7 +53,12 @@ skill sort: [docs/features/2026-10-pump-skill-sort/spec.md](docs/features/2026-1
   one-time, persisted); you can still add/remove names by hand and a removed
   name is never silently re-added.
 - **Netted balances** — a clear "B owes A 50.000 ₫" summary that adds up across
-  all active Nomnoms and cancels out opposite debts.
+  all active Nomnoms and cancels out opposite debts. Names may hold spaces
+  ("Dung Nguyen" and "Dung" are two people with their own rows). Tapping a row
+  lists the Nomnoms behind it; a Nomnom that went the other way shows in green
+  as "takes off".
+- **Nomnoms by month** — Home's Active Nomnoms sit under month headers
+  ("November 2026 · 4"); the newest month is open, older ones fold until tapped.
 - **Tick debts off one by one** — each "B owes A" line in a Nomnom has its own
   Paid check. A tick records the amount paid (`night.payments`), so if an item
   is edited later the line reopens showing only what's left. Home balances only
